@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface AnalyticsFiltersProps {
   uploadedData: any[];
@@ -59,23 +58,94 @@ export function AnalyticsFilters({ uploadedData }: AnalyticsFiltersProps) {
   const [selectedYear, setSelectedYear] = useState("todos");
   const [selectedMonth, setSelectedMonth] = useState("todos");
   const [topEngineersFilter, setTopEngineersFilter] = useState("orcamento");
+  // Novo estado para o filtro de departamento
+  const [selectedDepartment, setSelectedDepartment] = useState("todos");
 
   // Dropdown states
   const [engineerDropdownOpen, setEngineerDropdownOpen] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  // Novo estado para dropdown de departamento
+  const [departmentDropdownOpen, setDepartmentDropdownOpen] = useState(false);
 
-  // Replace the static engineers array with dynamic one
-  const engineers = [
-    { value: "todos", label: "Engenheiro" },
-    ...Array.from(new Set(uploadedData.map((row) => row.engenheiro)))
-      .filter((eng) => eng && eng.trim() !== "")
-      .map((eng) => ({
-        value: eng.toLowerCase().replace(/\s+/g, ""),
+  // Opções de departamento
+  const departments = [
+    { value: "todos", label: "Departamento" },
+    { value: "vendas", label: "Departamento de Vendas" },
+    { value: "servicos", label: "Departamento de Serviços" },
+    { value: "outros", label: "Outros" },
+  ];
+
+  // Mapeamento dos departamentos e colaboradores
+  const departmentMap: Record<
+    string,
+    { gerente: string; colaboradores: string[] }
+  > = {
+    vendas: {
+      gerente: "Sobrinho",
+      colaboradores: [
+        "Sobrinho",
+        "Mamede",
+        "Giovana",
+        "Rafael Massa",
+        "LENILTON",
+      ],
+    },
+    servicos: {
+      gerente: "Giovanni",
+      colaboradores: ["Giovanni", "Paloma", "Lucas", "Marcelo M", "Raquel"],
+    },
+  };
+
+  // Função para normalizar nomes (case insensitive, sem espaços extras)
+  function normalizeName(name: string) {
+    return name?.toLowerCase().replace(/\s+/g, "").trim();
+  }
+
+  // Lista de engenheiros filtrada pelo departamento
+  let filteredEngineers: { value: string; label: string }[] = [];
+  if (selectedDepartment === "todos") {
+    filteredEngineers = [
+      { value: "todos", label: "Engenheiro" },
+      ...Array.from(new Set(uploadedData.map((row) => row.engenheiro)))
+        .filter((eng) => eng && eng.trim() !== "")
+        .map((eng) => ({
+          value: normalizeName(eng),
+          label: eng,
+        })),
+    ];
+  } else if (
+    selectedDepartment === "vendas" ||
+    selectedDepartment === "servicos"
+  ) {
+    const { colaboradores } = departmentMap[selectedDepartment];
+    filteredEngineers = [
+      { value: "todos", label: "Engenheiro" },
+      ...colaboradores.map((eng) => ({
+        value: normalizeName(eng),
         label: eng,
       })),
-  ];
+    ];
+  } else if (selectedDepartment === "outros") {
+    // Pega todos os engenheiros que não estão nos outros departamentos
+    const allColabs = [
+      ...departmentMap.vendas.colaboradores,
+      ...departmentMap.servicos.colaboradores,
+    ].map(normalizeName);
+    filteredEngineers = [
+      { value: "todos", label: "Engenheiro" },
+      ...Array.from(new Set(uploadedData.map((row) => row.engenheiro)))
+        .filter(
+          (eng) =>
+            eng && eng.trim() !== "" && !allColabs.includes(normalizeName(eng))
+        )
+        .map((eng) => ({
+          value: normalizeName(eng),
+          label: eng,
+        })),
+    ];
+  }
 
   // Replace the static years array with dynamic one
   const availableYears = Array.from(
@@ -147,10 +217,20 @@ export function AnalyticsFilters({ uploadedData }: AnalyticsFiltersProps) {
 
   return (
     <>
+      <div className="w-48">
+        <CustomDropdown
+          value={selectedDepartment}
+          options={departments}
+          onChange={setSelectedDepartment}
+          placeholder="Departamento"
+          isOpen={departmentDropdownOpen}
+          setIsOpen={setDepartmentDropdownOpen}
+        />
+      </div>
       <div className="w-64">
         <CustomDropdown
           value={selectedEngineer}
-          options={engineers}
+          options={filteredEngineers}
           onChange={setSelectedEngineer}
           placeholder="Selecionar engenheiro"
           isOpen={engineerDropdownOpen}
