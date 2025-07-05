@@ -22,7 +22,7 @@ export function AnalyticsCharts({ uploadedData }: AnalyticsChartsProps) {
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="text-xl text-gray-800">
-            Desempenho por Engenheiro
+            Desempenho por Colaborador(a)
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -1,11 +1,16 @@
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 
 interface AnalyticsRankingProps {
   uploadedData: any[];
 }
 
 export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
+  const [filterType, setFilterType] = useState<"orcamento" | "faturamento">(
+    "orcamento"
+  );
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -15,11 +20,16 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
 
   // Change topEngineers to show all engineers instead of just top 5
   const allEngineers = uploadedData.sort((a, b) => {
-    // Default to orcamento filter
-    return b.projetos - a.projetos;
+    // Sort based on selected filter
+    if (filterType === "orcamento") {
+      // Sort by conversion rate (quantidade/projetos) for orçamento filter
+      const rateA = a.projetos > 0 ? a.quantidade / a.projetos : 0;
+      const rateB = b.projetos > 0 ? b.quantidade / b.projetos : 0;
+      return rateB - rateA;
+    } else {
+      return b.valorTotal - a.valorTotal;
+    }
   });
-
-  const topEngineersFilter = "orcamento"; // This would come from props in a real implementation
 
   return (
     <Card className="bg-white">
@@ -27,13 +37,39 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl text-gray-800">
-              Ranking de Engenheiros
+              Ranking de Colaboradores
             </CardTitle>
             <p className="text-sm text-gray-500">
-              {topEngineersFilter === "orcamento"
+              {filterType === "orcamento"
                 ? "Por quantidade de orçamentos"
                 : "Por faturamento"}
             </p>
+          </div>
+
+          {/* Filter buttons */}
+          <div className="flex items-center space-x-2">
+            <div className="relative bg-gray-200 rounded-lg p-1 flex">
+              <button
+                onClick={() => setFilterType("orcamento")}
+                className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                  filterType === "orcamento"
+                    ? "text-blue-700 bg-white shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                Orçamento
+              </button>
+              <button
+                onClick={() => setFilterType("faturamento")}
+                className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                  filterType === "faturamento"
+                    ? "text-blue-700 bg-white shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                Faturamento
+              </button>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -58,41 +94,15 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-blue-800 mb-2">
-                    {topEngineersFilter === "orcamento"
+                    {filterType === "orcamento"
                       ? "Filtro: Quantidade de Orçamentos"
                       : "Filtro: Faturamento"}
                   </h4>
                   <div className="text-sm text-blue-700">
-                    {topEngineersFilter === "orcamento" ? (
-                      <div className="space-y-1">
-                        <p>
-                          <strong>Contabiliza apenas:</strong> Linhas com
-                          "Orçamento de Venda" na coluna Descrição
-                        </p>
-                        <p>
-                          <strong>Métrica:</strong> Número total de orçamentos
-                          elaborados por engenheiro
-                        </p>
-                        <p>
-                          <strong>Objetivo:</strong> Medir produtividade na
-                          elaboração de propostas comerciais
-                        </p>
-                      </div>
+                    {filterType === "orcamento" ? (
+                      <div className="space-y-1"></div>
                     ) : (
-                      <div className="space-y-1">
-                        <p>
-                          <strong>Contabiliza apenas:</strong> Linhas com "Venda
-                          de Serviços" + "Venda Normal" na coluna Descrição
-                        </p>
-                        <p>
-                          <strong>Métrica:</strong> Número de vendas efetivadas
-                          e valor total faturado
-                        </p>
-                        <p>
-                          <strong>Objetivo:</strong> Medir performance comercial
-                          e receita gerada
-                        </p>
-                      </div>
+                      <div className="space-y-1"></div>
                     )}
                   </div>
                 </div>
@@ -103,7 +113,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-gray-800">
-                  {topEngineersFilter === "orcamento"
+                  {filterType === "orcamento"
                     ? uploadedData.reduce((sum, eng) => sum + eng.projetos, 0)
                     : uploadedData.reduce(
                         (sum, eng) => sum + eng.quantidade,
@@ -111,7 +121,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                       )}
                 </div>
                 <div className="text-sm text-gray-600">
-                  {topEngineersFilter === "orcamento"
+                  {filterType === "orcamento"
                     ? "Total de Orçamentos"
                     : "Total de Vendas"}
                 </div>
@@ -119,7 +129,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
 
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {topEngineersFilter === "orcamento"
+                  {filterType === "orcamento"
                     ? formatCurrency(
                         uploadedData.reduce(
                           (sum, eng) => sum + eng.valorOrcamentos,
@@ -134,7 +144,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                       )}
                 </div>
                 <div className="text-sm text-gray-600">
-                  {topEngineersFilter === "orcamento"
+                  {filterType === "orcamento"
                     ? "Valor em Orçamentos"
                     : "Valor Faturado"}
                 </div>
@@ -144,7 +154,9 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                 <div className="text-2xl font-bold text-blue-600">
                   {allEngineers.length}
                 </div>
-                <div className="text-sm text-gray-600">Engenheiros Ativos</div>
+                <div className="text-sm text-gray-600">
+                  Colaboradores Ativos
+                </div>
               </div>
             </div>
 
@@ -184,7 +196,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                   </div>
 
                   <div className="space-y-2">
-                    {topEngineersFilter === "orcamento" ? (
+                    {filterType === "orcamento" ? (
                       <div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">
@@ -248,8 +260,25 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                           </div>
                         </div>
                         <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-gray-600 flex items-center gap-1">
                             Ticket médio:
+                            <div className="relative group">
+                              <svg
+                                className="w-3 h-3 text-gray-400 cursor-help"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                Valor total ÷ Número de vendas
+                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                              </div>
+                            </div>
                           </span>
                           <span className="font-medium text-xs text-blue-600">
                             {engineer.quantidade > 0
@@ -264,75 +293,52 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                   </div>
 
                   {/* Barra de progresso relativa - Taxa de Conversão */}
-                  <div className="mt-3">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs text-gray-500">
-                        Taxa de Conversão
-                      </span>
-                      <span className="text-xs text-gray-600">
-                        {topEngineersFilter === "orcamento"
-                          ? `${
+                  {filterType === "orcamento" && (
+                    <div className="mt-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs text-gray-500">
+                          Taxa de Conversão
+                        </span>
+                        <span className="text-xs text-gray-600">
+                          {`${
+                            engineer.projetos > 0
+                              ? Math.round(
+                                  (engineer.quantidade / engineer.projetos) *
+                                    100
+                                )
+                              : 0
+                          }%`}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-500 ${
+                            index === 0
+                              ? "bg-yellow-500"
+                              : index === 1
+                              ? "bg-gray-400"
+                              : index === 2
+                              ? "bg-orange-600"
+                              : "bg-blue-500"
+                          }`}
+                          style={{
+                            width: `${
                               engineer.projetos > 0
-                                ? Math.round(
-                                    (engineer.quantidade / engineer.projetos) *
-                                      100
-                                  )
-                                : 0
-                            }%`
-                          : `${
-                              engineer.projetos > 0
-                                ? Math.round(
-                                    (engineer.valorTotal /
-                                      engineer.valorOrcamentos) *
-                                      100
-                                  )
-                                : 0
-                            }%`}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-500 ${
-                          index === 0
-                            ? "bg-yellow-500"
-                            : index === 1
-                            ? "bg-gray-400"
-                            : index === 2
-                            ? "bg-orange-600"
-                            : "bg-blue-500"
-                        }`}
-                        style={{
-                          width: `${
-                            topEngineersFilter === "orcamento"
-                              ? engineer.projetos > 0
                                 ? Math.min(
                                     (engineer.quantidade / engineer.projetos) *
                                       100,
                                     100
                                   )
                                 : 0
-                              : engineer.valorOrcamentos > 0
-                              ? Math.min(
-                                  (engineer.valorTotal /
-                                    engineer.valorOrcamentos) *
-                                    100,
-                                  100
-                                )
-                              : 0
-                          }%`,
-                        }}
-                      ></div>
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 text-center">
+                        {`${engineer.quantidade} vendas de ${engineer.projetos} orçamentos`}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1 text-center">
-                      {topEngineersFilter === "orcamento"
-                        ? `${engineer.quantidade} vendas de ${engineer.projetos} orçamentos`
-                        : `${formatCurrency(
-                            engineer.valorTotal
-                          )} de ${formatCurrency(
-                            engineer.valorOrcamentos
-                          )} orçados`}
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>

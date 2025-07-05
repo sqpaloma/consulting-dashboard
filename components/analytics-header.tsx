@@ -80,7 +80,6 @@ export function AnalyticsHeader() {
       {/* Page Title */}
       <div className="space-y-2">
         <h1 className="text-4xl font-bold text-white">Análises</h1>
-        <p className="text-gray-300">Relatórios e métricas de desempenho</p>
       </div>
     </>
   );

@@ -68,7 +68,7 @@ export function AnalyticsFilters({ uploadedData }: AnalyticsFiltersProps) {
 
   // Replace the static engineers array with dynamic one
   const engineers = [
-    { value: "todos", label: "Todos os engenheiros" },
+    { value: "todos", label: "Engenheiro" },
     ...Array.from(new Set(uploadedData.map((row) => row.engenheiro)))
       .filter((eng) => eng && eng.trim() !== "")
       .map((eng) => ({
@@ -83,7 +83,7 @@ export function AnalyticsFilters({ uploadedData }: AnalyticsFiltersProps) {
   ).sort((a, b) => Number.parseInt(b) - Number.parseInt(a));
 
   const years = [
-    { value: "todos", label: "Todos os anos" },
+    { value: "todos", label: "Ano" },
     ...availableYears.map((year) => ({ value: year, label: year })),
   ];
 
@@ -103,7 +103,7 @@ export function AnalyticsFilters({ uploadedData }: AnalyticsFiltersProps) {
   ).sort();
 
   const months = [
-    { value: "todos", label: "Todos os meses" },
+    { value: "todos", label: "Mês" },
     ...availableMonths.map((month) => {
       const monthNames = [
         "",
