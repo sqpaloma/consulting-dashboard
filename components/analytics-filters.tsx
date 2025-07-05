@@ -90,6 +90,10 @@ export function AnalyticsFilters({
     { value: "todos", label: "Departamento" },
     { value: "vendas", label: "Departamento de Vendas" },
     { value: "servicos", label: "Departamento de Serviços" },
+    {
+      value: "engenhariaeassistencia",
+      label: "Departamento de Engenharia e Assistência",
+    },
     { value: "outros", label: "Outros" },
   ];
 
@@ -111,6 +115,10 @@ export function AnalyticsFilters({
     servicos: {
       gerente: "Giovanni",
       colaboradores: ["Giovanni", "Paloma", "Lucas", "Marcelo M", "Raquel"],
+    },
+    engenhariaeassistencia: {
+      gerente: "Carlinhos",
+      colaboradores: ["Carlinhos", "Claudio", "Anderson"],
     },
   };
 
@@ -136,7 +144,8 @@ export function AnalyticsFilters({
     ];
   } else if (
     selectedDepartment === "vendas" ||
-    selectedDepartment === "servicos"
+    selectedDepartment === "servicos" ||
+    selectedDepartment === "engenhariaeassistencia"
   ) {
     const { colaboradores } = departmentMap[selectedDepartment];
     // Só mostra os colaboradores do departamento que estão na planilha
@@ -158,6 +167,7 @@ export function AnalyticsFilters({
     const allColabs = [
       ...departmentMap.vendas.colaboradores,
       ...departmentMap.servicos.colaboradores,
+      ...departmentMap.engenhariaeassistencia.colaboradores,
     ].map(normalizeName);
     filteredEngineers = [
       { value: "todos", label: "Engenheiro" },

@@ -44,23 +44,6 @@ export function useAnalyticsData() {
     engineerBreakdown: any[];
   } | null>(null);
 
-  const [lossAnalysis, setLossAnalysis] = useState<{
-    totalOrcamentos: number;
-    totalVendas: number;
-    perdidos: number;
-    taxaConversao: number;
-    motivosPerdas: { [key: string]: number };
-    detalhePerdas: Array<{
-      engenheiro: string;
-      orcamento: string;
-      valor: number;
-      motivo: string;
-      observacao?: string;
-    }>;
-  } | null>(null);
-
-  const [showLossAnalysis, setShowLossAnalysis] = useState(false);
-
   const loadSavedData = async () => {
     setIsLoading(true);
     try {
@@ -861,89 +844,6 @@ export function useAnalyticsData() {
     );
   };
 
-  const generateLossAnalysis = () => {
-    if (uploadedData.length === 0) {
-      alert("Nenhum dado disponível para análise.");
-      return;
-    }
-
-    const totalOrcamentos = uploadedData.reduce(
-      (sum, eng) => sum + eng.projetos,
-      0
-    );
-    const totalVendas = uploadedData.reduce(
-      (sum, eng) => sum + eng.quantidade,
-      0
-    );
-    const perdidos = totalOrcamentos - totalVendas;
-    const taxaConversao =
-      totalOrcamentos > 0 ? (totalVendas / totalOrcamentos) * 100 : 0;
-
-    // Simular motivos de perda baseado em padrões reais do mercado
-    const motivosPerdas = {
-      "Preço muito alto": Math.round(perdidos * 0.35),
-      "Cliente escolheu concorrente": Math.round(perdidos * 0.25),
-      "Projeto cancelado/adiado": Math.round(perdidos * 0.15),
-      "Não atendeu especificações": Math.round(perdidos * 0.1),
-      "Prazo de entrega": Math.round(perdidos * 0.08),
-      "Falta de follow-up": Math.round(perdidos * 0.04),
-      "Outros motivos": Math.round(perdidos * 0.03),
-    };
-
-    // Simular detalhes de perdas por engenheiro
-    const detalhePerdas: Array<{
-      engenheiro: string;
-      orcamento: string;
-      valor: number;
-      motivo: string;
-      observacao?: string;
-    }> = [];
-
-    uploadedData.forEach((eng, index) => {
-      const perdasEngenheiro = eng.projetos - eng.quantidade;
-      if (perdasEngenheiro > 0) {
-        const motivos = Object.keys(motivosPerdas);
-        for (let i = 0; i < perdasEngenheiro; i++) {
-          const motivoIndex = Math.floor(Math.random() * motivos.length);
-          const motivo = motivos[motivoIndex];
-          detalhePerdas.push({
-            engenheiro: eng.engenheiro,
-            orcamento: `ORC-${eng.ano}-${String(eng.mes).padStart(
-              2,
-              "0"
-            )}-${String(index + 1).padStart(3, "0")}-${String(i + 1).padStart(
-              2,
-              "0"
-            )}`,
-            valor: Math.round(
-              (eng.valorOrcamentos / eng.projetos) * (0.8 + Math.random() * 0.4)
-            ),
-            motivo: motivo,
-            observacao:
-              motivo === "Preço muito alto"
-                ? "Cliente considerou 15-20% acima do orçamento"
-                : motivo === "Cliente escolheu concorrente"
-                ? "Perdeu para empresa local com preço menor"
-                : motivo === "Projeto cancelado/adiado"
-                ? "Cliente adiou investimento por 6 meses"
-                : undefined,
-          });
-        }
-      }
-    });
-
-    setLossAnalysis({
-      totalOrcamentos,
-      totalVendas,
-      perdidos,
-      taxaConversao,
-      motivosPerdas,
-      detalhePerdas,
-    });
-
-    setShowLossAnalysis(true);
-  };
-
   return {
     uploadedData,
     setUploadedData,
@@ -957,16 +857,11 @@ export function useAnalyticsData() {
     setSaveStatus,
     processingSummary,
     setProcessingSummary,
-    lossAnalysis,
-    setLossAnalysis,
-    showLossAnalysis,
-    setShowLossAnalysis,
     loadSavedData,
     loadUploadHistory,
     handleFileUpload,
     handleSaveData,
     handleClearData,
     generateDetailedReport,
-    generateLossAnalysis,
   };
 }

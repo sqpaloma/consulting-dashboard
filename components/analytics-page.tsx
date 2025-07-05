@@ -9,7 +9,7 @@ import { useAnalyticsData } from "../hooks/use-analytics-data";
 import { AnalyticsHeader } from "./analytics-header";
 import { AnalyticsStatusCard } from "./analytics-status-card";
 import { AnalyticsUploadSection } from "./analytics-upload-section";
-import { AnalyticsLossAnalysis } from "./analytics-loss-analysis";
+
 import { AnalyticsAdminData } from "./analytics-admin-data";
 import { AnalyticsMetrics } from "./analytics-metrics";
 import { AnalyticsCharts } from "./analytics-charts";
@@ -22,16 +22,12 @@ export function AnalyticsPage() {
     uploadHistory,
     isLoading,
     saveStatus,
-    lossAnalysis,
-    showLossAnalysis,
-    setShowLossAnalysis,
     loadSavedData,
     loadUploadHistory,
     handleFileUpload,
     handleSaveData,
     handleClearData,
     generateDetailedReport,
-    generateLossAnalysis,
   } = useAnalyticsData();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,12 +60,20 @@ export function AnalyticsPage() {
       gerente: "Giovanni",
       colaboradores: ["Giovanni", "Paloma", "Lucas", "Marcelo M", "Raquel"],
     },
+    engenhariaeassistencia: {
+      gerente: "Carlinhos",
+      colaboradores: ["Carlinhos", "Claudio", "Anderson"],
+    },
   };
 
   // Filtragem dos dados conforme os filtros selecionados
   let filteredData = uploadedData;
   if (selectedDepartment !== "todos") {
-    if (selectedDepartment === "vendas" || selectedDepartment === "servicos") {
+    if (
+      selectedDepartment === "vendas" ||
+      selectedDepartment === "servicos" ||
+      selectedDepartment === "engenhariaeassistencia"
+    ) {
       const colabs =
         departmentMap[selectedDepartment].colaboradores.map(normalizeName);
       filteredData = filteredData.filter((row) =>
@@ -79,6 +83,7 @@ export function AnalyticsPage() {
       const allColabs = [
         ...departmentMap.vendas.colaboradores,
         ...departmentMap.servicos.colaboradores,
+        ...departmentMap.engenhariaeassistencia.colaboradores,
       ].map(normalizeName);
       filteredData = filteredData.filter(
         (row) => !allColabs.includes(normalizeName(row.engenheiro))
@@ -138,7 +143,6 @@ export function AnalyticsPage() {
           onSaveData={handleSaveData}
           onPrint={handlePrint}
           onGenerateReport={generateDetailedReport}
-          onGenerateLossAnalysis={generateLossAnalysis}
           onClearData={handleClearData}
           // Passar filtros e setters
           selectedDepartment={selectedDepartment}
@@ -195,14 +199,6 @@ export function AnalyticsPage() {
 
         {/* Administrative Data */}
         <AnalyticsAdminData uploadedData={filteredData} />
-
-        {/* Loss Analysis Modal/Card */}
-        {showLossAnalysis && lossAnalysis && (
-          <AnalyticsLossAnalysis
-            lossAnalysis={lossAnalysis}
-            onClose={() => setShowLossAnalysis(false)}
-          />
-        )}
 
         <input
           ref={fileInputRef}
