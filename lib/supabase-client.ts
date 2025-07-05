@@ -1,39 +1,54 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Only create the client if environment variables are available
+export const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;
 
 export interface AnalyticsData {
-  id?: number
-  engenheiro: string
-  ano: number
-  mes: number
-  registros: number
-  servicos: number
-  pecas: number
-  valor_total: number
-  valor_pecas: number
-  valor_servicos: number
-  valor_orcamentos: number
-  projetos: number
-  quantidade: number
-  created_at?: string
-  updated_at?: string
+  id?: number;
+  engenheiro: string;
+  ano: number;
+  mes: number;
+  registros: number;
+  servicos: number;
+  pecas: number;
+  valor_total: number;
+  valor_pecas: number;
+  valor_servicos: number;
+  valor_orcamentos: number;
+  projetos: number;
+  quantidade: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AnalyticsUpload {
-  id?: number
-  file_name: string
-  uploaded_by?: string
-  upload_date?: string
-  total_records: number
-  status: string
+  id?: number;
+  file_name: string;
+  uploaded_by?: string;
+  upload_date?: string;
+  total_records: number;
+  status: string;
 }
 
 // Função para salvar dados da planilha
-export async function saveAnalyticsData(data: AnalyticsData[], fileName: string, uploadedBy?: string) {
+export async function saveAnalyticsData(
+  data: AnalyticsData[],
+  fileName: string,
+  uploadedBy?: string
+) {
+  if (!supabase) {
+    console.warn(
+      "Supabase client not initialized - environment variables missing"
+    );
+    return { success: false, error: "Supabase not configured" };
+  }
+
   try {
     // Primeiro, registra o upload
     const { data: uploadRecord, error: uploadError } = await supabase
@@ -45,12 +60,12 @@ export async function saveAnalyticsData(data: AnalyticsData[], fileName: string,
         status: "processing",
       })
       .select()
-      .single()
+      .single();
 
-    if (uploadError) throw uploadError
+    if (uploadError) throw uploadError;
 
     // Limpa dados existentes (opcional - você pode querer manter histórico)
-    await supabase.from("analytics_data").delete().neq("id", 0)
+    await supabase.from("analytics_data").delete().neq("id", 0);
 
     // Insere novos dados
     const { error: dataError } = await supabase.from("analytics_data").insert(
@@ -67,27 +82,40 @@ export async function saveAnalyticsData(data: AnalyticsData[], fileName: string,
         valor_orcamentos: item.valor_orcamentos,
         projetos: item.projetos,
         quantidade: item.quantidade,
-      })),
-    )
+      }))
+    );
 
-    if (dataError) throw dataError
+    if (dataError) throw dataError;
 
     // Atualiza status do upload
-    await supabase.from("analytics_uploads").update({ status: "completed" }).eq("id", uploadRecord.id)
+    await supabase
+      .from("analytics_uploads")
+      .update({ status: "completed" })
+      .eq("id", uploadRecord.id);
 
-    return { success: true, uploadId: uploadRecord.id }
+    return { success: true, uploadId: uploadRecord.id };
   } catch (error) {
-    console.error("Erro ao salvar dados:", error)
-    return { success: false, error }
+    console.error("Erro ao salvar dados:", error);
+    return { success: false, error };
   }
 }
 
 // Função para carregar dados salvos
 export async function loadAnalyticsData(): Promise<AnalyticsData[]> {
-  try {
-    const { data, error } = await supabase.from("analytics_data").select("*").order("engenheiro", { ascending: true })
+  if (!supabase) {
+    console.warn(
+      "Supabase client not initialized - environment variables missing"
+    );
+    return [];
+  }
 
-    if (error) throw error
+  try {
+    const { data, error } = await supabase
+      .from("analytics_data")
+      .select("*")
+      .order("engenheiro", { ascending: true });
+
+    if (error) throw error;
 
     return data.map((item) => ({
       id: item.id,
@@ -105,38 +133,52 @@ export async function loadAnalyticsData(): Promise<AnalyticsData[]> {
       quantidade: item.quantidade,
       created_at: item.created_at,
       updated_at: item.updated_at,
-    }))
+    }));
   } catch (error) {
-    console.error("Erro ao carregar dados:", error)
-    return []
+    console.error("Erro ao carregar dados:", error);
+    return [];
   }
 }
 
 // Função para obter histórico de uploads
 export async function getUploadHistory(): Promise<AnalyticsUpload[]> {
+  if (!supabase) {
+    console.warn(
+      "Supabase client not initialized - environment variables missing"
+    );
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from("analytics_uploads")
       .select("*")
       .order("upload_date", { ascending: false })
-      .limit(10)
+      .limit(10);
 
-    if (error) throw error
-    return data || []
+    if (error) throw error;
+    return data || [];
   } catch (error) {
-    console.error("Erro ao carregar histórico:", error)
-    return []
+    console.error("Erro ao carregar histórico:", error);
+    return [];
   }
 }
 
 // Função para limpar todos os dados
 export async function clearAllAnalyticsData() {
+  if (!supabase) {
+    console.warn(
+      "Supabase client not initialized - environment variables missing"
+    );
+    return { success: false, error: "Supabase not configured" };
+  }
+
   try {
-    await supabase.from("analytics_data").delete().neq("id", 0)
-    await supabase.from("analytics_uploads").delete().neq("id", 0)
-    return { success: true }
+    await supabase.from("analytics_data").delete().neq("id", 0);
+    await supabase.from("analytics_uploads").delete().neq("id", 0);
+    return { success: true };
   } catch (error) {
-    console.error("Erro ao limpar dados:", error)
-    return { success: false, error }
+    console.error("Erro ao limpar dados:", error);
+    return { success: false, error };
   }
 }
