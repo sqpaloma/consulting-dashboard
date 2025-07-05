@@ -105,27 +105,37 @@ export function AnalyticsFilters({ uploadedData }: AnalyticsFiltersProps) {
 
   // Lista de engenheiros filtrada pelo departamento
   let filteredEngineers: { value: string; label: string }[] = [];
+  // Lista de engenheiros únicos presentes na planilha
+  const engineersInSheet = Array.from(
+    new Set(uploadedData.map((row) => row.engenheiro))
+  ).filter((eng) => eng && eng.trim() !== "");
+
   if (selectedDepartment === "todos") {
     filteredEngineers = [
       { value: "todos", label: "Engenheiro" },
-      ...Array.from(new Set(uploadedData.map((row) => row.engenheiro)))
-        .filter((eng) => eng && eng.trim() !== "")
-        .map((eng) => ({
-          value: normalizeName(eng),
-          label: eng,
-        })),
+      ...engineersInSheet.map((eng) => ({
+        value: normalizeName(eng),
+        label: eng,
+      })),
     ];
   } else if (
     selectedDepartment === "vendas" ||
     selectedDepartment === "servicos"
   ) {
     const { colaboradores } = departmentMap[selectedDepartment];
+    // Só mostra os colaboradores do departamento que estão na planilha
     filteredEngineers = [
       { value: "todos", label: "Engenheiro" },
-      ...colaboradores.map((eng) => ({
-        value: normalizeName(eng),
-        label: eng,
-      })),
+      ...colaboradores
+        .filter((eng) =>
+          engineersInSheet.some(
+            (sheetEng) => normalizeName(sheetEng) === normalizeName(eng)
+          )
+        )
+        .map((eng) => ({
+          value: normalizeName(eng),
+          label: eng,
+        })),
     ];
   } else if (selectedDepartment === "outros") {
     // Pega todos os engenheiros que não estão nos outros departamentos
@@ -135,11 +145,8 @@ export function AnalyticsFilters({ uploadedData }: AnalyticsFiltersProps) {
     ].map(normalizeName);
     filteredEngineers = [
       { value: "todos", label: "Engenheiro" },
-      ...Array.from(new Set(uploadedData.map((row) => row.engenheiro)))
-        .filter(
-          (eng) =>
-            eng && eng.trim() !== "" && !allColabs.includes(normalizeName(eng))
-        )
+      ...engineersInSheet
+        .filter((eng) => !allColabs.includes(normalizeName(eng)))
         .map((eng) => ({
           value: normalizeName(eng),
           label: eng,
