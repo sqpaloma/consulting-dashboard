@@ -94,6 +94,7 @@ export function AnalyticsFilters({
       value: "engenhariaeassistencia",
       label: "Departamento de Engenharia e Assistência",
     },
+    { value: "externos", label: "Departamento Vendedores Externos" },
     { value: "outros", label: "Outros" },
   ];
 
@@ -120,6 +121,10 @@ export function AnalyticsFilters({
       gerente: "Carlinhos",
       colaboradores: ["Carlinhos", "Claudio", "Anderson"],
     },
+    externos: {
+      gerente: "Carvalho",
+      colaboradores: ["RONAN NONATO", "Jefferson", "Edison", "Sandro"],
+    },
   };
 
   // Função para normalizar nomes (case insensitive, sem espaços extras)
@@ -145,7 +150,8 @@ export function AnalyticsFilters({
   } else if (
     selectedDepartment === "vendas" ||
     selectedDepartment === "servicos" ||
-    selectedDepartment === "engenhariaeassistencia"
+    selectedDepartment === "engenhariaeassistencia" ||
+    selectedDepartment === "externos"
   ) {
     const { colaboradores } = departmentMap[selectedDepartment];
     // Só mostra os colaboradores do departamento que estão na planilha
@@ -168,6 +174,7 @@ export function AnalyticsFilters({
       ...departmentMap.vendas.colaboradores,
       ...departmentMap.servicos.colaboradores,
       ...departmentMap.engenhariaeassistencia.colaboradores,
+      ...departmentMap.externos.colaboradores,
     ].map(normalizeName);
     filteredEngineers = [
       { value: "todos", label: "Engenheiro" },

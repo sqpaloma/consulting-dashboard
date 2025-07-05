@@ -64,6 +64,10 @@ export function AnalyticsPage() {
       gerente: "Carlinhos",
       colaboradores: ["Carlinhos", "Claudio", "Anderson"],
     },
+    externos: {
+      gerente: "Carvalho",
+      colaboradores: ["RONAN NONATO", "Jefferson", "Edison", "Sandro"],
+    },
   };
 
   // Filtragem dos dados conforme os filtros selecionados
@@ -72,7 +76,8 @@ export function AnalyticsPage() {
     if (
       selectedDepartment === "vendas" ||
       selectedDepartment === "servicos" ||
-      selectedDepartment === "engenhariaeassistencia"
+      selectedDepartment === "engenhariaeassistencia" ||
+      selectedDepartment === "externos"
     ) {
       const colabs =
         departmentMap[selectedDepartment].colaboradores.map(normalizeName);
@@ -84,6 +89,7 @@ export function AnalyticsPage() {
         ...departmentMap.vendas.colaboradores,
         ...departmentMap.servicos.colaboradores,
         ...departmentMap.engenhariaeassistencia.colaboradores,
+        ...departmentMap.externos.colaboradores,
       ].map(normalizeName);
       filteredData = filteredData.filter(
         (row) => !allColabs.includes(normalizeName(row.engenheiro))
