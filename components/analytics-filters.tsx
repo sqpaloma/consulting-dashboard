@@ -292,20 +292,6 @@ export function AnalyticsFilters({
           setIsOpen={setMonthDropdownOpen}
         />
       </div>
-
-      <div className="w-40">
-        <CustomDropdown
-          value={topEngineersFilter}
-          options={[
-            { value: "orcamento", label: "Orçamento" },
-            { value: "faturamento", label: "Faturamento" },
-          ]}
-          onChange={setTopEngineersFilter}
-          placeholder="Filtro"
-          isOpen={filterDropdownOpen}
-          setIsOpen={setFilterDropdownOpen}
-        />
-      </div>
     </>
   );
 }
