@@ -24,6 +24,16 @@ interface AnalyticsUploadSectionProps {
   onGenerateReport: () => void;
   onGenerateLossAnalysis: () => void;
   onClearData: () => void;
+  selectedDepartment: string;
+  setSelectedDepartment: (value: string) => void;
+  selectedEngineer: string;
+  setSelectedEngineer: (value: string) => void;
+  selectedYear: string;
+  setSelectedYear: (value: string) => void;
+  selectedMonth: string;
+  setSelectedMonth: (value: string) => void;
+  topEngineersFilter: string;
+  setTopEngineersFilter: (value: string) => void;
 }
 
 export function AnalyticsUploadSection({
@@ -39,10 +49,32 @@ export function AnalyticsUploadSection({
   onGenerateReport,
   onGenerateLossAnalysis,
   onClearData,
+  selectedDepartment,
+  setSelectedDepartment,
+  selectedEngineer,
+  setSelectedEngineer,
+  selectedYear,
+  setSelectedYear,
+  selectedMonth,
+  setSelectedMonth,
+  topEngineersFilter,
+  setTopEngineersFilter,
 }: AnalyticsUploadSectionProps) {
   return (
     <div className="flex items-center space-x-4 flex-wrap gap-2">
-      <AnalyticsFilters uploadedData={uploadedData} />
+      <AnalyticsFilters
+        uploadedData={uploadedData}
+        selectedDepartment={selectedDepartment}
+        setSelectedDepartment={setSelectedDepartment}
+        selectedEngineer={selectedEngineer}
+        setSelectedEngineer={setSelectedEngineer}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        topEngineersFilter={topEngineersFilter}
+        setTopEngineersFilter={setTopEngineersFilter}
+      />
 
       <div className="flex items-center space-x-2">
         <Button

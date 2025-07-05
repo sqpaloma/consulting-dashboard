@@ -3,6 +3,16 @@ import { ChevronDown } from "lucide-react";
 
 interface AnalyticsFiltersProps {
   uploadedData: any[];
+  selectedDepartment: string;
+  setSelectedDepartment: (value: string) => void;
+  selectedEngineer: string;
+  setSelectedEngineer: (value: string) => void;
+  selectedYear: string;
+  setSelectedYear: (value: string) => void;
+  selectedMonth: string;
+  setSelectedMonth: (value: string) => void;
+  topEngineersFilter: string;
+  setTopEngineersFilter: (value: string) => void;
 }
 
 // Custom dropdown component
@@ -53,14 +63,20 @@ const CustomDropdown = ({
   );
 };
 
-export function AnalyticsFilters({ uploadedData }: AnalyticsFiltersProps) {
-  const [selectedEngineer, setSelectedEngineer] = useState("todos");
-  const [selectedYear, setSelectedYear] = useState("todos");
-  const [selectedMonth, setSelectedMonth] = useState("todos");
-  const [topEngineersFilter, setTopEngineersFilter] = useState("orcamento");
-  // Novo estado para o filtro de departamento
-  const [selectedDepartment, setSelectedDepartment] = useState("todos");
-
+export function AnalyticsFilters({
+  uploadedData,
+  selectedDepartment,
+  setSelectedDepartment,
+  selectedEngineer,
+  setSelectedEngineer,
+  selectedYear,
+  setSelectedYear,
+  selectedMonth,
+  setSelectedMonth,
+  topEngineersFilter,
+  setTopEngineersFilter,
+}: AnalyticsFiltersProps) {
+  // Remover os useState dos filtros, pois agora são controlados por props
   // Dropdown states
   const [engineerDropdownOpen, setEngineerDropdownOpen] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);

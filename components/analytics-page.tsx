@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -35,6 +35,71 @@ export function AnalyticsPage() {
   } = useAnalyticsData();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Filtros levantados para cá
+  const [selectedDepartment, setSelectedDepartment] = useState("todos");
+  const [selectedEngineer, setSelectedEngineer] = useState("todos");
+  const [selectedYear, setSelectedYear] = useState("todos");
+  const [selectedMonth, setSelectedMonth] = useState("todos");
+  const [topEngineersFilter, setTopEngineersFilter] = useState("orcamento");
+
+  // Função para normalizar nomes (igual do filtro)
+  function normalizeName(name: string) {
+    return name?.toLowerCase().replace(/\s+/g, "").trim();
+  }
+
+  // Mapeamento dos departamentos e colaboradores (igual do filtro)
+  const departmentMap = {
+    vendas: {
+      gerente: "Sobrinho",
+      colaboradores: [
+        "Sobrinho",
+        "Mamede",
+        "Giovana",
+        "Rafael Massa",
+        "LENILTON",
+      ],
+    },
+    servicos: {
+      gerente: "Giovanni",
+      colaboradores: ["Giovanni", "Paloma", "Lucas", "Marcelo M", "Raquel"],
+    },
+  };
+
+  // Filtragem dos dados conforme os filtros selecionados
+  let filteredData = uploadedData;
+  if (selectedDepartment !== "todos") {
+    if (selectedDepartment === "vendas" || selectedDepartment === "servicos") {
+      const colabs =
+        departmentMap[selectedDepartment].colaboradores.map(normalizeName);
+      filteredData = filteredData.filter((row) =>
+        colabs.includes(normalizeName(row.engenheiro))
+      );
+    } else if (selectedDepartment === "outros") {
+      const allColabs = [
+        ...departmentMap.vendas.colaboradores,
+        ...departmentMap.servicos.colaboradores,
+      ].map(normalizeName);
+      filteredData = filteredData.filter(
+        (row) => !allColabs.includes(normalizeName(row.engenheiro))
+      );
+    }
+  }
+  if (selectedEngineer !== "todos") {
+    filteredData = filteredData.filter(
+      (row) => normalizeName(row.engenheiro) === selectedEngineer
+    );
+  }
+  if (selectedYear !== "todos") {
+    filteredData = filteredData.filter(
+      (row) => row.ano?.toString() === selectedYear
+    );
+  }
+  if (selectedMonth !== "todos") {
+    filteredData = filteredData.filter(
+      (row) => row.mes?.toString().padStart(2, "0") === selectedMonth
+    );
+  }
 
   // Carregar dados salvos ao inicializar
   useEffect(() => {
@@ -75,6 +140,17 @@ export function AnalyticsPage() {
           onGenerateReport={generateDetailedReport}
           onGenerateLossAnalysis={generateLossAnalysis}
           onClearData={handleClearData}
+          // Passar filtros e setters
+          selectedDepartment={selectedDepartment}
+          setSelectedDepartment={setSelectedDepartment}
+          selectedEngineer={selectedEngineer}
+          setSelectedEngineer={setSelectedEngineer}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          topEngineersFilter={topEngineersFilter}
+          setTopEngineersFilter={setTopEngineersFilter}
         />
 
         {/* Loading State */}
@@ -109,16 +185,16 @@ export function AnalyticsPage() {
         )}
 
         {/* Metrics Cards */}
-        <AnalyticsMetrics uploadedData={uploadedData} />
+        <AnalyticsMetrics uploadedData={filteredData} />
 
         {/* Charts Section */}
-        <AnalyticsCharts uploadedData={uploadedData} />
+        <AnalyticsCharts uploadedData={filteredData} />
 
         {/* Ranking Section */}
-        <AnalyticsRanking uploadedData={uploadedData} />
+        <AnalyticsRanking uploadedData={filteredData} />
 
         {/* Administrative Data */}
-        <AnalyticsAdminData uploadedData={uploadedData} />
+        <AnalyticsAdminData uploadedData={filteredData} />
 
         {/* Loss Analysis Modal/Card */}
         {showLossAnalysis && lossAnalysis && (
