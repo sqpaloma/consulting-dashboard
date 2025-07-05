@@ -39,14 +39,7 @@ export function AnalyticsCharts({ uploadedData }: AnalyticsChartsProps) {
                         ...filteredData.map((e) => e.valorTotal)
                       );
                       const height = (engineer.valorTotal / maxValue) * 200;
-                      const colors = [
-                        "bg-blue-500",
-                        "bg-green-500",
-                        "bg-purple-500",
-                        "bg-orange-500",
-                        "bg-red-500",
-                      ];
-
+                      // Cor única azul translúcida e borda azul escura
                       return (
                         <div
                           key={index}
@@ -56,10 +49,13 @@ export function AnalyticsCharts({ uploadedData }: AnalyticsChartsProps) {
                             {formatCurrency(engineer.valorTotal)}
                           </div>
                           <div
-                            className={`w-12 ${
-                              colors[index % colors.length]
-                            } rounded-t transition-all duration-500 hover:opacity-80`}
-                            style={{ height: `${Math.max(height, 20)}px` }}
+                            className={
+                              "w-12 rounded-t transition-all duration-500 hover:opacity-80 border border-blue-700"
+                            }
+                            style={{
+                              height: `${Math.max(height, 20)}px`,
+                              backgroundColor: "rgba(37, 99, 235, 0.6)", // Azul-500 com 60% de opacidade
+                            }}
                             title={`${engineer.engenheiro}: ${formatCurrency(
                               engineer.valorTotal
                             )}`}

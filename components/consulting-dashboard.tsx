@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import type React from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Calendar,
   Settings,
@@ -24,12 +24,12 @@ import {
   History,
   AlertCircle,
   CheckCircle,
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Link from "next/link"
-import * as XLSX from "xlsx"
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link";
+import * as XLSX from "xlsx";
 import {
   saveDashboardData,
   loadDashboardData,
@@ -39,23 +39,23 @@ import {
   type DashboardData as DashboardDataType,
   type DashboardItem,
   type DashboardUpload,
-} from "@/lib/dashboard-supabase"
+} from "@/lib/dashboard-supabase";
 
 interface DashboardData {
-  totalItens: number
-  aguardandoAprovacao: number
-  analises: number
-  orcamentos: number
-  emExecucao: number
+  totalItens: number;
+  aguardandoAprovacao: number;
+  analises: number;
+  orcamentos: number;
+  emExecucao: number;
 }
 
 export function ConsultingDashboard() {
   // Timer states
-  const [timeLeft, setTimeLeft] = useState(25 * 60) // 25 minutos em segundos
-  const [isRunning, setIsRunning] = useState(false)
-  const [isWorkSession, setIsWorkSession] = useState(true) // true = trabalho, false = descanso
-  const [sessions, setSessions] = useState(0)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutos em segundos
+  const [isRunning, setIsRunning] = useState(false);
+  const [isWorkSession, setIsWorkSession] = useState(true); // true = trabalho, false = descanso
+  const [sessions, setSessions] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Novos estados para dados da planilha
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -64,19 +64,23 @@ export function ConsultingDashboard() {
     analises: 0,
     orcamentos: 0,
     emExecucao: 0,
-  })
-  const [fileName, setFileName] = useState<string>("")
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  });
+  const [fileName, setFileName] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Novos estados para modais
-  const [activeModal, setActiveModal] = useState<string | null>(null)
-  const [modalData, setModalData] = useState<any[]>([])
-  const [processedItems, setProcessedItems] = useState<any[]>([])
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [modalData, setModalData] = useState<any[]>([]);
+  const [processedItems, setProcessedItems] = useState<any[]>([]);
 
-  const [dashboardUploadHistory, setDashboardUploadHistory] = useState<DashboardUpload[]>([])
-  const [isDashboardLoading, setIsDashboardLoading] = useState(false)
-  const [dashboardSaveStatus, setDashboardSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
-  const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false)
+  const [dashboardUploadHistory, setDashboardUploadHistory] = useState<
+    DashboardUpload[]
+  >([]);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(false);
+  const [dashboardSaveStatus, setDashboardSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
 
   // Timer effects
   useEffect(() => {
@@ -85,100 +89,109 @@ export function ConsultingDashboard() {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             // Sessão terminou
-            setIsRunning(false)
+            setIsRunning(false);
             if (isWorkSession) {
               // Terminou trabalho, iniciar descanso
-              setIsWorkSession(false)
-              setSessions((prev) => prev + 1)
-              return 5 * 60 // 5 minutos de descanso
+              setIsWorkSession(false);
+              setSessions((prev) => prev + 1);
+              return 5 * 60; // 5 minutos de descanso
             } else {
               // Terminou descanso, iniciar trabalho
-              setIsWorkSession(true)
-              return 25 * 60 // 25 minutos de trabalho
+              setIsWorkSession(true);
+              return 25 * 60; // 25 minutos de trabalho
             }
           }
-          return prev - 1
-        })
-      }, 1000)
+          return prev - 1;
+        });
+      }, 1000);
     } else {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current)
+        clearInterval(intervalRef.current);
       }
     }
 
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current)
+        clearInterval(intervalRef.current);
       }
-    }
-  }, [isRunning, timeLeft, isWorkSession])
+    };
+  }, [isRunning, timeLeft, isWorkSession]);
 
   useEffect(() => {
-    loadSavedDashboardData()
-    loadDashboardUploadHistory()
-  }, [])
+    loadSavedDashboardData();
+    loadDashboardUploadHistory();
+  }, []);
 
   // Timer functions
   const toggleTimer = () => {
-    setIsRunning(!isRunning)
-  }
+    setIsRunning(!isRunning);
+  };
 
   const resetTimer = () => {
-    setIsRunning(false)
-    setIsWorkSession(true)
-    setTimeLeft(25 * 60)
+    setIsRunning(false);
+    setIsWorkSession(true);
+    setTimeLeft(25 * 60);
     if (intervalRef.current) {
-      clearInterval(intervalRef.current)
+      clearInterval(intervalRef.current);
     }
-  }
+  };
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   const getProgress = () => {
-    const totalTime = isWorkSession ? 25 * 60 : 5 * 60
-    return ((totalTime - timeLeft) / totalTime) * 100
-  }
+    const totalTime = isWorkSession ? 25 * 60 : 5 * 60;
+    return ((totalTime - timeLeft) / totalTime) * 100;
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    setFileName(file.name)
+    setFileName(file.name);
 
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: "array" })
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
 
         // Pega a primeira planilha
-        const sheetName = workbook.SheetNames[0]
-        const worksheet = workbook.Sheets[sheetName]
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
 
         // Converte para JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
         if (jsonData.length < 2) {
-          alert("Planilha deve conter pelo menos uma linha de cabeçalho e uma linha de dados.")
-          return
+          alert(
+            "Planilha deve conter pelo menos uma linha de cabeçalho e uma linha de dados."
+          );
+          return;
         }
 
         // Primeira linha são os cabeçalhos
-        const headers = jsonData[0] as string[]
+        const headers = jsonData[0] as string[];
 
         // Encontra os índices das colunas importantes
-        const statusIndex = headers.findIndex((header) => header && header.toLowerCase().includes("status"))
+        const statusIndex = headers.findIndex(
+          (header) => header && header.toLowerCase().includes("status")
+        );
         const osIndex = headers.findIndex(
-          (header) => header && (header.toLowerCase().includes("os") || header.toLowerCase().includes("ordem")),
-        )
+          (header) =>
+            header &&
+            (header.toLowerCase().includes("os") ||
+              header.toLowerCase().includes("ordem"))
+        );
 
         if (statusIndex === -1) {
-          alert("Coluna 'status' não encontrada na planilha.")
-          return
+          alert("Coluna 'status' não encontrada na planilha.");
+          return;
         }
 
         // Processa os dados
@@ -189,15 +202,15 @@ export function ConsultingDashboard() {
           orcamentos: 0,
           emExecucao: 0,
           items: [] as any[],
-        }
+        };
 
         // Processa cada linha de dados (pula o cabeçalho)
         for (let i = 1; i < jsonData.length; i++) {
-          const row = jsonData[i] as any[]
-          if (!row || row.length === 0) continue
+          const row = jsonData[i] as any[];
+          if (!row || row.length === 0) continue;
 
-          const status = row[statusIndex]?.toString().toLowerCase().trim()
-          const os = osIndex !== -1 ? row[osIndex]?.toString() : `OS-${i}`
+          const status = row[statusIndex]?.toString().toLowerCase().trim();
+          const os = osIndex !== -1 ? row[osIndex]?.toString() : `OS-${i}`;
 
           // Cria o item
           const item = {
@@ -207,37 +220,43 @@ export function ConsultingDashboard() {
             titulo: row[1] || `Item ${i}`, // Assume que a segunda coluna é o título
             cliente: row[2] || "Cliente não informado", // Assume que a terceira coluna é o cliente
             data: new Date().toLocaleDateString("pt-BR"),
-            valor: row[3] ? `R$ ${Number.parseFloat(row[3]).toLocaleString("pt-BR")}` : "Valor não informado",
+            valor: row[3]
+              ? `R$ ${Number.parseFloat(row[3]).toLocaleString("pt-BR")}`
+              : "Valor não informado",
             rawData: row,
-          }
+          };
 
-          processedData.items.push(item)
-          processedData.totalItens++
+          processedData.items.push(item);
+          processedData.totalItens++;
 
           // Categoriza baseado no status
-          if (status.includes("aguardando") || status.includes("pendente") || status.includes("aprovação")) {
-            processedData.aguardandoAprovacao++
+          if (
+            status.includes("aguardando") ||
+            status.includes("pendente") ||
+            status.includes("aprovação")
+          ) {
+            processedData.aguardandoAprovacao++;
           } else if (
             status.includes("análise") ||
             status.includes("analise") ||
             status.includes("revisão") ||
             status.includes("revisao")
           ) {
-            processedData.analises++
+            processedData.analises++;
           } else if (
             status.includes("orçamento") ||
             status.includes("orcamento") ||
             status.includes("cotação") ||
             status.includes("cotacao")
           ) {
-            processedData.orcamentos++
+            processedData.orcamentos++;
           } else if (
             status.includes("execução") ||
             status.includes("execucao") ||
             status.includes("andamento") ||
             status.includes("progresso")
           ) {
-            processedData.emExecucao++
+            processedData.emExecucao++;
           }
         }
 
@@ -248,43 +267,55 @@ export function ConsultingDashboard() {
           analises: processedData.analises,
           orcamentos: processedData.orcamentos,
           emExecucao: processedData.emExecucao,
-        })
+        });
 
         // Armazena os itens processados para uso nos modais
-        setProcessedItems(processedData.items)
+        setProcessedItems(processedData.items);
 
-        alert(`Planilha carregada com sucesso! ${processedData.totalItens} itens processados.`)
+        alert(
+          `Planilha carregada com sucesso! ${processedData.totalItens} itens processados.`
+        );
       } catch (error) {
-        console.error("Erro ao processar planilha:", error)
-        alert("Erro ao processar a planilha. Verifique se o arquivo está no formato correto (.xlsx ou .xls).")
+        console.error("Erro ao processar planilha:", error);
+        alert(
+          "Erro ao processar a planilha. Verifique se o arquivo está no formato correto (.xlsx ou .xls)."
+        );
       }
-    }
-    reader.readAsArrayBuffer(file)
-  }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   const handleUploadClick = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1)) // Janeiro 2025
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1)); // Janeiro 2025
 
-  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
+  const daysInMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  ).getDate();
+  const firstDayOfMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1
+  ).getDay();
 
-  const calendarDays = []
+  const calendarDays = [];
 
   // Dias vazios no início
   for (let i = 0; i < firstDayOfMonth; i++) {
-    calendarDays.push(null)
+    calendarDays.push(null);
   }
 
   // Dias do mês
   for (let day = 1; day <= daysInMonth; day++) {
-    calendarDays.push(day)
+    calendarDays.push(day);
   }
 
-  const highlightedDays = [9, 12, 21, 25, 30]
-  const today = 15
+  const highlightedDays = [9, 12, 21, 25, 30];
+  const today = 15;
 
   const activities = [
     {
@@ -307,14 +338,22 @@ export function ConsultingDashboard() {
         { name: "Lisa", avatar: "/placeholder.svg?height=32&width=32" },
       ],
     },
-  ]
+  ];
 
-  const timeSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"]
+  const timeSlots = [
+    "08:00",
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+  ];
 
   const loadSavedDashboardData = async () => {
-    setIsDashboardLoading(true)
+    setIsDashboardLoading(true);
     try {
-      const { dashboardData, items } = await loadDashboardData()
+      const { dashboardData, items } = await loadDashboardData();
       if (dashboardData && items.length > 0) {
         setDashboardData({
           totalItens: dashboardData.total_itens,
@@ -322,7 +361,7 @@ export function ConsultingDashboard() {
           analises: dashboardData.analises,
           orcamentos: dashboardData.orcamentos,
           emExecucao: dashboardData.em_execucao,
-        })
+        });
         setProcessedItems(
           items.map((item) => ({
             id: item.os,
@@ -333,32 +372,32 @@ export function ConsultingDashboard() {
             valor: item.valor || "Valor não informado",
             data: item.data_registro || new Date().toLocaleDateString("pt-BR"),
             rawData: item.raw_data,
-          })),
-        )
+          }))
+        );
       }
     } catch (error) {
-      console.error("Erro ao carregar dados salvos do dashboard:", error)
+      console.error("Erro ao carregar dados salvos do dashboard:", error);
     } finally {
-      setIsDashboardLoading(false)
+      setIsDashboardLoading(false);
     }
-  }
+  };
 
   const loadDashboardUploadHistory = async () => {
     try {
-      const history = await getDashboardUploadHistory()
-      setDashboardUploadHistory(history)
+      const history = await getDashboardUploadHistory();
+      setDashboardUploadHistory(history);
     } catch (error) {
-      console.error("Erro ao carregar histórico do dashboard:", error)
+      console.error("Erro ao carregar histórico do dashboard:", error);
     }
-  }
+  };
 
   const handleSaveDashboardData = async () => {
     if (processedItems.length === 0) {
-      alert("Nenhum dado para salvar. Faça upload de uma planilha primeiro.")
-      return
+      alert("Nenhum dado para salvar. Faça upload de uma planilha primeiro.");
+      return;
     }
 
-    setDashboardSaveStatus("saving")
+    setDashboardSaveStatus("saving");
     try {
       const dashboardDataToSave: DashboardDataType = {
         total_itens: dashboardData.totalItens,
@@ -368,7 +407,7 @@ export function ConsultingDashboard() {
         em_execucao: dashboardData.emExecucao,
         devolucoes: 0,
         movimentacoes: 0,
-      }
+      };
 
       const itemsToSave: DashboardItem[] = processedItems.map((item) => ({
         os: item.os,
@@ -378,51 +417,62 @@ export function ConsultingDashboard() {
         valor: item.valor,
         data_registro: item.data,
         raw_data: item.rawData,
-      }))
+      }));
 
-      const result = await saveDashboardData(dashboardDataToSave, itemsToSave, fileName, "Paloma")
+      const result = await saveDashboardData(
+        dashboardDataToSave,
+        itemsToSave,
+        fileName,
+        "Paloma"
+      );
 
       if (result.success) {
-        setDashboardSaveStatus("saved")
-        await loadDashboardUploadHistory()
-        setTimeout(() => setDashboardSaveStatus("idle"), 3000)
-        alert("Dados do dashboard salvos com sucesso! Agora outras pessoas podem visualizar estes dados.")
+        setDashboardSaveStatus("saved");
+        await loadDashboardUploadHistory();
+        setTimeout(() => setDashboardSaveStatus("idle"), 3000);
+        alert(
+          "Dados do dashboard salvos com sucesso! Agora outras pessoas podem visualizar estes dados."
+        );
       } else {
-        setDashboardSaveStatus("error")
-        setTimeout(() => setDashboardSaveStatus("idle"), 3000)
-        alert("Erro ao salvar dados do dashboard. Tente novamente.")
+        setDashboardSaveStatus("error");
+        setTimeout(() => setDashboardSaveStatus("idle"), 3000);
+        alert("Erro ao salvar dados do dashboard. Tente novamente.");
       }
     } catch (error) {
-      setDashboardSaveStatus("error")
-      setTimeout(() => setDashboardSaveStatus("idle"), 3000)
-      console.error("Erro ao salvar dados do dashboard:", error)
-      alert("Erro ao salvar dados do dashboard. Tente novamente.")
+      setDashboardSaveStatus("error");
+      setTimeout(() => setDashboardSaveStatus("idle"), 3000);
+      console.error("Erro ao salvar dados do dashboard:", error);
+      alert("Erro ao salvar dados do dashboard. Tente novamente.");
     }
-  }
+  };
 
   const handleClearDashboardData = async () => {
-    if (confirm("Tem certeza que deseja limpar todos os dados do dashboard? Esta ação não pode ser desfeita.")) {
-      setIsDashboardLoading(true)
+    if (
+      confirm(
+        "Tem certeza que deseja limpar todos os dados do dashboard? Esta ação não pode ser desfeita."
+      )
+    ) {
+      setIsDashboardLoading(true);
       try {
-        await clearAllDashboardData()
+        await clearAllDashboardData();
         setDashboardData({
           totalItens: 0,
           aguardandoAprovacao: 0,
           analises: 0,
           orcamentos: 0,
           emExecucao: 0,
-        })
-        setProcessedItems([])
-        setFileName("")
-        setDashboardUploadHistory([])
-        alert("Dados do dashboard limpos com sucesso!")
+        });
+        setProcessedItems([]);
+        setFileName("");
+        setDashboardUploadHistory([]);
+        alert("Dados do dashboard limpos com sucesso!");
       } catch (error) {
-        alert("Erro ao limpar dados do dashboard.")
+        alert("Erro ao limpar dados do dashboard.");
       } finally {
-        setIsDashboardLoading(false)
+        setIsDashboardLoading(false);
       }
     }
-  }
+  };
 
   const generateModalData = async (type: string) => {
     if (processedItems.length === 0) {
@@ -437,13 +487,13 @@ export function ConsultingDashboard() {
           status: "Em andamento",
           valor: "R$ 15.000",
         },
-      ]
-      return baseItems.slice(0, Math.floor(Math.random() * 5) + 3)
+      ];
+      return baseItems.slice(0, Math.floor(Math.random() * 5) + 3);
     }
 
     // Tenta carregar dados específicos do banco
     try {
-      const itemsFromDB = await getDashboardItemsByCategory(type)
+      const itemsFromDB = await getDashboardItemsByCategory(type);
       if (itemsFromDB.length > 0) {
         return itemsFromDB.map((item) => ({
           id: item.os,
@@ -454,67 +504,71 @@ export function ConsultingDashboard() {
           valor: item.valor || "Valor não informado",
           data: item.data_registro || new Date().toLocaleDateString("pt-BR"),
           rawData: item.raw_data,
-        }))
+        }));
       }
     } catch (error) {
-      console.error("Erro ao carregar dados do modal:", error)
+      console.error("Erro ao carregar dados do modal:", error);
     }
 
     // Fallback para filtrar os itens locais
-    let filteredItems = processedItems
+    let filteredItems = processedItems;
 
     switch (type) {
       case "aprovacao":
         filteredItems = processedItems.filter((item) => {
-          const status = item.status.toLowerCase()
-          return status.includes("aguardando") || status.includes("pendente") || status.includes("aprovação")
-        })
-        break
+          const status = item.status.toLowerCase();
+          return (
+            status.includes("aguardando") ||
+            status.includes("pendente") ||
+            status.includes("aprovação")
+          );
+        });
+        break;
       case "analises":
         filteredItems = processedItems.filter((item) => {
-          const status = item.status.toLowerCase()
+          const status = item.status.toLowerCase();
           return (
             status.includes("análise") ||
             status.includes("analise") ||
             status.includes("revisão") ||
             status.includes("revisao")
-          )
-        })
-        break
+          );
+        });
+        break;
       case "orcamentos":
         filteredItems = processedItems.filter((item) => {
-          const status = item.status.toLowerCase()
+          const status = item.status.toLowerCase();
           return (
             status.includes("orçamento") ||
             status.includes("orcamento") ||
             status.includes("cotação") ||
             status.includes("cotacao")
-          )
-        })
-        break
+          );
+        });
+        break;
       case "execucao":
         filteredItems = processedItems.filter((item) => {
-          const status = item.status.toLowerCase()
+          const status = item.status.toLowerCase();
           return (
             status.includes("execução") ||
             status.includes("execucao") ||
             status.includes("andamento") ||
             status.includes("progresso")
-          )
-        })
-        break
+          );
+        });
+        break;
       default:
-        filteredItems = processedItems
+        filteredItems = processedItems;
     }
 
-    return filteredItems
-  }
+    return filteredItems;
+  };
 
   const openModal = async (type: string) => {
-    setActiveModal(type)
-    const data = await generateModalData(type)
-    setModalData(data)
-  }
+    setActiveModal(type);
+    const data = await generateModalData(type);
+    setModalData(data);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
@@ -528,36 +582,62 @@ export function ConsultingDashboard() {
               </div>
               <div className="flex items-center space-x-1">
                 <span className="text-2xl font-bold text-white">novak</span>
-                <span className="text-2xl font-light text-green-400">gouveia</span>
+                <span className="text-2xl font-light text-green-400">
+                  gouveia
+                </span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-blue-700"
+            >
               <Grid3X3 className="h-5 w-5" />
             </Button>
             <Link href="/chat">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-blue-700"
+              >
                 <MessageSquare className="h-5 w-5" />
               </Button>
             </Link>
             <Link href="/calendar">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-blue-700"
+              >
                 <Calendar className="h-5 w-5" />
               </Button>
             </Link>
             <Link href="/analytics">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-blue-700"
+              >
                 <BarChart3 className="h-5 w-5" />
               </Button>
             </Link>
             <Link href="/manual">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-blue-700"
+              >
                 <BookOpen className="h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-blue-700"
+            >
               <Settings className="h-5 w-5" />
             </Button>
           </div>
@@ -569,7 +649,9 @@ export function ConsultingDashboard() {
           <h2 className="text-3xl font-light text-gray-100">
             Bom dia, <span className="text-green-400">Paloma</span>
           </h2>
-          <p className="text-gray-300">Vamos tornar hoje produtivo. Aqui está sua visão geral.</p>
+          <p className="text-gray-300">
+            Vamos tornar hoje produtivo. Aqui está sua visão geral.
+          </p>
         </div>
 
         {dashboardUploadHistory.length > 0 && (
@@ -579,9 +661,12 @@ export function ConsultingDashboard() {
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-500" />
                   <div>
-                    <p className="font-medium text-gray-800">Dados compartilhados disponíveis</p>
+                    <p className="font-medium text-gray-800">
+                      Dados compartilhados disponíveis
+                    </p>
                     <p className="text-sm text-gray-600">
-                      Último upload: {dashboardUploadHistory[0]?.file_name} por {dashboardUploadHistory[0]?.uploaded_by}
+                      Último upload: {dashboardUploadHistory[0]?.file_name} por{" "}
+                      {dashboardUploadHistory[0]?.uploaded_by}
                     </p>
                   </div>
                 </div>
@@ -598,13 +683,21 @@ export function ConsultingDashboard() {
                   {historyDropdownOpen && (
                     <div className="absolute right-0 mt-1 w-80 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-auto">
                       {dashboardUploadHistory.map((upload) => (
-                        <div key={upload.id} className="p-3 border-b border-gray-100 last:border-b-0">
-                          <div className="font-medium text-sm text-gray-800">{upload.file_name}</div>
+                        <div
+                          key={upload.id}
+                          className="p-3 border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-sm text-gray-800">
+                            {upload.file_name}
+                          </div>
                           <div className="text-xs text-gray-600">
-                            {upload.uploaded_by} • {upload.total_records} registros
+                            {upload.uploaded_by} • {upload.total_records}{" "}
+                            registros
                           </div>
                           <div className="text-xs text-gray-500">
-                            {new Date(upload.upload_date || "").toLocaleString("pt-BR")}
+                            {new Date(upload.upload_date || "").toLocaleString(
+                              "pt-BR"
+                            )}
                           </div>
                         </div>
                       ))}
@@ -630,15 +723,17 @@ export function ConsultingDashboard() {
 
             <Button
               onClick={handleSaveDashboardData}
-              disabled={processedItems.length === 0 || dashboardSaveStatus === "saving"}
+              disabled={
+                processedItems.length === 0 || dashboardSaveStatus === "saving"
+              }
               variant="outline"
               size="icon"
               className={`bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm ${
                 dashboardSaveStatus === "saved"
                   ? "border-green-400 text-green-300"
                   : dashboardSaveStatus === "error"
-                    ? "border-red-400 text-red-300"
-                    : ""
+                  ? "border-red-400 text-red-300"
+                  : ""
               }`}
               title="Salvar & Compartilhar"
             >
@@ -678,7 +773,13 @@ export function ConsultingDashboard() {
               </svg>
             </Button>
 
-            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
             {fileName && (
               <div className="flex items-center space-x-1 text-white/80 text-sm">
                 <FileSpreadsheet className="h-4 w-4" />
@@ -699,10 +800,14 @@ export function ConsultingDashboard() {
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-600">Total Itens</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Total Itens
+                  </span>
                   <BarChart3 className="h-4 w-4 text-blue-500" />
                 </div>
-                <div className="text-3xl font-bold text-gray-800">{dashboardData.totalItens}</div>
+                <div className="text-3xl font-bold text-gray-800">
+                  {dashboardData.totalItens}
+                </div>
               </CardContent>
             </Card>
 
@@ -713,8 +818,15 @@ export function ConsultingDashboard() {
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-600">Aguardando Aprovação</span>
-                  <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm font-medium text-gray-600">
+                    Aguardando Aprovação
+                  </span>
+                  <svg
+                    className="h-4 w-4 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -723,19 +835,27 @@ export function ConsultingDashboard() {
                     />
                   </svg>
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">{dashboardData.aguardandoAprovacao}</div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">
+                  {dashboardData.aguardandoAprovacao}
+                </div>
                 <div className="flex items-center space-x-2 text-xs">
                   <span className="text-red-500">
                     {dashboardData.totalItens > 0
-                      ? Math.round((dashboardData.aguardandoAprovacao / dashboardData.totalItens) * 100)
+                      ? Math.round(
+                          (dashboardData.aguardandoAprovacao /
+                            dashboardData.totalItens) *
+                            100
+                        )
                       : 0}
                     %
                   </span>
                   <span className="text-green-500">
                     {dashboardData.totalItens > 0
                       ? Math.round(
-                          ((dashboardData.totalItens - dashboardData.aguardandoAprovacao) / dashboardData.totalItens) *
-                            100,
+                          ((dashboardData.totalItens -
+                            dashboardData.aguardandoAprovacao) /
+                            dashboardData.totalItens) *
+                            100
                         )
                       : 100}
                     %
@@ -751,8 +871,15 @@ export function ConsultingDashboard() {
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-600">Análises</span>
-                  <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm font-medium text-gray-600">
+                    Análises
+                  </span>
+                  <svg
+                    className="h-4 w-4 text-blue-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -761,18 +888,25 @@ export function ConsultingDashboard() {
                     />
                   </svg>
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">{dashboardData.analises}</div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">
+                  {dashboardData.analises}
+                </div>
                 <div className="flex items-center space-x-2 text-xs">
                   <span className="text-red-500">
                     {dashboardData.totalItens > 0
-                      ? Math.round((dashboardData.analises / dashboardData.totalItens) * 100)
+                      ? Math.round(
+                          (dashboardData.analises / dashboardData.totalItens) *
+                            100
+                        )
                       : 0}
                     %
                   </span>
                   <span className="text-green-500">
                     {dashboardData.totalItens > 0
                       ? Math.round(
-                          ((dashboardData.totalItens - dashboardData.analises) / dashboardData.totalItens) * 100,
+                          ((dashboardData.totalItens - dashboardData.analises) /
+                            dashboardData.totalItens) *
+                            100
                         )
                       : 100}
                     %
@@ -788,21 +922,32 @@ export function ConsultingDashboard() {
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-600">Orçamentos</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Orçamentos
+                  </span>
                   <DollarSign className="h-4 w-4 text-green-500" />
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">{dashboardData.orcamentos}</div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">
+                  {dashboardData.orcamentos}
+                </div>
                 <div className="flex items-center space-x-2 text-xs">
                   <span className="text-red-500">
                     {dashboardData.totalItens > 0
-                      ? Math.round((dashboardData.orcamentos / dashboardData.totalItens) * 100)
+                      ? Math.round(
+                          (dashboardData.orcamentos /
+                            dashboardData.totalItens) *
+                            100
+                        )
                       : 0}
                     %
                   </span>
                   <span className="text-green-500">
                     {dashboardData.totalItens > 0
                       ? Math.round(
-                          ((dashboardData.totalItens - dashboardData.orcamentos) / dashboardData.totalItens) * 100,
+                          ((dashboardData.totalItens -
+                            dashboardData.orcamentos) /
+                            dashboardData.totalItens) *
+                            100
                         )
                       : 100}
                     %
@@ -818,8 +963,15 @@ export function ConsultingDashboard() {
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-600">Em Execução</span>
-                  <svg className="h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm font-medium text-gray-600">
+                    Em Execução
+                  </span>
+                  <svg
+                    className="h-4 w-4 text-orange-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -834,18 +986,27 @@ export function ConsultingDashboard() {
                     />
                   </svg>
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">{dashboardData.emExecucao}</div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">
+                  {dashboardData.emExecucao}
+                </div>
                 <div className="flex items-center space-x-2 text-xs">
                   <span className="text-red-500">
                     {dashboardData.totalItens > 0
-                      ? Math.round((dashboardData.emExecucao / dashboardData.totalItens) * 100)
+                      ? Math.round(
+                          (dashboardData.emExecucao /
+                            dashboardData.totalItens) *
+                            100
+                        )
                       : 0}
                     %
                   </span>
                   <span className="text-green-500">
                     {dashboardData.totalItens > 0
                       ? Math.round(
-                          ((dashboardData.totalItens - dashboardData.emExecucao) / dashboardData.totalItens) * 100,
+                          ((dashboardData.totalItens -
+                            dashboardData.emExecucao) /
+                            dashboardData.totalItens) *
+                            100
                         )
                       : 100}
                     %
@@ -858,8 +1019,15 @@ export function ConsultingDashboard() {
             <Card className="bg-white border border-gray-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-600">Devoluções</span>
-                  <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm font-medium text-gray-600">
+                    Devoluções
+                  </span>
+                  <svg
+                    className="h-4 w-4 text-red-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -880,8 +1048,15 @@ export function ConsultingDashboard() {
             <Card className="bg-white border border-gray-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-600">Movimentações</span>
-                  <svg className="h-4 w-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm font-medium text-gray-600">
+                    Movimentações
+                  </span>
+                  <svg
+                    className="h-4 w-4 text-purple-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -908,14 +1083,26 @@ export function ConsultingDashboard() {
                   <CardTitle className="text-xl text-gray-800">
                     {isWorkSession ? "Sessão de Trabalho" : "Tempo de Descanso"}
                   </CardTitle>
-                  <div className="text-sm text-gray-500">Sessões: {sessions}</div>
+                  <div className="text-sm text-gray-500">
+                    Sessões: {sessions}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col items-center space-y-6">
                   <div className="relative w-48 h-48">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="40" stroke="#f3f4f6" strokeWidth="8" fill="none" />
+                    <svg
+                      className="w-full h-full transform -rotate-90"
+                      viewBox="0 0 100 100"
+                    >
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        stroke="#f3f4f6"
+                        strokeWidth="8"
+                        fill="none"
+                      />
                       <circle
                         cx="50"
                         cy="50"
@@ -923,15 +1110,21 @@ export function ConsultingDashboard() {
                         stroke={isWorkSession ? "#22c55e" : "#3b82f6"}
                         strokeWidth="8"
                         fill="none"
-                        strokeDasharray={`${2 * Math.PI * 40 * (getProgress() / 100)} ${2 * Math.PI * 40}`}
+                        strokeDasharray={`${
+                          2 * Math.PI * 40 * (getProgress() / 100)
+                        } ${2 * Math.PI * 40}`}
                         strokeLinecap="round"
                         className="transition-all duration-1000 ease-in-out"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="text-3xl font-bold text-gray-800">{formatTime(timeLeft)}</div>
+                      <div className="text-3xl font-bold text-gray-800">
+                        {formatTime(timeLeft)}
+                      </div>
                       <div className="text-sm text-gray-500 text-center">
-                        {isWorkSession ? "Foco no trabalho" : "Hora do descanso"}
+                        {isWorkSession
+                          ? "Foco no trabalho"
+                          : "Hora do descanso"}
                       </div>
                     </div>
                   </div>
@@ -940,7 +1133,9 @@ export function ConsultingDashboard() {
                     <Button
                       onClick={toggleTimer}
                       className={`${
-                        isWorkSession ? "bg-green-500 hover:bg-green-600" : "bg-blue-500 hover:bg-blue-600"
+                        isWorkSession
+                          ? "bg-green-500 hover:bg-green-600"
+                          : "bg-blue-500 hover:bg-blue-600"
                       } text-white`}
                     >
                       {isRunning ? (
@@ -969,7 +1164,9 @@ export function ConsultingDashboard() {
                   <div className="text-center">
                     <div className="text-xs text-gray-500 mb-1">Próximo:</div>
                     <div className="text-sm font-medium text-gray-700">
-                      {isWorkSession ? "5 min de descanso" : "25 min de trabalho"}
+                      {isWorkSession
+                        ? "5 min de descanso"
+                        : "25 min de trabalho"}
                     </div>
                   </div>
                 </div>
@@ -980,7 +1177,9 @@ export function ConsultingDashboard() {
             <Card className="bg-white">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg text-gray-800">Próximos Agendamentos</CardTitle>
+                  <CardTitle className="text-lg text-gray-800">
+                    Próximos Agendamentos
+                  </CardTitle>
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <Button variant="ghost" size="icon">
@@ -994,8 +1193,8 @@ export function ConsultingDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-7 gap-1 text-center text-sm">
-                  {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
-                    <div key={day} className="p-2 text-gray-500 font-medium">
+                  {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => (
+                    <div key={idx} className="p-2 text-gray-500 font-medium">
                       {day}
                     </div>
                   ))}
@@ -1007,8 +1206,8 @@ export function ConsultingDashboard() {
                             day === today
                               ? "bg-green-500 text-white"
                               : highlightedDays.includes(day)
-                                ? "bg-green-200 text-gray-800"
-                                : "text-gray-600 hover:bg-gray-100"
+                              ? "bg-green-200 text-gray-800"
+                              : "text-gray-600 hover:bg-gray-100"
                           }`}
                         >
                           {day}
@@ -1027,7 +1226,9 @@ export function ConsultingDashboard() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-gray-500">Total de Projetos</div>
+                    <div className="text-sm text-gray-500">
+                      Total de Projetos
+                    </div>
                     <div className="text-2xl font-bold text-gray-800">24</div>
                     <div className="flex items-center text-xs text-green-600">
                       <TrendingUp className="h-3 w-3 mr-1" />
@@ -1062,7 +1263,9 @@ export function ConsultingDashboard() {
         {/* Daily Activity Planner */}
         <Card className="bg-white">
           <CardHeader>
-            <CardTitle className="text-xl text-gray-800">Planejador de Atividades Diárias</CardTitle>
+            <CardTitle className="text-xl text-gray-800">
+              Planejador de Atividades Diárias
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex space-x-4 overflow-x-auto pb-4">
@@ -1076,10 +1279,15 @@ export function ConsultingDashboard() {
 
             <div className="space-y-3 mt-6">
               {activities.map((activity, index) => (
-                <div key={index} className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div
+                  key={index}
+                  className="bg-green-50 rounded-lg p-4 border border-green-200"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-800">{activity.title}</h4>
+                      <h4 className="font-medium text-gray-800">
+                        {activity.title}
+                      </h4>
                       <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
                         <span>{activity.date}</span>
                         <div className="flex items-center">
@@ -1090,8 +1298,13 @@ export function ConsultingDashboard() {
                     </div>
                     <div className="flex -space-x-2">
                       {activity.participants.map((participant, pIndex) => (
-                        <Avatar key={pIndex} className="w-8 h-8 border-2 border-white">
-                          <AvatarImage src={participant.avatar || "/placeholder.svg"} />
+                        <Avatar
+                          key={pIndex}
+                          className="w-8 h-8 border-2 border-white"
+                        >
+                          <AvatarImage
+                            src={participant.avatar || "/placeholder.svg"}
+                          />
                           <AvatarFallback>{participant.name[0]}</AvatarFallback>
                         </Avatar>
                       ))}
@@ -1109,7 +1322,9 @@ export function ConsultingDashboard() {
           <CardContent className="p-6">
             <div className="text-center">
               <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-blue-600 rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-700 font-medium">Carregando dados compartilhados...</p>
+              <p className="text-gray-700 font-medium">
+                Carregando dados compartilhados...
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -1134,8 +1349,18 @@ export function ConsultingDashboard() {
                   onClick={() => setActiveModal(null)}
                   className="text-gray-500 hover:text-gray-700"
                 >
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </Button>
               </div>
@@ -1150,11 +1375,15 @@ export function ConsultingDashboard() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-800 mb-2">{item.titulo}</h3>
+                        <h3 className="font-semibold text-gray-800 mb-2">
+                          {item.titulo}
+                        </h3>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-gray-600">
                           <div>
                             <span className="font-medium">OS:</span>
-                            <div className="font-mono text-blue-600">{item.os || item.id}</div>
+                            <div className="font-mono text-blue-600">
+                              {item.os || item.id}
+                            </div>
                           </div>
                           <div>
                             <span className="font-medium">Cliente:</span>
@@ -1169,22 +1398,44 @@ export function ConsultingDashboard() {
                             <div>
                               <span
                                 className={`px-2 py-1 rounded-full text-xs ${
-                                  item.status.toLowerCase().includes("concluído") ||
-                                  item.status.toLowerCase().includes("concluido")
+                                  item.status
+                                    .toLowerCase()
+                                    .includes("concluído") ||
+                                  item.status
+                                    .toLowerCase()
+                                    .includes("concluido")
                                     ? "bg-green-100 text-green-800"
-                                    : item.status.toLowerCase().includes("andamento") ||
-                                        item.status.toLowerCase().includes("execução") ||
-                                        item.status.toLowerCase().includes("execucao")
-                                      ? "bg-blue-100 text-blue-800"
-                                      : item.status.toLowerCase().includes("pendente") ||
-                                          item.status.toLowerCase().includes("aguardando")
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : item.status.toLowerCase().includes("revisão") ||
-                                            item.status.toLowerCase().includes("revisao") ||
-                                            item.status.toLowerCase().includes("análise") ||
-                                            item.status.toLowerCase().includes("analise")
-                                          ? "bg-orange-100 text-orange-800"
-                                          : "bg-gray-100 text-gray-800"
+                                    : item.status
+                                        .toLowerCase()
+                                        .includes("andamento") ||
+                                      item.status
+                                        .toLowerCase()
+                                        .includes("execução") ||
+                                      item.status
+                                        .toLowerCase()
+                                        .includes("execucao")
+                                    ? "bg-blue-100 text-blue-800"
+                                    : item.status
+                                        .toLowerCase()
+                                        .includes("pendente") ||
+                                      item.status
+                                        .toLowerCase()
+                                        .includes("aguardando")
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : item.status
+                                        .toLowerCase()
+                                        .includes("revisão") ||
+                                      item.status
+                                        .toLowerCase()
+                                        .includes("revisao") ||
+                                      item.status
+                                        .toLowerCase()
+                                        .includes("análise") ||
+                                      item.status
+                                        .toLowerCase()
+                                        .includes("analise")
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-gray-100 text-gray-800"
                                 }`}
                               >
                                 {item.status}
@@ -1193,7 +1444,9 @@ export function ConsultingDashboard() {
                           </div>
                           <div>
                             <span className="font-medium">Valor:</span>
-                            <div className="font-semibold text-green-600">{item.valor}</div>
+                            <div className="font-semibold text-green-600">
+                              {item.valor}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1201,7 +1454,12 @@ export function ConsultingDashboard() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open("https://app.novakgouveia.com.br", "_blank")}
+                          onClick={() =>
+                            window.open(
+                              "https://app.novakgouveia.com.br",
+                              "_blank"
+                            )
+                          }
                         >
                           Ver Detalhes
                         </Button>
@@ -1214,7 +1472,12 @@ export function ConsultingDashboard() {
               {modalData.length === 0 && (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-4">
-                    <svg className="h-16 w-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="h-16 w-16 mx-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -1230,12 +1493,19 @@ export function ConsultingDashboard() {
 
             <div className="p-6 border-t border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">Total: {modalData.length} itens</div>
+                <div className="text-sm text-gray-600">
+                  Total: {modalData.length} itens
+                </div>
                 <div className="flex space-x-2">
-                  <Button variant="outline" onClick={() => setActiveModal(null)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveModal(null)}
+                  >
                     Fechar
                   </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">Exportar Lista</Button>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Exportar Lista
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1243,5 +1513,5 @@ export function ConsultingDashboard() {
         </div>
       )}
     </div>
-  )
+  );
 }
