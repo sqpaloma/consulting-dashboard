@@ -44,6 +44,8 @@ export function ConsultingDashboard() {
   // Estados para modais
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [modalData, setModalData] = useState<any[]>([]);
+  const [calendarModalData, setCalendarModalData] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   // Estados para upload e histórico
   const [dashboardUploadHistory, setDashboardUploadHistory] = useState<
@@ -81,6 +83,7 @@ export function ConsultingDashboard() {
             status: item.status,
             valor: item.valor || "Valor não informado",
             data: item.data_registro || new Date().toLocaleDateString("pt-BR"),
+            prazo: item.raw_data?.prazo || null,
             rawData: item.raw_data,
           }))
         );
@@ -182,6 +185,12 @@ export function ConsultingDashboard() {
         setIsDashboardLoading(false);
       }
     }
+  };
+
+  const handleCalendarDateClick = (date: string, items: any[]) => {
+    setSelectedDate(date);
+    setCalendarModalData(items);
+    setActiveModal("calendar");
   };
 
   const generateModalData = async (type: string) => {
@@ -312,7 +321,10 @@ export function ConsultingDashboard() {
           {/* Segunda linha: Sessão de Trabalho e Próximos Agendamentos lado a lado */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <WorkSessionTimer />
-            <DashboardCalendar />
+            <DashboardCalendar
+              processedItems={processedItems}
+              onDateClick={handleCalendarDateClick}
+            />
           </div>
 
           {/* Terceira linha: Total de Projetos e Concluídos lado a lado */}
@@ -341,6 +353,8 @@ export function ConsultingDashboard() {
         activeModal={activeModal}
         setActiveModal={setActiveModal}
         modalData={modalData}
+        calendarModalData={calendarModalData}
+        selectedDate={selectedDate}
       />
     </div>
   );

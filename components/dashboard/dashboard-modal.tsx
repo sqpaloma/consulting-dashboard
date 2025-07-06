@@ -6,12 +6,16 @@ interface DashboardModalProps {
   activeModal: string | null;
   setActiveModal: (modal: string | null) => void;
   modalData: any[];
+  calendarModalData?: any[];
+  selectedDate?: string | null;
 }
 
 export function DashboardModal({
   activeModal,
   setActiveModal,
   modalData,
+  calendarModalData = [],
+  selectedDate,
 }: DashboardModalProps) {
   if (!activeModal) return null;
 
@@ -27,6 +31,10 @@ export function DashboardModal({
         return "Orçamentos";
       case "execucao":
         return "Itens em Execução";
+      case "calendar":
+        return `Agendamentos - ${
+          selectedDate ? new Date(selectedDate).toLocaleDateString("pt-BR") : ""
+        }`;
       default:
         return "Detalhes";
     }
@@ -95,68 +103,82 @@ export function DashboardModal({
 
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           <div className="space-y-4">
-            {modalData.map((item) => (
-              <div
-                key={item.id}
-                className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 mb-2">
-                      {item.titulo}
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">OS:</span>
-                        <div className="font-mono text-blue-600">
-                          {item.os || item.id}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Cliente:</span>
-                        <div>{item.cliente}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Data:</span>
-                        <div>{item.data}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Status:</span>
+            {(activeModal === "calendar" ? calendarModalData : modalData).map(
+              (item) => (
+                <div
+                  key={item.id}
+                  className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-800 mb-2">
+                        {item.titulo}
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm text-gray-600">
                         <div>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                              item.status
-                            )}`}
-                          >
-                            {item.status}
-                          </span>
+                          <span className="font-medium">OS:</span>
+                          <div className="font-mono text-blue-600">
+                            {item.os || item.id}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Valor:</span>
-                        <div className="font-semibold text-green-600">
-                          {item.valor}
+                        <div>
+                          <span className="font-medium">Cliente:</span>
+                          <div>{item.cliente}</div>
+                        </div>
+                        <div>
+                          <span className="font-medium">Data:</span>
+                          <div>{item.data}</div>
+                        </div>
+                        {activeModal === "calendar" && item.prazo && (
+                          <div>
+                            <span className="font-medium">Prazo:</span>
+                            <div className="font-semibold text-red-600">
+                              {item.prazo}
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <span className="font-medium">Status:</span>
+                          <div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
+                                item.status
+                              )}`}
+                            >
+                              {item.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-medium">Valor:</span>
+                          <div className="font-semibold text-green-600">
+                            {item.valor}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        window.open("https://app.novakgouveia.com.br", "_blank")
-                      }
-                    >
-                      Ver Detalhes
-                    </Button>
+                    <div className="ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          window.open(
+                            "https://app.novakgouveia.com.br",
+                            "_blank"
+                          )
+                        }
+                      >
+                        Ver Detalhes
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
 
-          {modalData.length === 0 && (
+          {(activeModal === "calendar" ? calendarModalData : modalData)
+            .length === 0 && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <svg
@@ -181,7 +203,12 @@ export function DashboardModal({
         <div className="p-6 border-t border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600">
-              Total: {modalData.length} itens
+              Total:{" "}
+              {
+                (activeModal === "calendar" ? calendarModalData : modalData)
+                  .length
+              }{" "}
+              itens
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={() => setActiveModal(null)}>

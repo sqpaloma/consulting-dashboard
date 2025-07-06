@@ -4,8 +4,7 @@ import React from "react";
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+
 import { ManualSidebar } from "@/components/manual/manual-sidebar";
 import { ManualContent } from "@/components/manual/manual-content";
 import { StepByStepModal } from "@/components/manual/step-by-step-modal";

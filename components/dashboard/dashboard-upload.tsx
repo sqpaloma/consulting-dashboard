@@ -92,6 +92,9 @@ export function DashboardUpload({
             (header.toLowerCase().includes("os") ||
               header.toLowerCase().includes("ordem"))
         );
+        const prazoIndex = headers.findIndex(
+          (header) => header && header.toLowerCase().includes("prazo")
+        );
 
         if (statusIndex === -1) {
           alert("Coluna 'status' não encontrada na planilha.");
@@ -124,6 +127,7 @@ export function DashboardUpload({
             titulo: row[1] || `Item ${i}`, // Assume que a segunda coluna é o título
             cliente: row[2] || "Cliente não informado", // Assume que a terceira coluna é o cliente
             data: new Date().toLocaleDateString("pt-BR"),
+            prazo: prazoIndex !== -1 ? row[prazoIndex]?.toString() : null,
             valor: row[3]
               ? `R$ ${Number.parseFloat(row[3]).toLocaleString("pt-BR")}`
               : "Valor não informado",
