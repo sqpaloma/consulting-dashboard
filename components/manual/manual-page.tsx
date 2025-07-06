@@ -10,24 +10,17 @@ import {
   ArrowLeft,
   MessageSquare,
   BookOpen,
-  ChevronRight,
-  Users,
-  FileText,
-  Target,
-  Workflow,
-  Shield,
-  TrendingUp,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ManualSidebar } from "@/components/manual/manual-sidebar";
-import { ManualContent } from "@/components/manual/manual-content";
-import { StepByStepModal } from "@/components/manual/step-by-step-modal";
-import { ImagePreviewModal } from "@/components/manual/image-preview-modal";
-import { manualSections } from "@/components/manual/manual-data";
+import { ManualSidebar } from "./manual-sidebar";
+import { ManualContent } from "./manual-content";
+import { StepByStepModal } from "./step-by-step-modal";
+import { ImagePreviewModal } from "./image-preview-modal";
+import { manualSections } from "./manual-data";
 
-export default function Manual() {
+export function ManualPage() {
   const [activeSection, setActiveSection] = useState<string>("objetivo");
   const [stepByStepModal, setStepByStepModal] = useState<string | null>(null);
   const [stepImages, setStepImages] = useState<{ [key: string]: File[] }>({});

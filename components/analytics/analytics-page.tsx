@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { useAnalyticsData } from "../hooks/use-analytics-data";
+import { useAnalyticsData } from "@/hooks/use-analytics-data";
 import { AnalyticsHeader } from "./analytics-header";
 import { AnalyticsStatusCard } from "./analytics-status-card";
 import { AnalyticsUploadSection } from "./analytics-upload-section";

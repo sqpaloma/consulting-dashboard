@@ -1,5 +1,5 @@
-import { ConsultingDashboard } from "@/components/consulting-dashboard"
+import { ConsultingDashboard } from "@/components/dashboard";
 
 export default function Home() {
-  return <ConsultingDashboard />
+  return <ConsultingDashboard />;
 }
