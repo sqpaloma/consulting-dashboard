@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   description:
     "Gerenciador da consutoria, visualise o seu processo com o nosso dashboard",
   generator: "v0.dev",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -14,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body>{children}</body>
     </html>
   );

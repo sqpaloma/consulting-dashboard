@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { DashboardHeader } from "./dashboard-header";
+import { Header } from "@/components/Header";
 import { DashboardUpload } from "./dashboard-upload";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { WorkSessionTimer } from "./work-session-timer";
@@ -283,7 +283,8 @@ export function ConsultingDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <DashboardHeader />
+        {/* Header */}
+        <Header title="Dashboard" subtitle="Visão geral do seu processo" />
 
         <DashboardUpload
           dashboardData={dashboardData}

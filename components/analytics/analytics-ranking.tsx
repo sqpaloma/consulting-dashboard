@@ -174,7 +174,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">
-                            Média/orçamento:
+                            Ticket médio:
                           </span>
                           <span className="font-medium text-sm text-blue-600">
                             {engineer.projetos > 0
