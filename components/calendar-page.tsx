@@ -135,16 +135,7 @@ export function CalendarPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <Header
-          title="Calendário"
-          subtitle="Gerencie seus compromissos e eventos"
-        />
-
-        {/* Page Title */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-white">Calendário</h1>
-          <p className="text-gray-300">Gerencie seus compromissos e eventos</p>
-        </div>
+        <Header title="Calendário" />
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

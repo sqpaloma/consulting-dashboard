@@ -59,10 +59,7 @@ export default function Manual() {
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <Header
-          title="Manual de Trabalho"
-          subtitle="Departamento Consultores de Serviços – Engenharia"
-        />
+        <Header title="Manual da Consultoria" />
 
         {/* Manual Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

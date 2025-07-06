@@ -157,7 +157,7 @@ export function ConsultingDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <Header title="Dashboard" subtitle="Visão geral do seu processo" />
+        <Header title="Dashboard" />
 
         {/* Status Card */}
         {uploadHistory.length > 0 && (
