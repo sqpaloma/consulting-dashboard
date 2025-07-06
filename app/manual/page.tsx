@@ -2,22 +2,7 @@
 
 import React from "react";
 import { useState } from "react";
-import {
-  Calendar,
-  Settings,
-  BarChart3,
-  Grid3X3,
-  ArrowLeft,
-  MessageSquare,
-  BookOpen,
-  ChevronRight,
-  Users,
-  FileText,
-  Target,
-  Workflow,
-  Shield,
-  TrendingUp,
-} from "lucide-react";
+import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -75,86 +60,10 @@ export default function Manual() {
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link
-              href="/"
-              className="flex items-center space-x-3 hover:opacity-80"
-            >
-              <ArrowLeft className="h-5 w-5 text-white" />
-              <div className="w-12 h-12 bg-blue-700 rounded-full border-2 border-green-400 flex items-center justify-center relative">
-                <span className="text-white font-bold text-lg">ng</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <span className="text-2xl font-bold text-white">novak</span>
-                <span className="text-2xl font-light text-green-400">
-                  gouveia
-                </span>
-              </div>
-            </Link>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Link href="/">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-blue-700"
-              >
-                <Grid3X3 className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/chat">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-blue-700"
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/calendar">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-blue-700"
-              >
-                <Calendar className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/analytics">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-blue-700"
-              >
-                <BarChart3 className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-blue-700 bg-blue-700"
-            >
-              <BookOpen className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-blue-700"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Page Title */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-white">Manual de Trabalho</h1>
-          <p className="text-gray-300">
-            Departamento Consultores de Serviços – Engenharia
-          </p>
-        </div>
+        <Header
+          title="Manual de Trabalho"
+          subtitle="Departamento Consultores de Serviços – Engenharia"
+        />
 
         {/* Manual Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

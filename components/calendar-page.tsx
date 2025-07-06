@@ -1,27 +1,15 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import {
-  Calendar,
-  Settings,
-  BarChart3,
-  Grid3X3,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Clock,
-  MapPin,
-  Users,
-  ArrowLeft,
-  MessageSquare,
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { useState } from "react";
+import { Header } from "@/components/Header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Clock, MapPin, Users } from "lucide-react";
 
 export function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1)) // Janeiro 2025
-  const [selectedDate, setSelectedDate] = useState<number | null>(null)
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1)); // Janeiro 2025
+  const [selectedDate, setSelectedDate] = useState<number | null>(null);
 
   const monthNames = [
     "Janeiro",
@@ -36,21 +24,29 @@ export function CalendarPage() {
     "Outubro",
     "Novembro",
     "Dezembro",
-  ]
+  ];
 
-  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
+  const daysInMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  ).getDate();
+  const firstDayOfMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1
+  ).getDay();
 
-  const calendarDays = []
+  const calendarDays = [];
 
   // Dias vazios no início
   for (let i = 0; i < firstDayOfMonth; i++) {
-    calendarDays.push(null)
+    calendarDays.push(null);
   }
 
   // Dias do mês
   for (let day = 1; day <= daysInMonth; day++) {
-    calendarDays.push(day)
+    calendarDays.push(day);
   }
 
   const events = [
@@ -114,69 +110,35 @@ export function CalendarPage() {
       participants: ["Equipe Gestão"],
       color: "bg-indigo-500",
     },
-  ]
+  ];
 
   const getEventsForDate = (date: number) => {
-    return events.filter((event) => event.date === date)
-  }
+    return events.filter((event) => event.date === date);
+  };
 
   const navigateMonth = (direction: "prev" | "next") => {
     setCurrentDate((prev) => {
-      const newDate = new Date(prev)
+      const newDate = new Date(prev);
       if (direction === "prev") {
-        newDate.setMonth(prev.getMonth() - 1)
+        newDate.setMonth(prev.getMonth() - 1);
       } else {
-        newDate.setMonth(prev.getMonth() + 1)
+        newDate.setMonth(prev.getMonth() + 1);
       }
-      return newDate
-    })
-    setSelectedDate(null)
-  }
+      return newDate;
+    });
+    setSelectedDate(null);
+  };
 
-  const selectedEvents = selectedDate ? getEventsForDate(selectedDate) : []
+  const selectedEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link href="/" className="flex items-center space-x-3 hover:opacity-80">
-              <ArrowLeft className="h-5 w-5 text-white" />
-              <div className="w-12 h-12 bg-blue-700 rounded-full border-2 border-green-400 flex items-center justify-center relative">
-                <span className="text-white font-bold text-lg">ng</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <span className="text-2xl font-bold text-white">novak</span>
-                <span className="text-2xl font-light text-green-400">gouveia</span>
-              </div>
-            </Link>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
-                <Grid3X3 className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/chat">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
-                <MessageSquare className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700 bg-blue-700">
-              <Calendar className="h-5 w-5" />
-            </Button>
-            <Link href="/analytics">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
-                <BarChart3 className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-blue-700">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
+        <Header
+          title="Calendário"
+          subtitle="Gerencie seus compromissos e eventos"
+        />
 
         {/* Page Title */}
         <div className="space-y-2">
@@ -192,17 +154,25 @@ export function CalendarPage() {
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-2xl text-gray-800">
-                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                    {monthNames[currentDate.getMonth()]}{" "}
+                    {currentDate.getFullYear()}
                   </CardTitle>
                   <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
                       Novo Evento
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => navigateMonth("prev")}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigateMonth("prev")}
+                    >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => navigateMonth("next")}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigateMonth("next")}
+                    >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -210,18 +180,23 @@ export function CalendarPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-7 gap-2 mb-4">
-                  {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
-                    <div key={day} className="p-3 text-center text-sm font-semibold text-gray-600 border-b">
-                      {day}
-                    </div>
-                  ))}
+                  {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(
+                    (day) => (
+                      <div
+                        key={day}
+                        className="p-3 text-center text-sm font-semibold text-gray-600 border-b"
+                      >
+                        {day}
+                      </div>
+                    )
+                  )}
                 </div>
 
                 <div className="grid grid-cols-7 gap-2">
                   {calendarDays.map((day, index) => {
-                    const dayEvents = day ? getEventsForDate(day) : []
-                    const isSelected = selectedDate === day
-                    const isToday = day === 15 // Simulando hoje como dia 15
+                    const dayEvents = day ? getEventsForDate(day) : [];
+                    const isSelected = selectedDate === day;
+                    const isToday = day === 15; // Simulando hoje como dia 15
 
                     return (
                       <div key={index} className="min-h-[120px] p-2">
@@ -231,12 +206,16 @@ export function CalendarPage() {
                               isSelected
                                 ? "border-blue-500 bg-blue-50"
                                 : isToday
-                                  ? "border-green-500 bg-green-50"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                ? "border-green-500 bg-green-50"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                             onClick={() => setSelectedDate(day)}
                           >
-                            <div className={`text-sm font-medium mb-1 ${isToday ? "text-green-600" : "text-gray-800"}`}>
+                            <div
+                              className={`text-sm font-medium mb-1 ${
+                                isToday ? "text-green-600" : "text-gray-800"
+                              }`}
+                            >
                               {day}
                             </div>
                             <div className="space-y-1">
@@ -249,13 +228,15 @@ export function CalendarPage() {
                                 </div>
                               ))}
                               {dayEvents.length > 2 && (
-                                <div className="text-xs text-gray-500">+{dayEvents.length - 2} mais</div>
+                                <div className="text-xs text-gray-500">
+                                  +{dayEvents.length - 2} mais
+                                </div>
                               )}
                             </div>
                           </div>
                         )}
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </CardContent>
@@ -268,7 +249,9 @@ export function CalendarPage() {
               <CardHeader>
                 <CardTitle className="text-lg text-gray-800">
                   {selectedDate
-                    ? `Eventos - ${selectedDate} de ${monthNames[currentDate.getMonth()]}`
+                    ? `Eventos - ${selectedDate} de ${
+                        monthNames[currentDate.getMonth()]
+                      }`
                     : "Selecione uma data"}
                 </CardTitle>
               </CardHeader>
@@ -276,8 +259,13 @@ export function CalendarPage() {
                 {selectedEvents.length > 0 ? (
                   <div className="space-y-4">
                     {selectedEvents.map((event) => (
-                      <div key={event.id} className="border-l-4 border-blue-500 pl-4 py-2">
-                        <h4 className="font-semibold text-gray-800">{event.title}</h4>
+                      <div
+                        key={event.id}
+                        className="border-l-4 border-blue-500 pl-4 py-2"
+                      >
+                        <h4 className="font-semibold text-gray-800">
+                          {event.title}
+                        </h4>
                         <div className="space-y-1 mt-2 text-sm text-gray-600">
                           <div className="flex items-center">
                             <Clock className="h-3 w-3 mr-2" />
@@ -297,7 +285,9 @@ export function CalendarPage() {
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center py-8">
-                    {selectedDate ? "Nenhum evento nesta data" : "Clique em uma data para ver os eventos"}
+                    {selectedDate
+                      ? "Nenhum evento nesta data"
+                      : "Clique em uma data para ver os eventos"}
                   </p>
                 )}
               </CardContent>
@@ -306,13 +296,19 @@ export function CalendarPage() {
             {/* Quick Stats */}
             <Card className="bg-white">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-800">Resumo do Mês</CardTitle>
+                <CardTitle className="text-lg text-gray-800">
+                  Resumo do Mês
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total de Eventos</span>
-                    <span className="font-semibold text-gray-800">{events.length}</span>
+                    <span className="text-sm text-gray-600">
+                      Total de Eventos
+                    </span>
+                    <span className="font-semibold text-gray-800">
+                      {events.length}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Reuniões</span>
@@ -323,8 +319,12 @@ export function CalendarPage() {
                     <span className="font-semibold text-gray-800">2</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Horas Agendadas</span>
-                    <span className="font-semibold text-gray-800">12h 30min</span>
+                    <span className="text-sm text-gray-600">
+                      Horas Agendadas
+                    </span>
+                    <span className="font-semibold text-gray-800">
+                      12h 30min
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -333,17 +333,27 @@ export function CalendarPage() {
             {/* Upcoming Events */}
             <Card className="bg-white">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-800">Próximos Eventos</CardTitle>
+                <CardTitle className="text-lg text-gray-800">
+                  Próximos Eventos
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {events.slice(0, 3).map((event) => (
-                    <div key={event.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
-                      <div className={`w-3 h-3 rounded-full ${event.color}`}></div>
+                    <div
+                      key={event.id}
+                      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50"
+                    >
+                      <div
+                        className={`w-3 h-3 rounded-full ${event.color}`}
+                      ></div>
                       <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-800">{event.title}</div>
+                        <div className="text-sm font-medium text-gray-800">
+                          {event.title}
+                        </div>
                         <div className="text-xs text-gray-500">
-                          {event.date} de {monthNames[currentDate.getMonth()]} - {event.time}
+                          {event.date} de {monthNames[currentDate.getMonth()]} -{" "}
+                          {event.time}
                         </div>
                       </div>
                     </div>
@@ -355,5 +365,5 @@ export function CalendarPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
