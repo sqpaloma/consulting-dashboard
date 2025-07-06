@@ -3,11 +3,20 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+console.log("=== DEBUG: Configuração do Supabase Analytics ===");
+console.log("supabaseUrl:", supabaseUrl ? "Configurado" : "NÃO CONFIGURADO");
+console.log(
+  "supabaseAnonKey:",
+  supabaseAnonKey ? "Configurado" : "NÃO CONFIGURADO"
+);
+
 // Only create the client if environment variables are available
 export const supabase =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
+
+console.log("Supabase client criado:", supabase ? "SIM" : "NÃO");
 
 export interface AnalyticsData {
   id?: number;
