@@ -1,6 +1,4 @@
 export { ConsultingDashboard } from "./consulting-dashboard";
-export { DashboardUpload } from "./dashboard-upload";
-export { DashboardStatusCard } from "./dashboard-status-card";
 export { DashboardMetrics } from "./dashboard-metrics";
 export { WorkSessionTimer } from "./work-session-timer";
 export { DashboardCalendar } from "./dashboard-calendar";

@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { DashboardUpload } from "./dashboard-upload";
-import { DashboardStatusCard } from "./dashboard-status-card";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { WorkSessionTimer } from "./work-session-timer";
 import { DashboardCalendar } from "./dashboard-calendar";
@@ -15,19 +13,7 @@ import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
 
 export function ConsultingDashboard() {
-  const {
-    dashboardData,
-    processedItems,
-    fileName,
-    uploadHistory,
-    isLoading,
-    saveStatus,
-    loadSavedData,
-    loadUploadHistory,
-    handleFileUpload,
-    handleSaveData,
-    handleClearData,
-  } = useDashboardData();
+  const { dashboardData, processedItems, loadSavedData } = useDashboardData();
 
   // Estados para modais
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -37,8 +23,7 @@ export function ConsultingDashboard() {
 
   useEffect(() => {
     loadSavedData();
-    loadUploadHistory();
-  }, []);
+  }, [loadSavedData]);
 
   const handleCalendarDateClick = (date: string, items: any[]) => {
     setSelectedDate(date);
@@ -142,13 +127,6 @@ export function ConsultingDashboard() {
     setModalData(data);
   };
 
-  const handleUploadClick = () => {
-    const fileInput = document.querySelector(
-      'input[type="file"]'
-    ) as HTMLInputElement;
-    fileInput?.click();
-  };
-
   const handlePrint = () => {
     window.print();
   };
@@ -158,27 +136,6 @@ export function ConsultingDashboard() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <Header title="Dashboard" />
-
-        {/* Status Card */}
-        {uploadHistory.length > 0 && (
-          <DashboardStatusCard uploadHistory={uploadHistory} />
-        )}
-
-        {/* Upload Section */}
-        <div className="flex justify-end">
-          <DashboardUpload
-            dashboardData={dashboardData}
-            saveStatus={saveStatus}
-            uploadedData={processedItems}
-            isLoading={isLoading}
-            onUploadClick={handleUploadClick}
-            onFileUpload={handleFileUpload}
-            onSaveData={handleSaveData}
-            onPrint={handlePrint}
-            onClearData={handleClearData}
-            fileName={fileName}
-          />
-        </div>
 
         {/* Main Content Grid */}
         <div className="space-y-6">
