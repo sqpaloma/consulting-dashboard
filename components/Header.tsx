@@ -102,13 +102,15 @@ export function Header({
               <BookOpen className="h-5 w-5" />
             </Button>
           </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-blue-700"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
+          <Link href="/settings">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-blue-700"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </div>
 
