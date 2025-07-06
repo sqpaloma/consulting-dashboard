@@ -20,7 +20,7 @@ console.log("Supabase client criado:", supabase ? "SIM" : "NÃO");
 
 export interface DashboardData {
   id?: number;
-  total_items: number;
+  total_itens: number;
   aguardando_aprovacao: number;
   analises: number;
   orcamentos: number;
@@ -84,13 +84,13 @@ export async function saveDashboardData(
 
     // Limpa dados existentes
     await supabase.from("dashboard_data").delete().neq("id", 0);
-    await supabase.from("dashboard_items").delete().neq("id", 0);
+    await supabase.from("dashboard_itens").delete().neq("id", 0);
 
     // Insere dados do dashboard
     const { error: dashboardError } = await supabase
       .from("dashboard_data")
       .insert({
-        total_items: dashboardData.total_items,
+        total_itens: dashboardData.total_itens,
         aguardando_aprovacao: dashboardData.aguardando_aprovacao,
         analises: dashboardData.analises,
         orcamentos: dashboardData.orcamentos,
@@ -104,7 +104,7 @@ export async function saveDashboardData(
     // Insere itens individuais
     if (items.length > 0) {
       const { error: itemsError } = await supabase
-        .from("dashboard_items")
+        .from("dashboard_itens")
         .insert(
           items.map((item) => ({
             os: item.os,
@@ -187,7 +187,7 @@ export async function loadDashboardData(): Promise<{
 
     // ----- itens individuais -----
     const { data: items, error: itemsError } = await supabase
-      .from("dashboard_items")
+      .from("dashboard_itens")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -245,7 +245,7 @@ export async function clearAllDashboardData() {
 
   try {
     await supabase.from("dashboard_data").delete().neq("id", 0);
-    await supabase.from("dashboard_items").delete().neq("id", 0);
+    await supabase.from("dashboard_itens").delete().neq("id", 0);
     await supabase.from("dashboard_uploads").delete().neq("id", 0);
     return { success: true };
   } catch (error) {
@@ -266,7 +266,7 @@ export async function getDashboardItemsByCategory(
   }
 
   try {
-    let query = supabase.from("dashboard_items").select("*");
+    let query = supabase.from("dashboard_itens").select("*");
 
     switch (category) {
       case "aprovacao":

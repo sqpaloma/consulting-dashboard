@@ -28,6 +28,29 @@ interface DashboardItemRow {
   data: string;
   prazo: string;
   rawData: any;
+  data_registro: string | null;
+}
+
+// Função para converter data BR para ISO (YYYY-MM-DD)
+function parseDateBRtoISO(dateStr: string) {
+  if (!dateStr) return "";
+  const parts = dateStr.split("/");
+  if (parts.length === 3) {
+    let [day, month, year] = parts;
+    if (year.length === 2) {
+      year = +year < 50 ? "20" + year : "19" + year;
+    }
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+  return "";
+}
+
+// Função para exibir data ISO como BR
+export function formatDateToBR(dateStr: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("pt-BR");
 }
 
 export function useDashboardData() {
@@ -53,7 +76,7 @@ export function useDashboardData() {
         await loadDashboardData();
       if (savedDashboardData && items.length > 0) {
         setDashboardData({
-          totalItens: savedDashboardData.total_items,
+          totalItens: savedDashboardData.total_itens,
           aguardandoAprovacao: savedDashboardData.aguardando_aprovacao,
           analises: savedDashboardData.analises,
           orcamentos: savedDashboardData.orcamentos,
@@ -67,9 +90,10 @@ export function useDashboardData() {
             cliente: item.cliente || "Cliente não informado",
             status: item.status,
             valor: item.valor || "Valor não informado",
-            data: item.data_registro || new Date().toLocaleDateString("pt-BR"),
+            data: item.data_registro ? formatDateToBR(item.data_registro) : "",
             prazo: item.raw_data?.prazo || "",
             rawData: item.raw_data,
+            data_registro: item.data_registro || "",
           }))
         );
       }
@@ -168,6 +192,10 @@ export function useDashboardData() {
               ? `R$ ${Number.parseFloat(row[3]).toLocaleString("pt-BR")}`
               : "Valor não informado",
             rawData: row,
+            data_registro:
+              prazoIndex !== -1
+                ? parseDateBRtoISO(row[prazoIndex]?.toString() || "")
+                : "",
           };
 
           processedData.items.push(item);
@@ -246,7 +274,7 @@ export function useDashboardData() {
       console.log("saveDashboardData function:", typeof saveDashboardData);
 
       const dashboardDataToSave: DashboardDataType = {
-        total_items: dashboardData.totalItens,
+        total_itens: dashboardData.totalItens,
         aguardando_aprovacao: dashboardData.aguardandoAprovacao,
         analises: dashboardData.analises,
         orcamentos: dashboardData.orcamentos,
@@ -261,7 +289,7 @@ export function useDashboardData() {
         cliente: item.cliente,
         status: item.status,
         valor: item.valor,
-        data_registro: item.data,
+        data_registro: item.data_registro || undefined,
         raw_data: item.rawData,
       }));
 
