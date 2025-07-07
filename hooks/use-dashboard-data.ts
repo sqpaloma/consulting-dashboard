@@ -34,14 +34,56 @@ interface DashboardItemRow {
 // Função para converter data BR para ISO (YYYY-MM-DD)
 function parseDateBRtoISO(dateStr: string) {
   if (!dateStr) return "";
-  const parts = dateStr.split("/");
-  if (parts.length === 3) {
-    let [day, month, year] = parts;
-    if (year.length === 2) {
-      year = +year < 50 ? "20" + year : "19" + year;
+
+  const cleanDate = dateStr.toString().trim();
+
+  // Tenta diferentes formatos
+  const formats = [
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+    /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
+    /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
+  ];
+
+  for (const format of formats) {
+    const match = cleanDate.match(format);
+    if (match) {
+      if (format.source.includes("(\\d{4})-(\\d{1,2})-(\\d{1,2})")) {
+        // yyyy-mm-dd (já está no formato ISO)
+        const [, year, month, day] = match;
+        const isoDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
+          2,
+          "0"
+        )}`;
+        return isoDate;
+      } else {
+        // dd/mm/yyyy ou dd-mm-yyyy (formato brasileiro)
+        const [, day, month, year] = match;
+        let fullYear = year;
+
+        // Se o ano tem apenas 2 dígitos
+        if (year.length === 2) {
+          const yearNum = parseInt(year);
+          fullYear = yearNum < 50 ? `20${year}` : `19${year}`;
+        }
+
+        const isoDate = `${fullYear}-${month.padStart(2, "0")}-${day.padStart(
+          2,
+          "0"
+        )}`;
+        return isoDate;
+      }
     }
-    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
+
+  // Se for um número (data do Excel)
+  if (!isNaN(Number(cleanDate)) && cleanDate.length > 4) {
+    const excelDate = Number(cleanDate);
+    const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+    const isoDate = jsDate.toISOString().split("T")[0];
+    return isoDate;
+  }
+
   return "";
 }
 

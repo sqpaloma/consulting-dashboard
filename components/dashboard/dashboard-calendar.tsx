@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Clock,
+  RefreshCw,
+} from "lucide-react";
+import { loadDashboardData } from "@/lib/dashboard-supabase-client";
 
 interface CalendarItem {
   id: string;
@@ -31,22 +38,66 @@ export function DashboardCalendar({
   const [calendarItems, setCalendarItems] = useState<{
     [key: string]: CalendarItem[];
   }>({});
+  const [databaseItems, setDatabaseItems] = useState<CalendarItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Carrega dados do banco de dados
+  const loadDatabaseItems = async () => {
+    setIsLoading(true);
+    try {
+      const { items } = await loadDashboardData();
+
+      // Converte os dados do banco para o formato do calendário
+      const dbItems: CalendarItem[] = items
+        .filter((item) => item.data_registro) // Só inclui itens com data_registro
+        .map((item) => ({
+          id: item.os,
+          os: item.os,
+          titulo: item.titulo || `Item ${item.os}`,
+          cliente: item.cliente || "Cliente não informado",
+          status: item.status,
+          valor: item.valor || "Valor não informado",
+          prazo: item.data_registro || "", // Usa data_registro como prazo
+          data: item.data_registro || "",
+          rawData: item.raw_data || [],
+        }));
+
+      setDatabaseItems(dbItems);
+    } catch (error) {
+      console.error("Erro ao carregar dados do banco:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Carrega dados do banco quando o componente monta
+  useEffect(() => {
+    loadDatabaseItems();
+  }, []);
 
   // Processa os itens para extrair datas de prazo
   useEffect(() => {
     const itemsByDate: { [key: string]: CalendarItem[] } = {};
 
-    processedItems.forEach((item) => {
+    // Combina dados da planilha com dados do banco
+    const allItems = [...processedItems, ...databaseItems];
+
+    allItems.forEach((item) => {
       // Tenta extrair a data do prazo
       let prazoDate = null;
 
-      // Primeiro, tenta usar a coluna "prazo" se existir
-      if (item.prazo) {
+      // Primeiro, tenta usar o campo data_registro se for do banco
+      if (item.data && item.data.includes("-")) {
+        // Se a data está em formato ISO (YYYY-MM-DD), usa diretamente
+        prazoDate = new Date(item.data);
+        if (isNaN(prazoDate.getTime())) {
+          prazoDate = null;
+        }
+      } else if (item.prazo) {
+        // Se tem prazo, tenta fazer parse
         prazoDate = parseDate(item.prazo);
-      }
-
-      // Se não encontrar prazo, usa a data padrão
-      if (!prazoDate && item.data) {
+      } else if (item.data) {
+        // Se não tem prazo, usa a data padrão
         prazoDate = parseDate(item.data);
       }
 
@@ -60,7 +111,7 @@ export function DashboardCalendar({
     });
 
     setCalendarItems(itemsByDate);
-  }, [processedItems]);
+  }, [processedItems, databaseItems]);
 
   // Função para fazer parse de diferentes formatos de data
   const parseDate = (dateString: string): Date | null => {
@@ -195,7 +246,22 @@ export function DashboardCalendar({
           <CardTitle className="text-lg text-gray-800 flex items-center">
             <Calendar className="h-5 w-5 mr-2" />
             Próximos Agendamentos
+            {isLoading && (
+              <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+            )}
           </CardTitle>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadDatabaseItems}
+              disabled={isLoading}
+              className="text-xs"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              {isLoading ? "Carregando..." : "Atualizar"}
+            </Button>
+          </div>
         </div>
         <div className="flex items-center justify-between mt-4">
           <Button
@@ -220,56 +286,63 @@ export function DashboardCalendar({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-7 gap-1 text-center text-sm">
-          {["D", "S", "T", "Q", "Q", "S", "S"].map((day, idx) => (
-            <div key={idx} className="p-2 text-gray-500 font-medium">
+        <div className="grid grid-cols-7 gap-1 mb-4">
+          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
+            <div
+              key={day}
+              className="text-center text-sm font-medium text-gray-500 p-2"
+            >
               {day}
             </div>
           ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
           {calendarDays.map((day, index) => (
-            <div key={index} className="p-2">
-              {day && (
-                <div
-                  className={`w-8 h-8 flex items-center justify-center rounded-full text-sm relative cursor-pointer transition-all ${
-                    day === today
-                      ? "bg-green-500 text-white"
-                      : hasItemsOnDate(day)
-                      ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                  onClick={() => handleDateClick(day)}
-                >
-                  {day}
-                  {hasItemsOnDate(day) && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                      {getItemsCountOnDate(day)}
-                    </div>
-                  )}
-                </div>
+            <div
+              key={index}
+              className={`
+                aspect-square p-2 text-center text-sm cursor-pointer rounded-lg
+                ${
+                  day === null
+                    ? "invisible"
+                    : day === today &&
+                      currentMonth === new Date().getMonth() &&
+                      currentYear === new Date().getFullYear()
+                    ? "bg-blue-100 text-blue-600 font-bold"
+                    : hasItemsOnDate(day)
+                    ? "bg-red-100 text-red-800 font-medium hover:bg-red-200"
+                    : "hover:bg-gray-100 text-gray-700"
+                }
+                ${
+                  selectedDate ===
+                  `${currentYear}-${String(currentMonth + 1).padStart(
+                    2,
+                    "0"
+                  )}-${String(day).padStart(2, "0")}`
+                    ? "ring-2 ring-blue-500"
+                    : ""
+                }
+              `}
+              onClick={() => day && handleDateClick(day)}
+            >
+              {day}
+              {day && hasItemsOnDate(day) && (
+                <div className="w-1 h-1 bg-red-500 rounded-full mx-auto mt-1"></div>
               )}
             </div>
           ))}
         </div>
 
-        {/* Legenda */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
-                <span>Hoje</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-blue-100 rounded-full mr-1"></div>
-                <span>Agendamentos</span>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <Clock className="h-3 w-3 mr-1" />
-              <span>Clique para ver detalhes</span>
+        {Object.keys(calendarItems).length > 0 && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center text-sm text-gray-600">
+              <Clock className="h-4 w-4 mr-2" />
+              <span>
+                {Object.keys(calendarItems).length} data(s) com agendamentos
+              </span>
             </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
