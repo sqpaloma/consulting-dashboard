@@ -223,6 +223,20 @@ export function DashboardCalendar({
     return calendarItems[dateKey] ? calendarItems[dateKey].length : 0;
   };
 
+  const isDatePastToday = (day: number) => {
+    const itemDate = new Date(currentYear, currentMonth, day);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    return itemDate < todayDate;
+  };
+
+  const isDateFutureToday = (day: number) => {
+    const itemDate = new Date(currentYear, currentMonth, day);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    return itemDate > todayDate;
+  };
+
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
   };
@@ -301,8 +315,12 @@ export function DashboardCalendar({
                       currentMonth === new Date().getMonth() &&
                       currentYear === new Date().getFullYear()
                     ? "bg-blue-100 text-blue-600 font-bold"
-                    : hasItemsOnDate(day)
+                    : hasItemsOnDate(day) && isDatePastToday(day)
                     ? "bg-red-100 text-red-800 font-medium hover:bg-red-200"
+                    : hasItemsOnDate(day) && isDateFutureToday(day)
+                    ? "bg-green-100 text-green-800 font-medium hover:bg-green-200"
+                    : hasItemsOnDate(day)
+                    ? "bg-blue-100 text-blue-600 font-medium hover:bg-blue-200"
                     : "hover:bg-gray-100 text-gray-700"
                 }
                 ${
@@ -319,7 +337,19 @@ export function DashboardCalendar({
             >
               {day}
               {day && hasItemsOnDate(day) && (
-                <div className="w-1 h-1 bg-red-500 rounded-full mx-auto mt-1"></div>
+                <div
+                  className={`w-1 h-1 rounded-full mx-auto mt-1 ${
+                    day === today &&
+                    currentMonth === new Date().getMonth() &&
+                    currentYear === new Date().getFullYear()
+                      ? "bg-blue-500"
+                      : isDatePastToday(day)
+                      ? "bg-red-500"
+                      : isDateFutureToday(day)
+                      ? "bg-green-500"
+                      : "bg-blue-500"
+                  }`}
+                ></div>
               )}
             </div>
           ))}
