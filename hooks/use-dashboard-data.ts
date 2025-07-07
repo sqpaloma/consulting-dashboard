@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import {
   saveDashboardData,
@@ -9,6 +9,9 @@ import {
   type DashboardItem,
   type DashboardUpload,
 } from "@/lib/dashboard-supabase-client";
+
+// Estado global para controlar salvamento
+let isSavingGlobal = false;
 
 interface DashboardDataRow {
   totalItens: number;
@@ -110,7 +113,7 @@ export function useDashboardData() {
     "idle" | "saving" | "saved" | "error"
   >("idle");
 
-  const loadSavedData = async () => {
+  const loadSavedData = useCallback(async () => {
     setIsLoading(true);
     try {
       const { dashboardData: savedDashboardData, items } =
@@ -142,16 +145,16 @@ export function useDashboardData() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const loadUploadHistory = async () => {
+  const loadUploadHistory = useCallback(async () => {
     try {
       const history = await getDashboardUploadHistory();
       setUploadHistory(history);
     } catch (error) {
       console.error("Erro ao carregar histórico do dashboard:", error);
     }
-  };
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -294,7 +297,7 @@ export function useDashboardData() {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleSaveData = async () => {
+  const handleSaveData = useCallback(async () => {
     console.log("=== DEBUG: Iniciando salvamento do dashboard ===");
     console.log("processedItems.length:", processedItems.length);
     console.log("dashboardData:", dashboardData);
@@ -305,11 +308,19 @@ export function useDashboardData() {
       return;
     }
 
-    setSaveStatus("saving");
-    try {
-      // Teste: verificar se a função saveDashboardData está sendo importada corretamente
-      console.log("saveDashboardData function:", typeof saveDashboardData);
+    // Verificar se já está salvando GLOBALMENTE para evitar múltiplas chamadas
+    if (isSavingGlobal || saveStatus === "saving") {
+      console.log(
+        "DEBUG: Salvamento já em andamento, ignorando chamada duplicada"
+      );
+      return;
+    }
 
+    // Marcar como salvando globalmente
+    isSavingGlobal = true;
+    setSaveStatus("saving");
+
+    try {
       const dashboardDataToSave: DashboardDataType = {
         total_itens: dashboardData.totalItens,
         aguardando_aprovacao: dashboardData.aguardandoAprovacao,
@@ -331,27 +342,6 @@ export function useDashboardData() {
 
       console.log("dashboardDataToSave:", dashboardDataToSave);
       console.log("itemsToSave (primeiros 2):", itemsToSave.slice(0, 2));
-
-      // Teste: verificar se o supabase está configurado
-      const { supabase } = await import("@/lib/dashboard-supabase-client");
-      console.log("Supabase client:", supabase);
-
-      // Teste: tentar salvar apenas o upload primeiro
-      if (supabase) {
-        console.log("=== TESTE: Salvando apenas upload ===");
-        const testUploadResult = await supabase
-          .from("dashboard_uploads")
-          .insert({
-            file_name: "teste-" + fileName,
-            uploaded_by: "Teste",
-            total_records: itemsToSave.length,
-            status: "processing",
-          })
-          .select()
-          .single();
-
-        console.log("Teste upload result:", testUploadResult);
-      }
 
       const result = await saveDashboardData(
         dashboardDataToSave,
@@ -380,8 +370,11 @@ export function useDashboardData() {
       setTimeout(() => setSaveStatus("idle"), 3000);
       console.error("Erro ao salvar dados do dashboard:", error);
       alert("Erro ao salvar dados do dashboard. Tente novamente.");
+    } finally {
+      // Sempre desmarcar o estado global
+      isSavingGlobal = false;
     }
-  };
+  }, [processedItems, dashboardData, fileName, saveStatus, loadUploadHistory]);
 
   const handleClearData = async () => {
     if (

@@ -64,7 +64,7 @@ export function SettingsDataManagement() {
   useEffect(() => {
     loadSavedData();
     loadUploadHistory();
-  }, []);
+  }, [loadSavedData, loadUploadHistory]);
 
   const handleUploadClick = (
     type: "consultores" | "devolucoes" | "movimentacoes"
