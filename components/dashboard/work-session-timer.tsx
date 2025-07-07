@@ -76,7 +76,7 @@ export function WorkSessionTimer() {
   };
 
   return (
-    <Card className="bg-white">
+    <Card className="bg-white h-full flex flex-col">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl text-gray-800">
@@ -85,9 +85,9 @@ export function WorkSessionTimer() {
           <div className="text-sm text-gray-500">Sessões: {sessions}</div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center space-y-6">
-          <div className="relative w-48 h-48">
+      <CardContent className="flex-1 flex flex-col justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative w-36 h-36">
             <svg
               className="w-full h-full transform -rotate-90"
               viewBox="0 0 100 100"
@@ -124,7 +124,7 @@ export function WorkSessionTimer() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <Button
               onClick={toggleTimer}
               className={`${
@@ -157,7 +157,7 @@ export function WorkSessionTimer() {
           </div>
 
           <div className="text-center">
-            <div className="text-xs text-gray-500 mb-1">Próximo:</div>
+            <div className="text-sm text-gray-500 mb-1">Próximo:</div>
             <div className="text-sm font-medium text-gray-700">
               {isWorkSession ? "5 min de descanso" : "25 min de trabalho"}
             </div>

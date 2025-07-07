@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { WorkSessionTimer } from "./work-session-timer";
 import { DashboardCalendar } from "./dashboard-calendar";
-import { DashboardProjects } from "./dashboard-projects";
+import { TotalProjectsCard, CompletedProjectsCard } from "./dashboard-projects";
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
@@ -145,17 +145,23 @@ export function ConsultingDashboard() {
             openModal={openModal}
           />
 
-          {/* Segunda linha: Sessão de Trabalho e Próximos Agendamentos lado a lado */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <WorkSessionTimer />
+          {/* Layout reorganizado: Coluna esquerda com componentes menores e coluna direita com calendário */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[650px]">
+            {/* Coluna esquerda: WorkSessionTimer, Total de Projetos e Concluídos */}
+            <div className="flex flex-col space-y-4 h-full">
+              <div className="flex-1">
+                <WorkSessionTimer />
+              </div>
+              <TotalProjectsCard />
+              <CompletedProjectsCard />
+            </div>
+
+            {/* Coluna direita: Calendário */}
             <DashboardCalendar
               processedItems={processedItems}
               onDateClick={handleCalendarDateClick}
             />
           </div>
-
-          {/* Terceira linha: Total de Projetos e Concluídos lado a lado */}
-          <DashboardProjects />
         </div>
 
         {/* Daily Activity Planner */}
