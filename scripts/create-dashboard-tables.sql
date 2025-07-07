@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS dashboard_itens (
   titulo VARCHAR(500),
   cliente VARCHAR(255),
   status VARCHAR(255),
-  valor VARCHAR(100),
   data_registro DATE,
   raw_data JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

@@ -149,12 +149,6 @@ export function DashboardModal({
                             </span>
                           </div>
                         </div>
-                        <div>
-                          <span className="font-medium">Valor:</span>
-                          <div className="font-semibold text-green-600">
-                            {item.valor}
-                          </div>
-                        </div>
                       </div>
                     </div>
                     <div className="ml-4">

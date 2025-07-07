@@ -37,7 +37,6 @@ export interface DashboardItem {
   titulo?: string;
   cliente?: string;
   status: string;
-  valor?: string;
   data_registro?: string;
   raw_data?: any;
   created_at?: string;
@@ -111,7 +110,6 @@ export async function saveDashboardData(
             titulo: item.titulo,
             cliente: item.cliente,
             status: item.status,
-            valor: item.valor,
             data_registro: item.data_registro,
             raw_data: item.raw_data,
           }))

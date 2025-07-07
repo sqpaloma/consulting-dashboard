@@ -24,7 +24,6 @@ interface DashboardItemRow {
   titulo: string;
   cliente: string;
   status: string;
-  valor: string;
   data: string;
   prazo: string;
   rawData: any;
@@ -131,7 +130,6 @@ export function useDashboardData() {
             titulo: item.titulo || `Item ${item.os}`,
             cliente: item.cliente || "Cliente não informado",
             status: item.status,
-            valor: item.valor || "Valor não informado",
             data: item.data_registro ? formatDateToBR(item.data_registro) : "",
             prazo: item.raw_data?.prazo || "",
             rawData: item.raw_data,
@@ -230,9 +228,6 @@ export function useDashboardData() {
             cliente: row[2] || "Cliente não informado", // Assume que a terceira coluna é o cliente
             data: new Date().toLocaleDateString("pt-BR"),
             prazo: prazoIndex !== -1 ? row[prazoIndex]?.toString() || "" : "",
-            valor: row[3]
-              ? `R$ ${Number.parseFloat(row[3]).toLocaleString("pt-BR")}`
-              : "Valor não informado",
             rawData: row,
             data_registro:
               prazoIndex !== -1
@@ -330,7 +325,6 @@ export function useDashboardData() {
         titulo: item.titulo,
         cliente: item.cliente,
         status: item.status,
-        valor: item.valor,
         data_registro: item.data_registro || undefined,
         raw_data: item.rawData,
       }));

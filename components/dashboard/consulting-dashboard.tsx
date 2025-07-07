@@ -42,7 +42,6 @@ export function ConsultingDashboard() {
           cliente: "Construtora ABC",
           data: "15/01/2025",
           status: "Em andamento",
-          valor: "R$ 15.000",
         },
       ];
       return baseItems.slice(0, Math.floor(Math.random() * 5) + 3);
@@ -58,7 +57,6 @@ export function ConsultingDashboard() {
           titulo: item.titulo || `Item ${item.os}`,
           cliente: item.cliente || "Cliente não informado",
           status: item.status,
-          valor: item.valor || "Valor não informado",
           data: item.data_registro || new Date().toLocaleDateString("pt-BR"),
           rawData: item.raw_data,
         }));

@@ -13,7 +13,6 @@ interface CalendarItem {
   titulo: string;
   cliente: string;
   status: string;
-  valor: string;
   prazo: string;
   data: string;
   rawData: any[];
@@ -56,7 +55,6 @@ export function ActivityPlanner({ processedItems = [] }: ActivityPlannerProps) {
           titulo: item.titulo || `Item ${item.os}`,
           cliente: item.cliente || "Cliente não informado",
           status: item.status,
-          valor: item.valor || "Valor não informado",
           prazo: item.data_registro || "", // Usa data_registro como prazo
           data: item.data_registro || "",
           rawData: item.raw_data || [],
