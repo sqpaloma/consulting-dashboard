@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+
 import { ChevronLeft, ChevronRight, Clock, MapPin, Users } from "lucide-react";
 
 export function CalendarPage() {

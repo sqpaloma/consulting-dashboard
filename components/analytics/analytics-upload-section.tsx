@@ -50,7 +50,7 @@ export function AnalyticsUploadSection({
   onFileUpload,
   onSaveData,
   onPrint,
-  onGenerateReport,
+
   onClearData,
   selectedDepartment,
   setSelectedDepartment,

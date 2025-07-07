@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  Clock,
-  RefreshCw,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, RefreshCw } from "lucide-react";
 import { loadDashboardData } from "@/lib/dashboard-supabase-client";
 
 interface CalendarItem {
@@ -332,17 +326,6 @@ export function DashboardCalendar({
             </div>
           ))}
         </div>
-
-        {Object.keys(calendarItems).length > 0 && (
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center text-sm text-gray-600">
-              <Clock className="h-4 w-4 mr-2" />
-              <span>
-                {Object.keys(calendarItems).length} data(s) com agendamentos
-              </span>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Header } from "@/components/Header";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { WorkSessionTimer } from "./work-session-timer";

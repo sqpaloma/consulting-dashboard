@@ -18,7 +18,7 @@ import { useDashboardData } from "@/hooks/use-dashboard-data";
 export function SettingsDataManagement() {
   const {
     dashboardData,
-    processedItems,
+
     fileName,
     uploadHistory,
     isLoading,
