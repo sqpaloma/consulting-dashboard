@@ -104,9 +104,9 @@ export function DashboardModal({
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           <div className="space-y-4">
             {(activeModal === "calendar" ? calendarModalData : modalData).map(
-              (item) => (
+              (item, index) => (
                 <div
-                  key={item.id}
+                  key={`modal-item-${item.id || item.os}-${index}`}
                   className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:bg-gray-100 transition-colors"
                 >
                   <div className="flex items-center justify-between">

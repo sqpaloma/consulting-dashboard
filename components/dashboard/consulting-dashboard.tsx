@@ -165,7 +165,7 @@ export function ConsultingDashboard() {
         </div>
 
         {/* Daily Activity Planner */}
-        <ActivityPlanner />
+        <ActivityPlanner processedItems={processedItems} />
 
         {/* Modals */}
         <DashboardModal
