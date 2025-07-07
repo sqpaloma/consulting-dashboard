@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import { useAnalyticsData } from "@/hooks/use-analytics-data";
 import { Header } from "@/components/Header";
-import { AnalyticsStatusCard } from "./analytics-status-card";
 import { AnalyticsUploadSection } from "./analytics-upload-section";
 
 import { AnalyticsAdminData } from "./analytics-admin-data";
@@ -132,17 +131,13 @@ export function AnalyticsPage() {
         {/* Header */}
         <Header title="Análises" />
 
-        {/* Status Card */}
-        {uploadHistory.length > 0 && (
-          <AnalyticsStatusCard uploadHistory={uploadHistory} />
-        )}
-
         {/* Filters and Upload */}
         <AnalyticsUploadSection
           fileInputRef={fileInputRef}
           fileName={fileName}
           saveStatus={saveStatus}
           uploadedData={uploadedData}
+          uploadHistory={uploadHistory}
           isLoading={isLoading}
           onUploadClick={handleUploadClick}
           onFileUpload={handleFileUpload}
