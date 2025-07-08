@@ -54,14 +54,16 @@ export interface UserSettings {
 interface SettingsTabsProps {
   userSettings: UserSettings;
   onSettingChange: (category: string, setting: string, value: any) => void;
+  defaultTab?: string;
 }
 
 export function SettingsTabs({
   userSettings,
   onSettingChange,
+  defaultTab = "profile",
 }: SettingsTabsProps) {
   return (
-    <Tabs defaultValue="profile" className="w-full">
+    <Tabs defaultValue={defaultTab} className="w-full">
       <TabsList className="grid w-full grid-cols-6 bg-white/10 backdrop-blur-sm">
         <TabsTrigger
           value="profile"

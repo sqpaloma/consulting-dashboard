@@ -7,10 +7,12 @@ import {
   BookOpen,
   Settings,
   ArrowLeft,
+  Bell,
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 import Image from "next/image";
+import { NotificationsPanel } from "@/components/notifications/notifications-panel";
 
 interface HeaderProps {
   title: string;
@@ -102,6 +104,15 @@ export function Header({
               <BookOpen className="h-5 w-5" />
             </Button>
           </Link>
+          <NotificationsPanel>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-blue-700"
+            >
+              <Bell className="h-5 w-5" />
+            </Button>
+          </NotificationsPanel>
           <Link href="/settings">
             <Button
               variant="ghost"

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,26 @@ import {
 import { Save } from "lucide-react";
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const [defaultTab, setDefaultTab] = useState<string>("profile");
+
+  useEffect(() => {
+    if (
+      tabParam &&
+      [
+        "profile",
+        "notifications",
+        "privacy",
+        "appearance",
+        "data",
+        "system",
+      ].includes(tabParam)
+    ) {
+      setDefaultTab(tabParam);
+    }
+  }, [tabParam]);
+
   const [userSettings, setUserSettings] = useState<UserSettings>({
     // Profile
     name: "Paloma Silva",
@@ -72,6 +93,7 @@ export default function SettingsPage() {
           <SettingsTabs
             userSettings={userSettings}
             onSettingChange={handleSettingChange}
+            defaultTab={defaultTab}
           />
 
           {/* Save Button */}
