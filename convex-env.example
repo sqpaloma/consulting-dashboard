@@ -1,0 +1,4 @@
+# Convex Configuration
+# Copie este arquivo para .env.local e configure as variáveis
+NEXT_PUBLIC_CONVEX_URL=https://localhost:3210
+CONVEX_DEPLOY_KEY=your-deploy-key-here 

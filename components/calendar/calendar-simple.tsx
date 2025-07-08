@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 import { ChevronLeft, ChevronRight, Clock, MapPin, Users } from "lucide-react";
 
-export function CalendarPage() {
+export function CalendarSimple() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1)); // Janeiro 2025
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
 
@@ -197,8 +197,8 @@ export function CalendarPage() {
                               isSelected
                                 ? "border-blue-500 bg-blue-50"
                                 : isToday
-                                ? "border-green-500 bg-green-50"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                  ? "border-green-500 bg-green-50"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                             onClick={() => setSelectedDate(day)}
                           >
