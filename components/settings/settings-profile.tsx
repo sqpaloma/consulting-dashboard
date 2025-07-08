@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +17,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Upload, Save, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface UserSettings {
   name: string;
@@ -29,16 +33,109 @@ interface UserSettings {
 interface SettingsProfileProps {
   userSettings: UserSettings;
   onSettingChange: (category: string, setting: string, value: any) => void;
+  userId?: Id<"users">;
 }
 
 export function SettingsProfile({
   userSettings,
   onSettingChange,
+  userId,
 }: SettingsProfileProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Convex mutations
+  const createOrUpdateUser = useMutation(api.users.createOrUpdateUser);
+  const changeUserPassword = useMutation(api.auth.changeUserPassword);
+
+  const handleSaveProfile = async () => {
+    if (!userId) {
+      toast.error("ID do usuário não encontrado");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await createOrUpdateUser({
+        name: userSettings.name,
+        email: userSettings.email,
+        phone: userSettings.phone,
+        position: userSettings.position,
+        department: userSettings.department,
+        location: userSettings.location,
+        company: userSettings.company,
+      });
+
+      toast.success("Perfil atualizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar perfil:", error);
+      toast.error("Erro ao salvar perfil");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!userId) {
+      toast.error("ID do usuário não encontrado");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+
+    // Validar nova senha
+    if (newPassword.length < 8) {
+      toast.error("A senha deve ter pelo menos 8 caracteres");
+      return;
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      toast.error("A senha deve conter pelo menos uma letra maiúscula");
+      return;
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      toast.error("A senha deve conter pelo menos uma letra minúscula");
+      return;
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      toast.error("A senha deve conter pelo menos um número");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      // Alterar senha
+      await changeUserPassword({
+        userId,
+        currentPassword,
+        newPassword,
+      });
+
+      toast.success("Senha alterada com sucesso!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error("Erro ao alterar senha:", error);
+      toast.error("Erro ao alterar senha. Verifique a senha atual.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleAvatarUpload = () => {
+    // Implementar upload de avatar aqui
+    toast.info("Funcionalidade de upload de avatar em desenvolvimento");
+  };
 
   return (
     <Card className="bg-white/10 backdrop-blur-sm border-white/20">
@@ -54,13 +151,14 @@ export function SettingsProfile({
           <Avatar className="h-20 w-20">
             <AvatarImage src="/avatar-placeholder.jpg" />
             <AvatarFallback className="bg-blue-600 text-white text-xl">
-              PS
+              {userSettings.name.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="space-y-2">
             <Button
               variant="outline"
-              className="text-white border-white/20 bg-white/10"
+              className="text-white border-white/20 bg-white/10 hover:bg-white/20"
+              onClick={handleAvatarUpload}
             >
               <Upload className="h-4 w-4 mr-2" />
               Alterar Foto
@@ -174,6 +272,16 @@ export function SettingsProfile({
           </div>
         </div>
 
+        {/* Save Profile Button */}
+        <Button
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          onClick={handleSaveProfile}
+          disabled={isSaving}
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {isSaving ? "Salvando..." : "Salvar Perfil"}
+        </Button>
+
         <Separator className="bg-white/20" />
 
         {/* Password Change */}
@@ -238,9 +346,18 @@ export function SettingsProfile({
             />
           </div>
 
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={handleChangePassword}
+            disabled={
+              isChangingPassword ||
+              !currentPassword ||
+              !newPassword ||
+              !confirmPassword
+            }
+          >
             <Save className="h-4 w-4 mr-2" />
-            Alterar Senha
+            {isChangingPassword ? "Alterando..." : "Alterar Senha"}
           </Button>
         </div>
       </CardContent>

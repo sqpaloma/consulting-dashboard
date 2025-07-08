@@ -15,6 +15,7 @@ import {
   Database,
   FileSpreadsheet,
 } from "lucide-react";
+import { Id } from "@/convex/_generated/dataModel";
 
 export interface UserSettings {
   // Profile
@@ -55,12 +56,14 @@ interface SettingsTabsProps {
   userSettings: UserSettings;
   onSettingChange: (category: string, setting: string, value: any) => void;
   defaultTab?: string;
+  userId?: Id<"users">;
 }
 
 export function SettingsTabs({
   userSettings,
   onSettingChange,
   defaultTab = "profile",
+  userId,
 }: SettingsTabsProps) {
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
@@ -113,6 +116,7 @@ export function SettingsTabs({
         <SettingsProfile
           userSettings={userSettings}
           onSettingChange={onSettingChange}
+          userId={userId}
         />
       </TabsContent>
 
