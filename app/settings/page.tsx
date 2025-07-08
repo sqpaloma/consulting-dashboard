@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -14,7 +14,7 @@ import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const [defaultTab, setDefaultTab] = useState<string>("profile");
@@ -219,5 +219,24 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            <Header title="Configurações" />
+            <div className="flex items-center justify-center py-20">
+              <div className="text-white">Carregando...</div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <SettingsPageContent />
+    </Suspense>
   );
 }
