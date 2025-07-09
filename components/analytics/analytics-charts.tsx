@@ -43,8 +43,10 @@ export function AnalyticsCharts({ uploadedData }: AnalyticsChartsProps) {
     });
   };
 
-  // Filter and sort data
-  const filteredData = sortEngineers([...uploadedData]);
+  // Filter and sort data - exclude engineers with zero value
+  const filteredData = sortEngineers(
+    [...uploadedData].filter((engineer) => engineer.valorTotal > 0)
+  );
 
   return (
     <div className="space-y-6">
