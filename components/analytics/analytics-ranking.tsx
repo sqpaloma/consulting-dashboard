@@ -41,7 +41,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
             <p className="text-sm text-gray-500">
               {filterType === "orcamento"
                 ? "Por quantidade de orçamentos"
-                : "Por faturamento"}
+                : "Por orçamentos convertidos"}
             </p>
           </div>
 
@@ -66,7 +66,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                     : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                Faturamento
+                Conversões
               </button>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                 <div className="text-sm text-gray-600">
                   {filterType === "orcamento"
                     ? "Total de Orçamentos"
-                    : "Total de Vendas"}
+                    : "Total de Orçamentos Convertidos"}
                 </div>
               </div>
 
@@ -188,7 +188,9 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                     ) : (
                       <div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Vendas:</span>
+                          <span className="text-sm text-gray-600">
+                            Orçamentos Convertidos:
+                          </span>
                           <span className="font-semibold text-lg text-gray-800">
                             {engineer.quantidade}
                           </span>
@@ -233,7 +235,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                                 />
                               </svg>
                               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                Valor total ÷ Número de vendas
+                                Valor total ÷ Número de orçamentos convertidos
                                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                               </div>
                             </div>
@@ -285,7 +287,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                         ></div>
                       </div>
                       <div className="text-xs text-gray-500 mt-1 text-center">
-                        {`${engineer.quantidade} vendas de ${engineer.projetos} orçamentos`}
+                        {`${engineer.quantidade} faturamentos de ${engineer.projetos} orçamentos`}
                       </div>
                     </div>
                   )}

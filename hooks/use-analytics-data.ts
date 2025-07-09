@@ -112,8 +112,17 @@ export function useAnalyticsData() {
 
         // Encontra os índices das colunas importantes baseado nos cabeçalhos reais
         const orcamentoIndex = headers.findIndex(
-          (header) => header && header.toLowerCase().includes("nro orçamento")
+          (header) =>
+            header &&
+            (header.toLowerCase().includes("nro orçamento") ||
+              header.toLowerCase().includes("nro orcamento") ||
+              header.toLowerCase().includes("número orçamento") ||
+              header.toLowerCase().includes("numero orcamento") ||
+              header.toLowerCase().includes("orçamento") ||
+              header.toLowerCase().includes("orcamento") ||
+              header.toLowerCase().includes("budget"))
         );
+
         const osIndex = headers.findIndex(
           (header) => header && header.toLowerCase().includes("nro. da os")
         );
@@ -159,6 +168,9 @@ export function useAnalyticsData() {
         const processedData: DataRow[] = [];
         const engineerStats: { [key: string]: DataRow } = {};
 
+        // Mapa para rastrear orçamentos únicos convertidos por engenheiro
+        const uniqueConversions: { [key: string]: Set<string> } = {};
+
         // Processa cada linha de dados (pula as 3 primeiras linhas: linha 1, 2 e cabeçalho na linha 3)
         for (let i = 3; i < jsonData.length; i++) {
           const row = jsonData[i] as any[];
@@ -175,15 +187,18 @@ export function useAnalyticsData() {
               ? row[descricaoIndex]?.toString() || "Não informado"
               : "Não informado";
 
+          // Extrai o ID do orçamento se disponível
+          const orcamentoId =
+            orcamentoIndex !== -1 && row[orcamentoIndex]
+              ? row[orcamentoIndex]?.toString().trim()
+              : null;
+
           // Processa a data de negociação
           let ano = 2025;
           let mes = 6; // Padrão junho ao invés de janeiro
 
-          console.log("Processando linha:", i, "Data bruta:", row[dtNegIndex]);
-
           if (dtNegIndex !== -1 && row[dtNegIndex]) {
             const dtNegStr = row[dtNegIndex].toString().trim();
-            console.log("Data string:", dtNegStr);
 
             // Tenta diferentes formatos de data
             let dataProcessada: Date | null = null;
@@ -193,7 +208,6 @@ export function useAnalyticsData() {
               // Excel armazena datas como números (dias desde 1900-01-01)
               const excelDate = Number(dtNegStr);
               dataProcessada = new Date((excelDate - 25569) * 86400 * 1000);
-              console.log("Data do Excel processada:", dataProcessada);
             } else {
               // Tenta formatos de string comuns - prioriza formato brasileiro
               const formatosBrasil = [
@@ -206,7 +220,6 @@ export function useAnalyticsData() {
               for (const formato of formatosBrasil) {
                 const match = dtNegStr.match(formato);
                 if (match) {
-                  console.log("Match encontrado:", match);
                   if (
                     formato.source.includes("(\\d{4})-(\\d{1,2})-(\\d{1,2})")
                   ) {
@@ -231,7 +244,6 @@ export function useAnalyticsData() {
                       Number.parseInt(match[1]) // dia
                     );
                   }
-                  console.log("Data processada com regex:", dataProcessada);
                   break;
                 }
               }
@@ -245,10 +257,6 @@ export function useAnalyticsData() {
                     // Converte dd/mm/yyyy para mm/dd/yyyy para o Date.parse
                     const dataAmericana = `${partes[1]}/${partes[0]}/${partes[2]}`;
                     dataProcessada = new Date(dataAmericana);
-                    console.log(
-                      "Data processada com Date.parse:",
-                      dataProcessada
-                    );
                   }
                 }
               }
@@ -257,18 +265,7 @@ export function useAnalyticsData() {
             if (dataProcessada && !isNaN(dataProcessada.getTime())) {
               ano = dataProcessada.getFullYear();
               mes = dataProcessada.getMonth() + 1;
-              console.log("Data final processada - Ano:", ano, "Mês:", mes);
-            } else {
-              console.warn(`Não foi possível processar a data: ${dtNegStr}`);
-              console.log("Usando valores padrão - Ano:", ano, "Mês:", mes);
             }
-          } else {
-            console.log(
-              "Coluna de data não encontrada ou vazia, usando padrão - Ano:",
-              ano,
-              "Mês:",
-              mes
-            );
           }
 
           // Converte valor para número
@@ -281,7 +278,6 @@ export function useAnalyticsData() {
             ) || 0;
 
           // Determina o tipo baseado na descrição
-          // Determina o tipo baseado na descrição - MAIS ESPECÍFICO
           const isOrcamento =
             descricao.toLowerCase().includes("orçamento de venda") ||
             descricao.toLowerCase().includes("orcamento de venda");
@@ -316,28 +312,54 @@ export function useAnalyticsData() {
               projetos: 0,
               quantidade: 0,
             };
+            // Inicializa o set de conversões únicas para este engenheiro
+            uniqueConversions[chaveUnica] = new Set();
           }
 
           const stats = engineerStats[chaveUnica];
           stats.registros += 1;
-          // REMOVER ESTA LINHA: stats.quantidade += 1
 
           // Soma os valores baseado no tipo de operação
           if (isVendaNormal) {
             stats.pecas += 1;
             stats.valorPecas += valor;
             stats.valorTotal += valor;
-            stats.quantidade += 1; // SÓ INCREMENTA QUANTIDADE PARA VENDAS REAIS
+
+            // Adiciona ao set de conversões únicas se tiver ID do orçamento
+            if (orcamentoId) {
+              uniqueConversions[chaveUnica].add(orcamentoId);
+            } else {
+              // Se não tiver ID do orçamento, incrementa diretamente (fallback)
+              stats.quantidade += 1;
+            }
           } else if (isVendaServicos) {
             stats.servicos += 1;
             stats.valorServicos += valor;
             stats.valorTotal += valor;
-            stats.quantidade += 1; // SÓ INCREMENTA QUANTIDADE PARA VENDAS REAIS
+
+            // Adiciona ao set de conversões únicas se tiver ID do orçamento
+            if (orcamentoId) {
+              uniqueConversions[chaveUnica].add(orcamentoId);
+            } else {
+              // Se não tiver ID do orçamento, incrementa diretamente (fallback)
+              stats.quantidade += 1;
+            }
           } else if (isOrcamento) {
             stats.valorOrcamentos += valor;
-            stats.projetos += 1; // SÓ INCREMENTA PROJETOS PARA ORÇAMENTOS
+            stats.projetos += 1;
           }
         }
+
+        // Após processar todas as linhas, atualiza as quantidades com base nos orçamentos únicos
+        Object.keys(engineerStats).forEach((chaveUnica) => {
+          const stats = engineerStats[chaveUnica];
+          const conversionsSet = uniqueConversions[chaveUnica];
+
+          // Se temos IDs de orçamento, usa o tamanho do set (orçamentos únicos)
+          if (conversionsSet && conversionsSet.size > 0) {
+            stats.quantidade = conversionsSet.size;
+          }
+        });
 
         // Converte o objeto em array
         const finalData = Object.values(engineerStats);
@@ -345,18 +367,14 @@ export function useAnalyticsData() {
         // Atualiza o estado
         setUploadedData(finalData);
 
-        // Log detalhado dos tipos processados
-        console.log("=== BREAKDOWN DETALHADO DOS REGISTROS ===");
-        console.log(`Total de linhas processadas: ${jsonData.length - 3}`);
-
-        // Contadores por tipo
+        // Contadores por tipo para o relatório
         let totalOrcamentos = 0;
         let totalVendaNormal = 0;
         let totalVendaServicos = 0;
         let totalOutros = 0;
         let totalIgnorados = 0;
 
-        // Reprocessa para contar tipos
+        // Conta os tipos de registros
         for (let i = 3; i < jsonData.length; i++) {
           const row = jsonData[i] as any[];
           if (!row || row.length === 0) {
@@ -392,62 +410,8 @@ export function useAnalyticsData() {
             totalVendaServicos++;
           } else {
             totalOutros++;
-            console.log(`Linha ${i}: Tipo não reconhecido - "${descricao}"`);
           }
         }
-
-        console.log(`📊 Orçamentos de Venda: ${totalOrcamentos}`);
-        console.log(`🛒 Venda Normal/Peças: ${totalVendaNormal}`);
-        console.log(`🔧 Venda de Serviços: ${totalVendaServicos}`);
-        console.log(`❓ Outros tipos: ${totalOutros}`);
-        console.log(`🚫 Linhas vazias/ignoradas: ${totalIgnorados}`);
-        console.log(
-          `✅ Total válido: ${
-            totalOrcamentos +
-            totalVendaNormal +
-            totalVendaServicos +
-            totalOutros
-          }`
-        );
-
-        // Breakdown por engenheiro
-        console.log("\n=== BREAKDOWN POR ENGENHEIRO ===");
-        finalData.forEach((eng) => {
-          console.log(
-            `\n👨‍💼 ${eng.engenheiro} (${eng.ano}/${eng.mes
-              .toString()
-              .padStart(2, "0")}):`
-          );
-          console.log(`  📋 Total registros: ${eng.registros}`);
-          console.log(
-            `  📊 Orçamentos: ${
-              eng.projetos
-            } (R$ ${eng.valorOrcamentos.toLocaleString("pt-BR")})`
-          );
-          console.log(
-            `  🔧 Serviços: ${
-              eng.servicos
-            } (R$ ${eng.valorServicos.toLocaleString("pt-BR")})`
-          );
-          console.log(
-            `  🛒 Peças: ${eng.pecas} (R$ ${eng.valorPecas.toLocaleString(
-              "pt-BR"
-            )})`
-          );
-          console.log(
-            `  💰 Vendas efetivas: ${
-              eng.quantidade
-            } (R$ ${eng.valorTotal.toLocaleString("pt-BR")})`
-          );
-
-          // Validação
-          const vendasCalculadas = eng.servicos + eng.pecas;
-          if (eng.quantidade !== vendasCalculadas) {
-            console.warn(
-              `  ⚠️  ATENÇÃO: Quantidade (${eng.quantidade}) ≠ Serviços + Peças (${vendasCalculadas})`
-            );
-          }
-        });
 
         // Armazenar dados do relatório
         setProcessingSummary({
@@ -461,18 +425,41 @@ export function useAnalyticsData() {
           engineerBreakdown: finalData,
         });
 
-        alert(
-          `Planilha carregada com sucesso!\n\n` +
-            `📊 RESUMO DOS REGISTROS:\n` +
-            `• Orçamentos de Venda: ${totalOrcamentos}\n` +
-            `• Venda Normal/Peças: ${totalVendaNormal}\n` +
-            `• Venda de Serviços: ${totalVendaServicos}\n` +
-            `• Outros tipos: ${totalOutros}\n` +
-            `• Linhas ignoradas: ${totalIgnorados}\n\n` +
-            `👥 ${finalData.length} engenheiros processados\n` +
-            `📋 ${jsonData.length - 3} registros totais\n\n` +
-            `🔍 Veja o console (F12) para detalhes completos!`
+        // Verificar se a correção foi aplicada e mostrar resultado
+        const correcaoAplicada = orcamentoIndex !== -1;
+        const totalConversoes = finalData.reduce(
+          (sum, eng) => sum + eng.quantidade,
+          0
         );
+        const totalLinhasVenda = finalData.reduce(
+          (sum, eng) => sum + eng.servicos + eng.pecas,
+          0
+        );
+
+        let alertMessage =
+          `Planilha carregada com sucesso!\n\n` +
+          `📊 RESUMO DOS REGISTROS:\n` +
+          `• Orçamentos de Venda: ${totalOrcamentos}\n` +
+          `• Venda Normal/Peças: ${totalVendaNormal}\n` +
+          `• Venda de Serviços: ${totalVendaServicos}\n` +
+          `• Outros tipos: ${totalOutros}\n` +
+          `• Linhas ignoradas: ${totalIgnorados}\n\n` +
+          `👥 ${finalData.length} engenheiros processados\n` +
+          `📋 ${jsonData.length - 3} registros totais\n\n`;
+
+        if (correcaoAplicada) {
+          alertMessage +=
+            `✅ CORREÇÃO DA TAXA DE CONVERSÃO APLICADA!\n` +
+            `• Orçamentos únicos convertidos: ${totalConversoes}\n` +
+            `• Linhas de venda na planilha: ${totalLinhasVenda}\n` +
+            `• Taxa de conversão agora é baseada em orçamentos únicos\n\n`;
+        } else {
+          alertMessage +=
+            `⚠️ TAXA DE CONVERSÃO BASEADA EM LINHAS DE VENDA\n` +
+            `• Para melhor precisão, inclua uma coluna com ID do orçamento\n\n`;
+        }
+
+        alert(alertMessage);
       } catch (error) {
         console.error("Erro ao processar planilha:", error);
         alert(
