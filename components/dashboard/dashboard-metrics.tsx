@@ -2,6 +2,11 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, DollarSign } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  loadDevolucaoData,
+  loadMovimentacaoData,
+} from "@/lib/returns-movements-supabase-client";
 
 interface DashboardData {
   totalItens: number;
@@ -20,6 +25,43 @@ export function DashboardMetrics({
   dashboardData,
   openModal,
 }: DashboardMetricsProps) {
+  const [devolucaoData, setDevolucaoData] = useState({
+    total: 0,
+    pendentes: 0,
+    concluidas: 0,
+  });
+  const [movimentacaoData, setMovimentacaoData] = useState({
+    total: 0,
+    entrada: 0,
+    saida: 0,
+  });
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [devolucaoResult, movimentacaoResult] = await Promise.all([
+          loadDevolucaoData(),
+          loadMovimentacaoData(),
+        ]);
+
+        if (devolucaoResult.devolucaoData) {
+          setDevolucaoData(devolucaoResult.devolucaoData);
+        }
+
+        if (movimentacaoResult.movimentacaoData) {
+          setMovimentacaoData(movimentacaoResult.movimentacaoData);
+        }
+      } catch (error) {
+        console.error(
+          "Erro ao carregar dados de devoluções e movimentações:",
+          error
+        );
+      }
+    };
+
+    loadData();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
       {/* Total Itens */}
@@ -256,10 +298,26 @@ export function DashboardMetrics({
               />
             </svg>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">0</div>
+          <div className="text-3xl font-bold text-gray-800 mb-2">
+            {devolucaoData.total}
+          </div>
           <div className="flex items-center space-x-2 text-xs">
-            <span className="text-red-500">0%</span>
-            <span className="text-green-500">100%</span>
+            <span className="text-red-500">
+              {devolucaoData.total > 0
+                ? Math.round(
+                    (devolucaoData.pendentes / devolucaoData.total) * 100
+                  )
+                : 0}
+              %
+            </span>
+            <span className="text-green-500">
+              {devolucaoData.total > 0
+                ? Math.round(
+                    (devolucaoData.concluidas / devolucaoData.total) * 100
+                  )
+                : 100}
+              %
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -285,10 +343,26 @@ export function DashboardMetrics({
               />
             </svg>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">0</div>
+          <div className="text-3xl font-bold text-gray-800 mb-2">
+            {movimentacaoData.total}
+          </div>
           <div className="flex items-center space-x-2 text-xs">
-            <span className="text-red-500">0%</span>
-            <span className="text-green-500">100%</span>
+            <span className="text-red-500">
+              {movimentacaoData.total > 0
+                ? Math.round(
+                    (movimentacaoData.saida / movimentacaoData.total) * 100
+                  )
+                : 0}
+              %
+            </span>
+            <span className="text-green-500">
+              {movimentacaoData.total > 0
+                ? Math.round(
+                    (movimentacaoData.entrada / movimentacaoData.total) * 100
+                  )
+                : 100}
+              %
+            </span>
           </div>
         </CardContent>
       </Card>

@@ -18,6 +18,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useReturnsData } from "@/hooks/use-returns-data";
+import { useMovementsData } from "@/hooks/use-movements-data";
 
 export function SettingsDataManagement() {
   const {
@@ -33,23 +35,33 @@ export function SettingsDataManagement() {
     handleClearData,
   } = useDashboardData();
 
-  // Estados para Devoluções
-  const [devolucoes, setDevolucoes] = useState({
-    data: { total: 0, pendentes: 0, concluidas: 0 },
-    fileName: "",
-    uploadHistory: [],
-    isLoading: false,
-    saveStatus: "idle" as "idle" | "saving" | "saved" | "error",
-  });
+  // Hook para Devoluções
+  const {
+    devolucaoData,
+    fileName: devolucaoFileName,
+    uploadHistory: devolucaoUploadHistory,
+    isLoading: devolucaoIsLoading,
+    saveStatus: devolucaoSaveStatus,
+    loadSavedData: loadDevolucaoSavedData,
+    loadUploadHistory: loadDevolucaoUploadHistory,
+    handleFileUpload: handleDevolucaoFileUpload,
+    handleSaveData: handleDevolucaoSaveData,
+    handleClearData: handleDevolucaoClearData,
+  } = useReturnsData();
 
-  // Estados para Movimentações
-  const [movimentacoes, setMovimentacoes] = useState({
-    data: { total: 0, entrada: 0, saida: 0 },
-    fileName: "",
-    uploadHistory: [],
-    isLoading: false,
-    saveStatus: "idle" as "idle" | "saving" | "saved" | "error",
-  });
+  // Hook para Movimentações
+  const {
+    movimentacaoData,
+    fileName: movimentacaoFileName,
+    uploadHistory: movimentacaoUploadHistory,
+    isLoading: movimentacaoIsLoading,
+    saveStatus: movimentacaoSaveStatus,
+    loadSavedData: loadMovimentacaoSavedData,
+    loadUploadHistory: loadMovimentacaoUploadHistory,
+    handleFileUpload: handleMovimentacaoFileUpload,
+    handleSaveData: handleMovimentacaoSaveData,
+    handleClearData: handleMovimentacaoClearData,
+  } = useMovementsData();
 
   const fileInputRefConsultores = useRef<HTMLInputElement>(null);
   const fileInputRefDevolucoes = useRef<HTMLInputElement>(null);
@@ -64,7 +76,18 @@ export function SettingsDataManagement() {
   useEffect(() => {
     loadSavedData();
     loadUploadHistory();
-  }, [loadSavedData, loadUploadHistory]);
+    loadDevolucaoSavedData();
+    loadDevolucaoUploadHistory();
+    loadMovimentacaoSavedData();
+    loadMovimentacaoUploadHistory();
+  }, [
+    loadSavedData,
+    loadUploadHistory,
+    loadDevolucaoSavedData,
+    loadDevolucaoUploadHistory,
+    loadMovimentacaoSavedData,
+    loadMovimentacaoUploadHistory,
+  ]);
 
   const handleUploadClick = (
     type: "consultores" | "devolucoes" | "movimentacoes"
@@ -78,52 +101,6 @@ export function SettingsDataManagement() {
     }
   };
 
-  const handleFileUploadDevolucoes = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setDevolucoes((prev) => ({
-      ...prev,
-      fileName: file.name,
-      isLoading: true,
-    }));
-
-    // Simular processamento por agora
-    setTimeout(() => {
-      setDevolucoes((prev) => ({
-        ...prev,
-        data: { total: 15, pendentes: 8, concluidas: 7 },
-        isLoading: false,
-      }));
-      alert("Planilha de Devoluções carregada com sucesso!");
-    }, 2000);
-  };
-
-  const handleFileUploadMovimentacoes = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setMovimentacoes((prev) => ({
-      ...prev,
-      fileName: file.name,
-      isLoading: true,
-    }));
-
-    // Simular processamento por agora
-    setTimeout(() => {
-      setMovimentacoes((prev) => ({
-        ...prev,
-        data: { total: 42, entrada: 25, saida: 17 },
-        isLoading: false,
-      }));
-      alert("Planilha de Movimentações carregada com sucesso!");
-    }, 2000);
-  };
-
   const getSaveButtonText = (saveStatus: string) => {
     switch (saveStatus) {
       case "saving":
@@ -134,68 +111,6 @@ export function SettingsDataManagement() {
         return "Erro";
       default:
         return "Salvar & Compartilhar";
-    }
-  };
-
-  const handleSaveDevolucoes = async () => {
-    if (devolucoes.data.total === 0) {
-      alert("Nenhum dado para salvar. Faça upload de uma planilha primeiro.");
-      return;
-    }
-
-    setDevolucoes((prev) => ({ ...prev, saveStatus: "saving" }));
-
-    // Simular salvamento por agora
-    setTimeout(() => {
-      setDevolucoes((prev) => ({ ...prev, saveStatus: "saved" }));
-      setTimeout(() => {
-        setDevolucoes((prev) => ({ ...prev, saveStatus: "idle" }));
-      }, 3000);
-      alert("Dados de Devoluções salvos com sucesso!");
-    }, 2000);
-  };
-
-  const handleSaveMovimentacoes = async () => {
-    if (movimentacoes.data.total === 0) {
-      alert("Nenhum dado para salvar. Faça upload de uma planilha primeiro.");
-      return;
-    }
-
-    setMovimentacoes((prev) => ({ ...prev, saveStatus: "saving" }));
-
-    // Simular salvamento por agora
-    setTimeout(() => {
-      setMovimentacoes((prev) => ({ ...prev, saveStatus: "saved" }));
-      setTimeout(() => {
-        setMovimentacoes((prev) => ({ ...prev, saveStatus: "idle" }));
-      }, 3000);
-      alert("Dados de Movimentações salvos com sucesso!");
-    }, 2000);
-  };
-
-  const handleClearDevolucoes = () => {
-    if (
-      confirm("Tem certeza que deseja limpar todos os dados de Devoluções?")
-    ) {
-      setDevolucoes((prev) => ({
-        ...prev,
-        data: { total: 0, pendentes: 0, concluidas: 0 },
-        fileName: "",
-      }));
-      alert("Dados de Devoluções limpos com sucesso!");
-    }
-  };
-
-  const handleClearMovimentacoes = () => {
-    if (
-      confirm("Tem certeza que deseja limpar todos os dados de Movimentações?")
-    ) {
-      setMovimentacoes((prev) => ({
-        ...prev,
-        data: { total: 0, entrada: 0, saida: 0 },
-        fileName: "",
-      }));
-      alert("Dados de Movimentações limpos com sucesso!");
     }
   };
 
@@ -424,14 +339,14 @@ export function SettingsDataManagement() {
                 ref={fileInputRefDevolucoes}
                 type="file"
                 accept=".xlsx,.xls"
-                onChange={handleFileUploadDevolucoes}
+                onChange={handleDevolucaoFileUpload}
                 className="hidden"
               />
 
-              {devolucoes.fileName && (
+              {devolucaoFileName && (
                 <div className="flex items-center space-x-2 text-white/80 text-sm bg-white/5 p-2 rounded">
                   <FileSpreadsheet className="h-4 w-4" />
-                  <span>Arquivo atual: {devolucoes.fileName}</span>
+                  <span>Arquivo atual: {devolucaoFileName}</span>
                 </div>
               )}
 
@@ -452,19 +367,19 @@ export function SettingsDataManagement() {
                 <div className="bg-white/5 p-3 rounded">
                   <div className="text-xs text-gray-300">Total</div>
                   <div className="text-lg font-semibold text-white">
-                    {devolucoes.data.total}
+                    {devolucaoData.total}
                   </div>
                 </div>
                 <div className="bg-white/5 p-3 rounded">
                   <div className="text-xs text-gray-300">Pendentes</div>
                   <div className="text-lg font-semibold text-white">
-                    {devolucoes.data.pendentes}
+                    {devolucaoData.pendentes}
                   </div>
                 </div>
                 <div className="bg-white/5 p-3 rounded">
                   <div className="text-xs text-gray-300">Concluídas</div>
                   <div className="text-lg font-semibold text-white">
-                    {devolucoes.data.concluidas}
+                    {devolucaoData.concluidas}
                   </div>
                 </div>
               </div>
@@ -477,20 +392,20 @@ export function SettingsDataManagement() {
               <Label className="text-white text-base font-medium">Ações</Label>
               <div className="flex flex-wrap gap-4">
                 <Button
-                  onClick={handleSaveDevolucoes}
+                  onClick={handleDevolucaoSaveData}
                   disabled={
-                    devolucoes.data.total === 0 ||
-                    devolucoes.saveStatus === "saving"
+                    devolucaoData.total === 0 ||
+                    devolucaoSaveStatus === "saving"
                   }
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {getSaveButtonText(devolucoes.saveStatus)}
+                  {getSaveButtonText(devolucaoSaveStatus)}
                 </Button>
 
                 <Button
-                  onClick={handleClearDevolucoes}
-                  disabled={devolucoes.isLoading}
+                  onClick={handleDevolucaoClearData}
+                  disabled={devolucaoIsLoading}
                   variant="destructive"
                   className="bg-red-600 hover:bg-red-700"
                 >
@@ -527,14 +442,14 @@ export function SettingsDataManagement() {
                 ref={fileInputRefMovimentacoes}
                 type="file"
                 accept=".xlsx,.xls"
-                onChange={handleFileUploadMovimentacoes}
+                onChange={handleMovimentacaoFileUpload}
                 className="hidden"
               />
 
-              {movimentacoes.fileName && (
+              {movimentacaoFileName && (
                 <div className="flex items-center space-x-2 text-white/80 text-sm bg-white/5 p-2 rounded">
                   <FileSpreadsheet className="h-4 w-4" />
-                  <span>Arquivo atual: {movimentacoes.fileName}</span>
+                  <span>Arquivo atual: {movimentacaoFileName}</span>
                 </div>
               )}
 
@@ -555,19 +470,19 @@ export function SettingsDataManagement() {
                 <div className="bg-white/5 p-3 rounded">
                   <div className="text-xs text-gray-300">Total</div>
                   <div className="text-lg font-semibold text-white">
-                    {movimentacoes.data.total}
+                    {movimentacaoData.total}
                   </div>
                 </div>
                 <div className="bg-white/5 p-3 rounded">
                   <div className="text-xs text-gray-300">Entrada</div>
                   <div className="text-lg font-semibold text-white">
-                    {movimentacoes.data.entrada}
+                    {movimentacaoData.entrada}
                   </div>
                 </div>
                 <div className="bg-white/5 p-3 rounded">
                   <div className="text-xs text-gray-300">Saída</div>
                   <div className="text-lg font-semibold text-white">
-                    {movimentacoes.data.saida}
+                    {movimentacaoData.saida}
                   </div>
                 </div>
               </div>
@@ -580,20 +495,20 @@ export function SettingsDataManagement() {
               <Label className="text-white text-base font-medium">Ações</Label>
               <div className="flex flex-wrap gap-4">
                 <Button
-                  onClick={handleSaveMovimentacoes}
+                  onClick={handleMovimentacaoSaveData}
                   disabled={
-                    movimentacoes.data.total === 0 ||
-                    movimentacoes.saveStatus === "saving"
+                    movimentacaoData.total === 0 ||
+                    movimentacaoSaveStatus === "saving"
                   }
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {getSaveButtonText(movimentacoes.saveStatus)}
+                  {getSaveButtonText(movimentacaoSaveStatus)}
                 </Button>
 
                 <Button
-                  onClick={handleClearMovimentacoes}
-                  disabled={movimentacoes.isLoading}
+                  onClick={handleMovimentacaoClearData}
+                  disabled={movimentacaoIsLoading}
                   variant="destructive"
                   className="bg-red-600 hover:bg-red-700"
                 >
