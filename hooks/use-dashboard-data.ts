@@ -26,6 +26,7 @@ interface DashboardItemRow {
   os: string;
   titulo: string;
   cliente: string;
+  responsavel?: string;
   status: string;
   data: string;
   prazo: string;
@@ -132,6 +133,7 @@ export function useDashboardData() {
             os: item.os,
             titulo: item.titulo || `Item ${item.os}`,
             cliente: item.cliente || "Cliente não informado",
+            responsavel: item.responsavel || "Não informado",
             status: item.status,
             data: item.data_registro ? formatDateToBR(item.data_registro) : "",
             prazo: item.raw_data?.prazo || "",
@@ -198,6 +200,63 @@ export function useDashboardData() {
         const prazoIndex = headers.findIndex(
           (header) => header && header.toLowerCase().includes("prazo")
         );
+        const responsavelIndex = headers.findIndex((header) => {
+          if (!header) return false;
+          const headerLower = header.toLowerCase().trim();
+          return (
+            headerLower.includes("responsavel") ||
+            headerLower.includes("responsável") ||
+            headerLower === "responsavel" ||
+            headerLower === "responsável" ||
+            headerLower === "resp" ||
+            headerLower.includes("responsible") ||
+            headerLower.includes("encarregado")
+          );
+        });
+
+        // Se não encontrou a coluna responsável pelo nome, vamos tentar algumas posições comuns
+        let finalResponsavelIndex = responsavelIndex;
+        if (responsavelIndex === -1) {
+          // Tentar algumas posições comuns baseadas na estrutura típica das planilhas
+          // Posição 4 é comum para responsável (após OS, titulo, cliente)
+          const possiblePositions = [4, 3, 5, 6, 7];
+          for (const pos of possiblePositions) {
+            if (pos < headers.length && headers[pos]) {
+              const headerLower = headers[pos].toLowerCase().trim();
+
+              // Se a coluna não for vazia e não for claramente outra coisa
+              if (
+                headers[pos].trim() !== "" &&
+                !headerLower.includes("status") &&
+                !headerLower.includes("prazo") &&
+                !headerLower.includes("data") &&
+                !headerLower.includes("valor") &&
+                !headerLower.includes("preco") &&
+                !headerLower.includes("quantidade") &&
+                headers[pos].length > 1 // pelo menos 2 caracteres
+              ) {
+                // Confirmar se há dados nesta coluna checando algumas linhas
+                let hasData = false;
+                for (
+                  let checkRow = 1;
+                  checkRow < Math.min(6, jsonData.length);
+                  checkRow++
+                ) {
+                  const row = jsonData[checkRow] as any[];
+                  if (row && row[pos] && row[pos].toString().trim() !== "") {
+                    hasData = true;
+                    break;
+                  }
+                }
+
+                if (hasData) {
+                  finalResponsavelIndex = pos;
+                  break;
+                }
+              }
+            }
+          }
+        }
 
         if (statusIndex === -1) {
           alert("Coluna 'status' não encontrada na planilha.");
@@ -222,6 +281,13 @@ export function useDashboardData() {
           const status = row[statusIndex]?.toString().toLowerCase().trim();
           const os = osIndex !== -1 ? row[osIndex]?.toString() : `OS-${i}`;
 
+          // Extrair responsável
+          const responsavelValue =
+            finalResponsavelIndex !== -1
+              ? row[finalResponsavelIndex]?.toString()?.trim() ||
+                "Não informado"
+              : "Não informado";
+
           // Cria o item
           const item: DashboardItemRow = {
             id: os,
@@ -229,6 +295,7 @@ export function useDashboardData() {
             status: row[statusIndex]?.toString() || "Não definido",
             titulo: row[1] || `Item ${i}`, // Assume que a segunda coluna é o título
             cliente: row[2] || "Cliente não informado", // Assume que a terceira coluna é o cliente
+            responsavel: responsavelValue,
             data: new Date().toLocaleDateString("pt-BR"),
             prazo: prazoIndex !== -1 ? row[prazoIndex]?.toString() || "" : "",
             rawData: row,
@@ -335,6 +402,7 @@ export function useDashboardData() {
         os: item.os,
         titulo: item.titulo,
         cliente: item.cliente,
+        responsavel: item.responsavel,
         status: item.status,
         data_registro: item.data_registro || undefined,
         raw_data: item.rawData,

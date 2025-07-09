@@ -12,6 +12,7 @@ interface CalendarItem {
   os: string;
   titulo: string;
   cliente: string;
+  responsavel?: string;
   status: string;
   prazo: string;
   data: string;
@@ -20,9 +21,13 @@ interface CalendarItem {
 
 interface ActivityPlannerProps {
   processedItems?: CalendarItem[];
+  filteredByResponsavel?: string | null;
 }
 
-export function ActivityPlanner({ processedItems = [] }: ActivityPlannerProps) {
+export function ActivityPlanner({
+  processedItems = [],
+  filteredByResponsavel,
+}: ActivityPlannerProps) {
   const [todayActivities, setTodayActivities] = useState<CalendarItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [databaseItems, setDatabaseItems] = useState<CalendarItem[]>([]);
@@ -47,18 +52,28 @@ export function ActivityPlanner({ processedItems = [] }: ActivityPlannerProps) {
       const { items } = await loadDashboardData();
 
       // Converte os dados do banco para o formato do calendário
-      const dbItems: CalendarItem[] = items
+      let dbItems: CalendarItem[] = items
         .filter((item) => item.data_registro) // Só inclui itens com data_registro
         .map((item) => ({
           id: item.os,
           os: item.os,
           titulo: item.titulo || `Item ${item.os}`,
           cliente: item.cliente || "Cliente não informado",
+          responsavel: item.responsavel || "Não informado",
           status: item.status,
           prazo: item.data_registro || "", // Usa data_registro como prazo
           data: item.data_registro || "",
           rawData: item.raw_data || [],
         }));
+
+      // Aplica filtro por responsável se ativo
+      if (filteredByResponsavel) {
+        dbItems = dbItems.filter(
+          (item) =>
+            item.responsavel &&
+            item.responsavel.trim() === filteredByResponsavel
+        );
+      }
 
       setDatabaseItems(dbItems);
     } catch (error) {
@@ -68,10 +83,10 @@ export function ActivityPlanner({ processedItems = [] }: ActivityPlannerProps) {
     }
   };
 
-  // Carrega dados do banco quando o componente monta
+  // Carrega dados do banco quando o componente monta ou quando o filtro muda
   useEffect(() => {
     loadDatabaseItems();
-  }, []);
+  }, [filteredByResponsavel]);
 
   // Processa os itens para extrair atividades do dia atual
   useEffect(() => {
@@ -260,32 +275,36 @@ export function ActivityPlanner({ processedItems = [] }: ActivityPlannerProps) {
                           activity.status.toLowerCase().includes("concluido")
                             ? "bg-green-100 text-green-800"
                             : activity.status
-                                .toLowerCase()
-                                .includes("andamento") ||
-                              activity.status
-                                .toLowerCase()
-                                .includes("execução") ||
-                              activity.status.toLowerCase().includes("execucao")
-                            ? "bg-blue-100 text-blue-800"
-                            : activity.status
-                                .toLowerCase()
-                                .includes("pendente") ||
-                              activity.status
-                                .toLowerCase()
-                                .includes("aguardando")
-                            ? "bg-blue-100 text-blue-800"
-                            : activity.status
-                                .toLowerCase()
-                                .includes("revisão") ||
-                              activity.status
-                                .toLowerCase()
-                                .includes("revisao") ||
-                              activity.status
-                                .toLowerCase()
-                                .includes("análise") ||
-                              activity.status.toLowerCase().includes("analise")
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-gray-100 text-gray-800"
+                                  .toLowerCase()
+                                  .includes("andamento") ||
+                                activity.status
+                                  .toLowerCase()
+                                  .includes("execução") ||
+                                activity.status
+                                  .toLowerCase()
+                                  .includes("execucao")
+                              ? "bg-blue-100 text-blue-800"
+                              : activity.status
+                                    .toLowerCase()
+                                    .includes("pendente") ||
+                                  activity.status
+                                    .toLowerCase()
+                                    .includes("aguardando")
+                                ? "bg-blue-100 text-blue-800"
+                                : activity.status
+                                      .toLowerCase()
+                                      .includes("revisão") ||
+                                    activity.status
+                                      .toLowerCase()
+                                      .includes("revisao") ||
+                                    activity.status
+                                      .toLowerCase()
+                                      .includes("análise") ||
+                                    activity.status
+                                      .toLowerCase()
+                                      .includes("analise")
+                                  ? "bg-orange-100 text-orange-800"
+                                  : "bg-gray-100 text-gray-800"
                         }`}
                       >
                         {activity.status}

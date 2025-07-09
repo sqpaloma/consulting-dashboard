@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS dashboard_itens (
   os VARCHAR(255),
   titulo VARCHAR(500),
   cliente VARCHAR(255),
+  responsavel VARCHAR(255),
   status VARCHAR(255),
   data_registro DATE,
   raw_data JSONB,
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS dashboard_uploads (
 -- Criar índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_dashboard_itens_status ON dashboard_itens(status);
 CREATE INDEX IF NOT EXISTS idx_dashboard_itens_os ON dashboard_itens(os);
+CREATE INDEX IF NOT EXISTS idx_dashboard_itens_responsavel ON dashboard_itens(responsavel);
 CREATE INDEX IF NOT EXISTS idx_dashboard_itens_created_at ON dashboard_itens(created_at);
 
 -- Função para atualizar timestamp (se não existir)

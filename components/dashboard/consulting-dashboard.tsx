@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import { Header } from "@/components/Header";
+
 import { DashboardMetrics } from "./dashboard-metrics";
 import { WorkSessionTimer } from "./work-session-timer";
 import { DashboardCalendar } from "./dashboard-calendar";
 import { TotalProjectsCard, CompletedProjectsCard } from "./dashboard-projects";
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
+import { ResponsavelFilter } from "./responsavel-filter";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
 
@@ -21,9 +23,73 @@ export function ConsultingDashboard() {
   const [calendarModalData, setCalendarModalData] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+  // Estados para filtro por responsável
+  const [filteredByResponsavel, setFilteredByResponsavel] = useState<
+    string | null
+  >(null);
+
+  // Dados filtrados baseados no responsável selecionado
+  const filteredItems = filteredByResponsavel
+    ? processedItems.filter(
+        (item) =>
+          item.responsavel && item.responsavel.trim() === filteredByResponsavel
+      )
+    : processedItems;
+
+  // Recalcular métricas baseadas nos dados filtrados
+  const filteredDashboardData = React.useMemo(() => {
+    if (!filteredByResponsavel) return dashboardData;
+
+    const metrics = {
+      totalItens: filteredItems.length,
+      aguardandoAprovacao: 0,
+      analises: 0,
+      orcamentos: 0,
+      emExecucao: 0,
+    };
+
+    filteredItems.forEach((item) => {
+      const status = item.status.toLowerCase();
+      if (
+        status.includes("aguardando") ||
+        status.includes("pendente") ||
+        status.includes("aprovação")
+      ) {
+        metrics.aguardandoAprovacao++;
+      } else if (
+        status.includes("análise") ||
+        status.includes("analise") ||
+        status.includes("revisão") ||
+        status.includes("revisao")
+      ) {
+        metrics.analises++;
+      } else if (
+        status.includes("orçamento") ||
+        status.includes("orcamento") ||
+        status.includes("cotação") ||
+        status.includes("cotacao")
+      ) {
+        metrics.orcamentos++;
+      } else if (
+        status.includes("execução") ||
+        status.includes("execucao") ||
+        status.includes("andamento") ||
+        status.includes("progresso")
+      ) {
+        metrics.emExecucao++;
+      }
+    });
+
+    return metrics;
+  }, [filteredItems, filteredByResponsavel, dashboardData]);
+
   useEffect(() => {
     loadSavedData();
   }, [loadSavedData]);
+
+  const handleResponsavelFilterChange = (responsavel: string | null) => {
+    setFilteredByResponsavel(responsavel);
+  };
 
   const handleCalendarDateClick = (date: string, items: any[]) => {
     setSelectedDate(date);
@@ -32,7 +98,7 @@ export function ConsultingDashboard() {
   };
 
   const generateModalData = async (type: string) => {
-    if (processedItems.length === 0) {
+    if (filteredItems.length === 0) {
       // Dados de exemplo se não houver planilha carregada
       const baseItems = [
         {
@@ -49,7 +115,17 @@ export function ConsultingDashboard() {
 
     // Tenta carregar dados específicos do banco
     try {
-      const itemsFromDB = await getDashboardItemsByCategory(type);
+      let itemsFromDB = await getDashboardItemsByCategory(type);
+
+      // Aplicar filtro por responsável se necessário
+      if (filteredByResponsavel && itemsFromDB.length > 0) {
+        itemsFromDB = itemsFromDB.filter(
+          (item) =>
+            item.responsavel &&
+            item.responsavel.trim() === filteredByResponsavel
+        );
+      }
+
       if (itemsFromDB.length > 0) {
         return itemsFromDB.map((item) => ({
           id: item.os,
@@ -65,12 +141,12 @@ export function ConsultingDashboard() {
       console.error("Erro ao carregar dados do modal:", error);
     }
 
-    // Fallback para filtrar os itens locais
-    let filteredItems = processedItems;
+    // Fallback para filtrar os itens locais (já filtrados por responsável)
+    let categorizedItems = filteredItems;
 
     switch (type) {
       case "aprovacao":
-        filteredItems = processedItems.filter((item) => {
+        categorizedItems = filteredItems.filter((item) => {
           const status = item.status.toLowerCase();
           return (
             status.includes("aguardando") ||
@@ -80,7 +156,7 @@ export function ConsultingDashboard() {
         });
         break;
       case "analises":
-        filteredItems = processedItems.filter((item) => {
+        categorizedItems = filteredItems.filter((item) => {
           const status = item.status.toLowerCase();
           return (
             status.includes("análise") ||
@@ -91,7 +167,7 @@ export function ConsultingDashboard() {
         });
         break;
       case "orcamentos":
-        filteredItems = processedItems.filter((item) => {
+        categorizedItems = filteredItems.filter((item) => {
           const status = item.status.toLowerCase();
           return (
             status.includes("orçamento") ||
@@ -102,7 +178,7 @@ export function ConsultingDashboard() {
         });
         break;
       case "execucao":
-        filteredItems = processedItems.filter((item) => {
+        categorizedItems = filteredItems.filter((item) => {
           const status = item.status.toLowerCase();
           return (
             status.includes("execução") ||
@@ -113,10 +189,10 @@ export function ConsultingDashboard() {
         });
         break;
       default:
-        filteredItems = processedItems;
+        categorizedItems = filteredItems;
     }
 
-    return filteredItems;
+    return categorizedItems;
   };
 
   const openModal = async (type: string) => {
@@ -133,13 +209,26 @@ export function ConsultingDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <Header title="Dashboard" />
+        <Header title="" />
+
+        {/* Título e Filtro na mesma linha */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl  text-white">
+              Seja bem vindo(a), {filteredByResponsavel}!
+            </h1>
+          </div>
+          <ResponsavelFilter
+            onFilterChange={handleResponsavelFilterChange}
+            processedItems={processedItems}
+          />
+        </div>
 
         {/* Main Content Grid */}
         <div className="space-y-6">
           {/* Metrics Cards */}
           <DashboardMetrics
-            dashboardData={dashboardData}
+            dashboardData={filteredDashboardData}
             openModal={openModal}
           />
 
@@ -156,14 +245,18 @@ export function ConsultingDashboard() {
 
             {/* Coluna direita: Calendário */}
             <DashboardCalendar
-              processedItems={processedItems}
+              processedItems={filteredItems}
               onDateClick={handleCalendarDateClick}
+              filteredByResponsavel={filteredByResponsavel}
             />
           </div>
         </div>
 
         {/* Daily Activity Planner */}
-        <ActivityPlanner processedItems={processedItems} />
+        <ActivityPlanner
+          processedItems={filteredItems}
+          filteredByResponsavel={filteredByResponsavel}
+        />
 
         {/* Modals */}
         <DashboardModal

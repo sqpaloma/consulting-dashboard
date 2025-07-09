@@ -11,6 +11,7 @@ interface CalendarItem {
   os: string;
   titulo: string;
   cliente: string;
+  responsavel?: string;
   status: string;
   prazo: string;
   data: string;
@@ -20,11 +21,13 @@ interface CalendarItem {
 interface DashboardCalendarProps {
   processedItems?: CalendarItem[];
   onDateClick?: (date: string, items: CalendarItem[]) => void;
+  filteredByResponsavel?: string | null;
 }
 
 export function DashboardCalendar({
   processedItems = [],
   onDateClick,
+  filteredByResponsavel,
 }: DashboardCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -41,18 +44,28 @@ export function DashboardCalendar({
       const { items } = await loadDashboardData();
 
       // Converte os dados do banco para o formato do calendário
-      const dbItems: CalendarItem[] = items
+      let dbItems: CalendarItem[] = items
         .filter((item) => item.data_registro) // Só inclui itens com data_registro
         .map((item) => ({
           id: item.os,
           os: item.os,
           titulo: item.titulo || `Item ${item.os}`,
           cliente: item.cliente || "Cliente não informado",
+          responsavel: item.responsavel || "Não informado",
           status: item.status,
           prazo: item.data_registro || "", // Usa data_registro como prazo
           data: item.data_registro || "",
           rawData: item.raw_data || [],
         }));
+
+      // Aplica filtro por responsável se ativo
+      if (filteredByResponsavel) {
+        dbItems = dbItems.filter(
+          (item) =>
+            item.responsavel &&
+            item.responsavel.trim() === filteredByResponsavel
+        );
+      }
 
       setDatabaseItems(dbItems);
     } catch (error) {
@@ -62,10 +75,10 @@ export function DashboardCalendar({
     }
   };
 
-  // Carrega dados do banco quando o componente monta
+  // Carrega dados do banco quando o componente monta ou quando o filtro muda
   useEffect(() => {
     loadDatabaseItems();
-  }, []);
+  }, [filteredByResponsavel]);
 
   // Processa os itens para extrair datas de prazo
   useEffect(() => {
@@ -312,16 +325,16 @@ export function DashboardCalendar({
                   day === null
                     ? "invisible"
                     : day === today &&
-                      currentMonth === new Date().getMonth() &&
-                      currentYear === new Date().getFullYear()
-                    ? "bg-blue-100 text-blue-600 font-bold"
-                    : hasItemsOnDate(day) && isDatePastToday(day)
-                    ? "bg-red-100 text-red-800 font-medium hover:bg-red-200"
-                    : hasItemsOnDate(day) && isDateFutureToday(day)
-                    ? "bg-green-100 text-green-800 font-medium hover:bg-green-200"
-                    : hasItemsOnDate(day)
-                    ? "bg-blue-100 text-blue-600 font-medium hover:bg-blue-200"
-                    : "hover:bg-gray-100 text-gray-700"
+                        currentMonth === new Date().getMonth() &&
+                        currentYear === new Date().getFullYear()
+                      ? "bg-blue-100 text-blue-600 font-bold"
+                      : hasItemsOnDate(day) && isDatePastToday(day)
+                        ? "bg-red-100 text-red-800 font-medium hover:bg-red-200"
+                        : hasItemsOnDate(day) && isDateFutureToday(day)
+                          ? "bg-green-100 text-green-800 font-medium hover:bg-green-200"
+                          : hasItemsOnDate(day)
+                            ? "bg-blue-100 text-blue-600 font-medium hover:bg-blue-200"
+                            : "hover:bg-gray-100 text-gray-700"
                 }
                 ${
                   selectedDate ===
@@ -344,10 +357,10 @@ export function DashboardCalendar({
                     currentYear === new Date().getFullYear()
                       ? "bg-blue-500"
                       : isDatePastToday(day)
-                      ? "bg-red-500"
-                      : isDateFutureToday(day)
-                      ? "bg-green-500"
-                      : "bg-blue-500"
+                        ? "bg-red-500"
+                        : isDateFutureToday(day)
+                          ? "bg-green-500"
+                          : "bg-blue-500"
                   }`}
                 ></div>
               )}

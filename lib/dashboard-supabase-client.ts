@@ -36,6 +36,7 @@ export interface DashboardItem {
   os: string;
   titulo?: string;
   cliente?: string;
+  responsavel?: string;
   status: string;
   data_registro?: string;
   raw_data?: any;
@@ -109,6 +110,7 @@ export async function saveDashboardData(
             os: item.os,
             titulo: item.titulo,
             cliente: item.cliente,
+            responsavel: item.responsavel,
             status: item.status,
             data_registro: item.data_registro,
             raw_data: item.raw_data,
@@ -300,6 +302,70 @@ export async function getDashboardItemsByCategory(
     return data || [];
   } catch (error) {
     console.error("Erro ao carregar itens por categoria:", error);
+    return [];
+  }
+}
+
+// Função para obter responsáveis únicos
+export async function getUniqueResponsaveis(): Promise<string[]> {
+  if (!supabase) {
+    console.warn(
+      "Supabase client not initialized - environment variables missing"
+    );
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("dashboard_itens")
+      .select("responsavel")
+      .not("responsavel", "is", null)
+      .not("responsavel", "eq", "")
+      .not("responsavel", "eq", "Não informado")
+      .order("responsavel", { ascending: true });
+
+    if (error && error.code !== "42P01") throw error;
+
+    if (!data) return [];
+
+    // Extrair valores únicos e filtrar valores nulos/vazios
+    const uniqueResponsaveis = Array.from(
+      new Set(
+        data
+          .map((item) => item.responsavel)
+          .filter((responsavel) => responsavel && responsavel.trim() !== "")
+      )
+    );
+
+    return uniqueResponsaveis;
+  } catch (error) {
+    console.error("Erro ao carregar responsáveis únicos:", error);
+    return [];
+  }
+}
+
+// Função para obter itens por responsável
+export async function getDashboardItemsByResponsavel(
+  responsavel: string
+): Promise<DashboardItem[]> {
+  if (!supabase) {
+    console.warn(
+      "Supabase client not initialized - environment variables missing"
+    );
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("dashboard_itens")
+      .select("*")
+      .eq("responsavel", responsavel)
+      .order("created_at", { ascending: false });
+
+    if (error && error.code !== "42P01") throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Erro ao carregar itens por responsável:", error);
     return [];
   }
 }
