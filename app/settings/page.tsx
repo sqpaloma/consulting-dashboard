@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Header } from "@/components/Header";
+import { ResponsiveLayout } from "@/components/responsive-layout";
 import { Button } from "@/components/ui/button";
 import {
   SettingsTabs,
@@ -77,11 +77,11 @@ function SettingsPageContent() {
     }
   }, [tabParam]);
 
-  // Atualizar estado local quando os dados do Convex carregarem
+  // Carregar configurações do usuário quando disponíveis
   useEffect(() => {
-    if (user && settings) {
-      setUserSettings({
-        // Profile
+    if (user) {
+      setUserSettings((prev) => ({
+        ...prev,
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
@@ -89,31 +89,8 @@ function SettingsPageContent() {
         department: user.department || "",
         location: user.location || "",
         company: user.company || "",
-
-        // Notifications
-        emailNotifications: settings.emailNotifications,
-        pushNotifications: settings.pushNotifications,
-        calendarReminders: settings.calendarReminders,
-        projectUpdates: settings.projectUpdates,
-        weeklyReports: settings.weeklyReports,
-
-        // Privacy
-        profileVisibility: settings.profileVisibility,
-        dataSharing: settings.dataSharing,
-        analyticsTracking: settings.analyticsTracking,
-
-        // Appearance
-        theme: settings.theme,
-        language: settings.language,
-        timezone: settings.timezone,
-        dateFormat: settings.dateFormat,
-        timeFormat: settings.timeFormat,
-
-        // System
-        autoSave: settings.autoSave,
-        backupFrequency: settings.backupFrequency,
-        sessionTimeout: settings.sessionTimeout,
-      });
+        ...settings,
+      }));
     }
   }, [user, settings]);
 
@@ -129,14 +106,9 @@ function SettingsPageContent() {
   };
 
   const handleSaveSettings = async () => {
-    if (!user?._id) {
-      toast.error("ID do usuário não encontrado");
-      return;
-    }
-
     try {
-      // Salvar informações do perfil
-      await createOrUpdateUser({
+      // Separar dados do usuário das configurações
+      const userData = {
         name: userSettings.name,
         email: userSettings.email,
         phone: userSettings.phone,
@@ -144,81 +116,74 @@ function SettingsPageContent() {
         department: userSettings.department,
         location: userSettings.location,
         company: userSettings.company,
-      });
+      };
 
-      // Salvar configurações
-      await updateUserSettings({
-        userId: user._id,
-        // Notifications
+      const settingsData = {
+        userId: user!._id,
         emailNotifications: userSettings.emailNotifications,
         pushNotifications: userSettings.pushNotifications,
         calendarReminders: userSettings.calendarReminders,
         projectUpdates: userSettings.projectUpdates,
         weeklyReports: userSettings.weeklyReports,
-        // Privacy
         profileVisibility: userSettings.profileVisibility,
         dataSharing: userSettings.dataSharing,
         analyticsTracking: userSettings.analyticsTracking,
-        // Appearance
         theme: userSettings.theme,
         language: userSettings.language,
         timezone: userSettings.timezone,
         dateFormat: userSettings.dateFormat,
         timeFormat: userSettings.timeFormat,
-        // System
         autoSave: userSettings.autoSave,
         backupFrequency: userSettings.backupFrequency,
         sessionTimeout: userSettings.sessionTimeout,
-      });
+      };
+
+      // Criar ou atualizar usuário
+      await createOrUpdateUser(userData);
+
+      // Atualizar configurações
+      await updateUserSettings(settingsData);
 
       toast.success("Configurações salvas com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar configurações:", error);
-      toast.error("Erro ao salvar configurações");
+      toast.error("Erro ao salvar configurações. Tente novamente.");
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Header title="Configurações" />
-          <div className="flex items-center justify-center py-20">
-            <div className="text-white">Carregando...</div>
-          </div>
+      <ResponsiveLayout title="Configurações">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-white">Carregando...</div>
         </div>
-      </div>
+      </ResponsiveLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <Header title="Configurações" />
+    <ResponsiveLayout title="Configurações">
+      {/* Main Content */}
+      <div className="space-y-6">
+        <SettingsTabs
+          userSettings={userSettings}
+          onSettingChange={handleSettingChange}
+          defaultTab={defaultTab}
+          userId={user?._id}
+        />
 
-        {/* Main Content */}
-        <div className="space-y-6">
-          <SettingsTabs
-            userSettings={userSettings}
-            onSettingChange={handleSettingChange}
-            defaultTab={defaultTab}
-            userId={user?._id}
-          />
-
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8"
-              onClick={handleSaveSettings}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Salvar Configurações
-            </Button>
-          </div>
+        {/* Save Button */}
+        <div className="flex justify-end">
+          <Button
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+            onClick={handleSaveSettings}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Salvar Configurações
+          </Button>
         </div>
       </div>
-    </div>
+    </ResponsiveLayout>
   );
 }
 
@@ -226,14 +191,11 @@ export default function SettingsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <Header title="Configurações" />
-            <div className="flex items-center justify-center py-20">
-              <div className="text-white">Carregando...</div>
-            </div>
+        <ResponsiveLayout title="Configurações">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-white">Carregando...</div>
           </div>
-        </div>
+        </ResponsiveLayout>
       }
     >
       <SettingsPageContent />

@@ -6,7 +6,7 @@ import { BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { useAnalyticsData } from "@/hooks/use-analytics-data";
-import { Header } from "@/components/Header";
+import { ResponsiveLayout } from "@/components/responsive-layout";
 import { AnalyticsUploadSection } from "./analytics-upload-section";
 
 import { AnalyticsAdminData } from "./analytics-admin-data";
@@ -126,89 +126,79 @@ export function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <Header title="Análises" />
+    <ResponsiveLayout title="Análises">
+      {/* Filters and Upload */}
+      <AnalyticsUploadSection
+        fileInputRef={fileInputRef}
+        fileName={fileName}
+        saveStatus={saveStatus}
+        uploadedData={uploadedData}
+        uploadHistory={uploadHistory}
+        isLoading={isLoading}
+        onUploadClick={handleUploadClick}
+        onFileUpload={handleFileUpload}
+        onSaveData={handleSaveData}
+        onPrint={handlePrint}
+        onGenerateReport={generateDetailedReport}
+        onClearData={handleClearData}
+        // Passar filtros e setters
+        selectedDepartment={selectedDepartment}
+        setSelectedDepartment={setSelectedDepartment}
+        selectedEngineer={selectedEngineer}
+        setSelectedEngineer={setSelectedEngineer}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        topEngineersFilter={topEngineersFilter}
+        setTopEngineersFilter={setTopEngineersFilter}
+      />
 
-        {/* Filters and Upload */}
-        <AnalyticsUploadSection
-          fileInputRef={fileInputRef}
-          fileName={fileName}
-          saveStatus={saveStatus}
-          uploadedData={uploadedData}
-          uploadHistory={uploadHistory}
-          isLoading={isLoading}
-          onUploadClick={handleUploadClick}
-          onFileUpload={handleFileUpload}
-          onSaveData={handleSaveData}
-          onPrint={handlePrint}
-          onGenerateReport={generateDetailedReport}
-          onClearData={handleClearData}
-          // Passar filtros e setters
-          selectedDepartment={selectedDepartment}
-          setSelectedDepartment={setSelectedDepartment}
-          selectedEngineer={selectedEngineer}
-          setSelectedEngineer={setSelectedEngineer}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
-          topEngineersFilter={topEngineersFilter}
-          setTopEngineersFilter={setTopEngineersFilter}
-        />
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="bg-white">
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-gray-600">Carregando dados...</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Loading State */}
-        {isLoading && (
-          <Card className="bg-white">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-blue-600 rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-700 font-medium">Carregando dados...</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      {/* Data Display */}
+      {!isLoading && uploadedData && uploadedData.length > 0 && (
+        <div className="space-y-6">
+          {/* Metrics Grid */}
+          <AnalyticsMetrics uploadedData={filteredData} />
 
-        {/* Highlight Card */}
-        {uploadedData.length === 0 && !isLoading && (
-          <Card className="bg-white">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <BarChart3 className="h-10 w-10 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-700 font-medium">
-                  Nenhum dado carregado. Por favor, faça upload de uma planilha
-                  Excel para visualizar as análises.
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Os dados serão salvos automaticamente e ficarão disponíveis
-                  para toda a equipe.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          {/* Charts Grid */}
+          <AnalyticsCharts uploadedData={filteredData} />
 
-        {/* Metrics Cards */}
-        <AnalyticsMetrics uploadedData={filteredData} />
+          {/* Ranking */}
+          <AnalyticsRanking uploadedData={filteredData} />
 
-        {/* Charts Section */}
-        <AnalyticsCharts uploadedData={filteredData} />
+          {/* Admin Data Table */}
+          <AnalyticsAdminData uploadedData={filteredData} />
+        </div>
+      )}
 
-        {/* Ranking Section */}
-        <AnalyticsRanking uploadedData={filteredData} />
-
-        {/* Administrative Data */}
-        <AnalyticsAdminData uploadedData={filteredData} />
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={handleFileUpload}
-          className="hidden"
-        />
-      </div>
-    </div>
+      {/* Empty State */}
+      {!isLoading && (!uploadedData || uploadedData.length === 0) && (
+        <Card className="bg-white">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <BarChart3 className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhum dado carregado
+            </h3>
+            <p className="text-gray-500 text-center mb-4">
+              Faça o upload de um arquivo Excel para começar a análise
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </ResponsiveLayout>
   );
 }

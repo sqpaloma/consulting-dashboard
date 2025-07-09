@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useState } from "react";
-import { Header } from "@/components/Header";
+import { ResponsiveLayout } from "@/components/responsive-layout";
 
 import { ManualSidebar } from "@/components/manual/manual-sidebar";
 import { ManualContent } from "@/components/manual/manual-content";
@@ -55,30 +55,25 @@ export default function Manual() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <Header title="Manual da Consultoria" />
+    <ResponsiveLayout title="Manual da Consultoria">
+      {/* Manual Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar - Table of Contents */}
+        <div className="lg:col-span-1">
+          <ManualSidebar
+            sections={manualSections}
+            activeSection={activeSection}
+            onSectionToggle={toggleSection}
+          />
+        </div>
 
-        {/* Manual Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar - Table of Contents */}
-          <div className="lg:col-span-1">
-            <ManualSidebar
-              sections={manualSections}
-              activeSection={activeSection}
-              onSectionToggle={toggleSection}
-            />
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
-            <ManualContent
-              activeSection={activeSection}
-              sections={manualSections}
-              onStepByStepClick={setStepByStepModal}
-            />
-          </div>
+        {/* Main Content */}
+        <div className="lg:col-span-3 space-y-6">
+          <ManualContent
+            activeSection={activeSection}
+            sections={manualSections}
+            onStepByStepClick={setStepByStepModal}
+          />
         </div>
       </div>
 
@@ -101,6 +96,6 @@ export default function Manual() {
           onClose={closeImagePreview}
         />
       )}
-    </div>
+    </ResponsiveLayout>
   );
 }

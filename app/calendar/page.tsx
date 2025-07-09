@@ -1,5 +1,10 @@
-import { CalendarMain } from "@/components/calendar";
+import { CalendarMain } from "@/components/calendar/calendar-main";
+import { ResponsiveLayout } from "@/components/responsive-layout";
 
 export default function CalendarPage() {
-  return <CalendarMain />;
+  return (
+    <ResponsiveLayout title="Calendário & Tarefas">
+      <CalendarMain />
+    </ResponsiveLayout>
+  );
 }

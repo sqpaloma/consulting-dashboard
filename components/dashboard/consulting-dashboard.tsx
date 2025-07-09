@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 
-import { Header } from "@/components/Header";
-
+import { ResponsiveLayout } from "@/components/responsive-layout";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { WorkSessionTimer } from "./work-session-timer";
 import { DashboardCalendar } from "./dashboard-calendar";
@@ -206,59 +205,56 @@ export function ConsultingDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <Header title="" />
-
-        {/* Título e Filtro na mesma linha */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-4xl  text-white">
-              Seja bem vindo(a), {filteredByResponsavel}!
-            </h1>
-          </div>
-          <ResponsavelFilter
-            onFilterChange={handleResponsavelFilterChange}
-            processedItems={processedItems}
-          />
+    <ResponsiveLayout>
+      {/* Título e Filtro na mesma linha */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h1 className="text-4xl  text-white">
+            Seja bem vindo(a), {filteredByResponsavel}!
+          </h1>
         </div>
+        <ResponsavelFilter
+          onFilterChange={handleResponsavelFilterChange}
+          processedItems={processedItems}
+        />
+      </div>
 
-        {/* Main Content Grid */}
-        <div className="space-y-6">
-          {/* Metrics Cards */}
-          <DashboardMetrics
-            dashboardData={filteredDashboardData}
-            openModal={openModal}
-          />
-
-          {/* Layout reorganizado: Coluna esquerda com componentes menores e coluna direita com calendário */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[650px]">
-            {/* Coluna esquerda: WorkSessionTimer, Total de Projetos e Concluídos */}
-            <div className="flex flex-col space-y-4 h-full">
-              <div className="flex-1">
-                <WorkSessionTimer />
-              </div>
-              <TotalProjectsCard />
-              <CompletedProjectsCard />
-            </div>
-
-            {/* Coluna direita: Calendário */}
-            <DashboardCalendar
-              processedItems={filteredItems}
-              onDateClick={handleCalendarDateClick}
-              filteredByResponsavel={filteredByResponsavel}
-            />
-          </div>
-        </div>
-
-        {/* Daily Activity Planner */}
-        <ActivityPlanner
-          processedItems={filteredItems}
-          filteredByResponsavel={filteredByResponsavel}
+      {/* Main Content Grid */}
+      <div className="space-y-6">
+        {/* Metrics Cards */}
+        <DashboardMetrics
+          dashboardData={filteredDashboardData}
+          openModal={openModal}
         />
 
-        {/* Modals */}
+        {/* Layout reorganizado: Coluna esquerda com componentes menores e coluna direita com calendário */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[650px]">
+          {/* Coluna esquerda: WorkSessionTimer, Total de Projetos e Concluídos */}
+          <div className="flex flex-col space-y-4 h-full">
+            <div className="flex-1">
+              <WorkSessionTimer />
+            </div>
+            <TotalProjectsCard />
+            <CompletedProjectsCard />
+          </div>
+
+          {/* Coluna direita: Calendário */}
+          <DashboardCalendar
+            processedItems={filteredItems}
+            onDateClick={handleCalendarDateClick}
+            filteredByResponsavel={filteredByResponsavel}
+          />
+        </div>
+      </div>
+
+      {/* Daily Activity Planner */}
+      <ActivityPlanner
+        processedItems={filteredItems}
+        filteredByResponsavel={filteredByResponsavel}
+      />
+
+      {/* Modals */}
+      {activeModal && (
         <DashboardModal
           activeModal={activeModal}
           setActiveModal={setActiveModal}
@@ -266,7 +262,7 @@ export function ConsultingDashboard() {
           calendarModalData={calendarModalData}
           selectedDate={selectedDate}
         />
-      </div>
-    </div>
+      )}
+    </ResponsiveLayout>
   );
 }
