@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ConvexClientProvider } from "@/lib/convex-provider";
+import { AuthLayout } from "@/components/auth/auth-layout";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         <ConvexClientProvider>
-          {children}
+          <AuthLayout>{children}</AuthLayout>
           <Toaster richColors position="bottom-right" />
         </ConvexClientProvider>
       </body>

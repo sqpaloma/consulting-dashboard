@@ -1,6 +1,121 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+// Função para fazer login
+export const login = mutation({
+  args: {
+    email: v.string(),
+    password: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    if (!user.hashedPassword) {
+      throw new Error("Usuário não possui senha configurada");
+    }
+
+    // Verificar senha
+    const hashedPassword = await hashPassword(args.password);
+    if (user.hashedPassword !== hashedPassword) {
+      throw new Error("Senha incorreta");
+    }
+
+    // Atualizar último login
+    await ctx.db.patch(user._id, {
+      lastLogin: Date.now(),
+    });
+
+    return {
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      position: user.position,
+      department: user.department,
+    };
+  },
+});
+
+// Função para criar usuário inicial
+export const createInitialUser = mutation({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    password: v.string(),
+    position: v.optional(v.string()),
+    department: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Verificar se o usuário já existe
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (existingUser) {
+      throw new Error("Usuário já existe");
+    }
+
+    // Hash da senha
+    const hashedPassword = await hashPassword(args.password);
+
+    // Criar usuário
+    const userId = await ctx.db.insert("users", {
+      name: args.name,
+      email: args.email,
+      position: args.position,
+      department: args.department,
+      hashedPassword,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    // Criar configurações padrão
+    await ctx.db.insert("userSettings", {
+      userId: userId,
+      emailNotifications: true,
+      pushNotifications: true,
+      calendarReminders: true,
+      projectUpdates: true,
+      weeklyReports: false,
+      profileVisibility: "public",
+      dataSharing: false,
+      analyticsTracking: true,
+      theme: "dark",
+      language: "pt-BR",
+      timezone: "America/Sao_Paulo",
+      dateFormat: "DD/MM/YYYY",
+      timeFormat: "24h",
+      autoSave: true,
+      backupFrequency: "daily",
+      sessionTimeout: "30min",
+      updatedAt: Date.now(),
+    });
+
+    return {
+      userId,
+      name: args.name,
+      email: args.email,
+      position: args.position,
+      department: args.department,
+    };
+  },
+});
+
+// Função para verificar se existe algum usuário
+export const hasUsers = query({
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    return users.length > 0;
+  },
+});
+
 // Verificar se uma senha está correta
 export const verifyPassword = mutation({
   args: {

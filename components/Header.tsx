@@ -50,7 +50,7 @@ export function Header({
               />
             </div>
             <div className="flex items-center space-x-1">
-              <span className="text-2xl  text-white">novak</span>
+              <span className="text-2xl font-bold text-white">novak</span>
               <span className="text-2xl font-light text-green-400">
                 gouveia
               </span>
@@ -127,7 +127,7 @@ export function Header({
 
       {/* Title Section */}
       <div className="space-y-2">
-        <h1 className="text-4xl text-white">{title}</h1>
+        <h1 className="text-4xl font-bold text-white">{title}</h1>
         {subtitle && (
           <h2 className="text-3xl font-light text-gray-100">{subtitle}</h2>
         )}

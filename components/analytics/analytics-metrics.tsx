@@ -53,9 +53,6 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
               <div className="text-3xl font-bold text-gray-800 mb-1">
                 {totalRegistros}
               </div>
-              <div className="text-sm text-gray-500">
-                Todos os itens processados
-              </div>
             </CardContent>
           </Card>
 

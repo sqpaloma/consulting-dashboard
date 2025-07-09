@@ -41,7 +41,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
             <p className="text-sm text-gray-500">
               {filterType === "orcamento"
                 ? "Por quantidade de orçamentos"
-                : "Por orçamentos convertidos"}
+                : "Por faturamento"}
             </p>
           </div>
 
@@ -66,7 +66,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                     : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                Conversões
+                Faturamento
               </button>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function AnalyticsRanking({ uploadedData }: AnalyticsRankingProps) {
                 <div className="text-sm text-gray-600">
                   {filterType === "orcamento"
                     ? "Total de Orçamentos"
-                    : "Total de Orçamentos Convertidos"}
+                    : "Total de Faturamentos"}
                 </div>
               </div>
 

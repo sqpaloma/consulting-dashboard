@@ -13,6 +13,7 @@ export default defineSchema({
     company: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
     hashedPassword: v.optional(v.string()),
+    lastLogin: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_email", ["email"]),

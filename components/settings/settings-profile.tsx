@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Upload, Save, Eye, EyeOff } from "lucide-react";
+import { User, Upload, Save, Eye, EyeOff, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
+import { useAuth } from "@/hooks/use-auth";
 
 interface UserSettings {
   name: string;
@@ -47,6 +48,9 @@ export function SettingsProfile({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Auth hook para logout
+  const { signOut } = useAuth();
 
   // Convex mutations
   const createOrUpdateUser = useMutation(api.users.createOrUpdateUser);
@@ -135,6 +139,13 @@ export function SettingsProfile({
   const handleAvatarUpload = () => {
     // Implementar upload de avatar aqui
     toast.info("Funcionalidade de upload de avatar em desenvolvimento");
+  };
+
+  const handleLogout = () => {
+    signOut();
+    toast.success("Logout realizado com sucesso!");
+    // Forçar redirecionamento para a raiz que mostrará o login
+    window.location.href = "/";
   };
 
   return (
@@ -359,6 +370,29 @@ export function SettingsProfile({
             <Save className="h-4 w-4 mr-2" />
             {isChangingPassword ? "Alterando..." : "Alterar Senha"}
           </Button>
+        </div>
+
+        <Separator className="bg-white/20" />
+
+        {/* Logout Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-white">Sessão</h3>
+          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+            <div>
+              <p className="text-white font-medium">Fazer Logout</p>
+              <p className="text-sm text-gray-300">
+                Sair da sua conta e retornar à tela de login
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="text-red-400 border-red-400/50 bg-red-400/10 hover:bg-red-400/20 hover:text-red-300"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

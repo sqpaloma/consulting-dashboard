@@ -1,0 +1,108 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+
+interface User {
+  userId: Id<"users">;
+  name: string;
+  email: string;
+  position?: string;
+  department?: string;
+}
+
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Mutations
+  const login = useMutation(api.auth.login);
+  const createInitialUser = useMutation(api.auth.createInitialUser);
+
+  // Queries
+  const hasUsers = useQuery(api.auth.hasUsers);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Error parsing saved user:", error);
+        localStorage.removeItem("user");
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const result = await login({ email, password });
+      const userData = {
+        userId: result.userId,
+        name: result.name,
+        email: result.email,
+        position: result.position,
+        department: result.department,
+      };
+
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      return { success: true };
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Erro ao fazer login",
+      };
+    }
+  };
+
+  const signOut = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+  };
+
+  const createUser = async (userData: {
+    name: string;
+    email: string;
+    password: string;
+    position?: string;
+    department?: string;
+  }) => {
+    try {
+      const result = await createInitialUser(userData);
+      const userDataResult = {
+        userId: result.userId,
+        name: result.name,
+        email: result.email,
+        position: result.position,
+        department: result.department,
+      };
+
+      setUser(userDataResult);
+      localStorage.setItem("user", JSON.stringify(userDataResult));
+      return { success: true };
+    } catch (error) {
+      console.error("Create user error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Erro ao criar usuário",
+      };
+    }
+  };
+
+  return {
+    user,
+    isLoading,
+    signIn,
+    signOut,
+    createUser,
+    hasUsers,
+    isAuthenticated: !!user,
+  };
+}

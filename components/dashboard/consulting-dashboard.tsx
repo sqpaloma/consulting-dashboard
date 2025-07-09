@@ -11,10 +11,12 @@ import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
 import { ResponsavelFilter } from "./responsavel-filter";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useAuth } from "@/hooks/use-auth";
 import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
 
 export function ConsultingDashboard() {
   const { dashboardData, processedItems, loadSavedData } = useDashboardData();
+  const { user } = useAuth();
 
   // Estados para modais
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -96,121 +98,45 @@ export function ConsultingDashboard() {
     setActiveModal("calendar");
   };
 
-  const generateModalData = async (type: string) => {
-    if (filteredItems.length === 0) {
-      // Dados de exemplo se não houver planilha carregada
-      const baseItems = [
-        {
-          id: "OS-001",
-          os: "OS-001",
-          titulo: "Análise Estrutural Edifício A",
-          cliente: "Construtora ABC",
-          data: "15/01/2025",
-          status: "Em andamento",
-        },
-      ];
-      return baseItems.slice(0, Math.floor(Math.random() * 5) + 3);
-    }
+  const openModal = async (modalType: string) => {
+    setActiveModal(modalType);
 
-    // Tenta carregar dados específicos do banco
+    let items: any[] = [];
     try {
-      let itemsFromDB = await getDashboardItemsByCategory(type);
-
-      // Aplicar filtro por responsável se necessário
-      if (filteredByResponsavel && itemsFromDB.length > 0) {
-        itemsFromDB = itemsFromDB.filter(
-          (item) =>
-            item.responsavel &&
-            item.responsavel.trim() === filteredByResponsavel
-        );
-      }
-
-      if (itemsFromDB.length > 0) {
-        return itemsFromDB.map((item) => ({
-          id: item.os,
-          os: item.os,
-          titulo: item.titulo || `Item ${item.os}`,
-          cliente: item.cliente || "Cliente não informado",
-          status: item.status,
-          data: item.data_registro || new Date().toLocaleDateString("pt-BR"),
-          rawData: item.raw_data,
-        }));
+      switch (modalType) {
+        case "total":
+          items = await getDashboardItemsByCategory("total");
+          break;
+        case "aprovacao":
+          items = await getDashboardItemsByCategory("aprovacao");
+          break;
+        case "analises":
+          items = await getDashboardItemsByCategory("analises");
+          break;
+        case "orcamentos":
+          items = await getDashboardItemsByCategory("orcamentos");
+          break;
+        case "execucao":
+          items = await getDashboardItemsByCategory("execucao");
+          break;
+        default:
+          items = [];
       }
     } catch (error) {
       console.error("Erro ao carregar dados do modal:", error);
+      items = [];
     }
 
-    // Fallback para filtrar os itens locais (já filtrados por responsável)
-    let categorizedItems = filteredItems;
-
-    switch (type) {
-      case "aprovacao":
-        categorizedItems = filteredItems.filter((item) => {
-          const status = item.status.toLowerCase();
-          return (
-            status.includes("aguardando") ||
-            status.includes("pendente") ||
-            status.includes("aprovação")
-          );
-        });
-        break;
-      case "analises":
-        categorizedItems = filteredItems.filter((item) => {
-          const status = item.status.toLowerCase();
-          return (
-            status.includes("análise") ||
-            status.includes("analise") ||
-            status.includes("revisão") ||
-            status.includes("revisao")
-          );
-        });
-        break;
-      case "orcamentos":
-        categorizedItems = filteredItems.filter((item) => {
-          const status = item.status.toLowerCase();
-          return (
-            status.includes("orçamento") ||
-            status.includes("orcamento") ||
-            status.includes("cotação") ||
-            status.includes("cotacao")
-          );
-        });
-        break;
-      case "execucao":
-        categorizedItems = filteredItems.filter((item) => {
-          const status = item.status.toLowerCase();
-          return (
-            status.includes("execução") ||
-            status.includes("execucao") ||
-            status.includes("andamento") ||
-            status.includes("progresso")
-          );
-        });
-        break;
-      default:
-        categorizedItems = filteredItems;
-    }
-
-    return categorizedItems;
-  };
-
-  const openModal = async (type: string) => {
-    setActiveModal(type);
-    const data = await generateModalData(type);
-    setModalData(data);
-  };
-
-  const handlePrint = () => {
-    window.print();
+    setModalData(items);
   };
 
   return (
     <ResponsiveLayout>
-      {/* Título e Filtro na mesma linha */}
+      {/* Título com nome do usuário */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-4xl  text-white">
-            Seja bem vindo(a), {filteredByResponsavel}!
+          <h1 className="text-4xl font-bold text-white">
+            Seja bem-vindo(a), {user?.name || "Usuário"}!
           </h1>
         </div>
         <ResponsavelFilter

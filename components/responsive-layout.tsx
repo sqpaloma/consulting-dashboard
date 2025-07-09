@@ -130,22 +130,21 @@ export function ResponsiveLayout({
                   </div>
                 </div>
               </SidebarHeader>
-
-              <SidebarContent className="px-2">
+              <SidebarContent>
                 <SidebarMenu>
                   {menuItems.map((item) => (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         asChild
-                        isActive={pathname === item.href}
-                        className="text-white hover:bg-blue-700 data-[active=true]:bg-blue-700 data-[active=true]:text-white p-3 my-1"
+                        className={`text-white hover:bg-blue-700 ${
+                          pathname === item.href
+                            ? "bg-blue-600 hover:bg-blue-600"
+                            : ""
+                        }`}
                       >
-                        <Link
-                          href={item.href}
-                          className="flex items-center space-x-3"
-                        >
+                        <Link href={item.href}>
                           <item.icon className="h-5 w-5" />
-                          <span className="text-base">{item.label}</span>
+                          {item.label}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -155,49 +154,71 @@ export function ResponsiveLayout({
             </div>
           </Sidebar>
 
-          <SidebarInset className="flex-1 overflow-hidden bg-transparent">
-            <div className="flex flex-col h-full">
-              {/* Header mobile com notificações e hamburger no lado direito */}
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center space-x-3">
-                  {title && (
-                    <div className="space-y-1">
-                      <h1 className="text-4xl font-bold text-white">{title}</h1>
-                      {subtitle && (
-                        <h2 className="text-3xl font-light text-gray-100">
-                          {subtitle}
-                        </h2>
-                      )}
+          <SidebarInset className="flex-1">
+            <header className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
+              <div className="px-4 py-4">
+                <div className="flex items-center justify-between">
+                  {/* Logo e navigation mobile */}
+                  <div className="flex items-center space-x-4">
+                    <HamburgerMenuButton />
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 flex items-center justify-center relative">
+                        <Image
+                          src="/logo.png"
+                          alt="Logo Novak & Gouveia"
+                          width={32}
+                          height={32}
+                          className="rounded-full border-2 border-green-400 bg-blue-700 object-cover"
+                          priority
+                        />
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-xl font-bold text-white">
+                          novak
+                        </span>
+                        <span className="text-xl font-light text-green-400">
+                          gouveia
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-                {/* Botões no lado direito: Notificações + Hamburger */}
-                <div className="flex items-center space-x-2">
+                  </div>
+
+                  {/* Notifications */}
                   <NotificationsPanel>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-white hover:bg-blue-700 p-2 rounded-md h-10 w-10"
+                      className="text-white hover:bg-blue-700"
                     >
                       <Bell className="h-5 w-5" />
-                      <span className="sr-only">Notificações</span>
                     </Button>
                   </NotificationsPanel>
-                  <HamburgerMenuButton />
                 </div>
+
+                {/* Title and subtitle */}
+                {(title || subtitle) && (
+                  <div className="mt-4">
+                    {title && (
+                      <h1 className="text-2xl font-bold text-white">{title}</h1>
+                    )}
+                    {subtitle && (
+                      <p className="text-blue-200 text-sm mt-1">{subtitle}</p>
+                    )}
+                  </div>
+                )}
               </div>
-              {/* Conteúdo com mesmo padding do desktop */}
-              <div className="flex-1 overflow-auto p-6">
-                <div className="max-w-7xl mx-auto space-y-6">{children}</div>
-              </div>
-            </div>
+            </header>
+
+            <main className="flex-1 p-4 overflow-x-auto">
+              <div className="max-w-7xl mx-auto">{children}</div>
+            </main>
           </SidebarInset>
         </div>
       </SidebarProvider>
     );
   }
 
-  // Desktop layout - mantém o header atual
+  // Desktop layout
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
