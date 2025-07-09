@@ -67,4 +67,45 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }),
+
+  // Tabela de conversas
+  conversations: defineTable({
+    name: v.optional(v.string()), // Nome da conversa (pode ser null para conversas 1:1)
+    type: v.string(), // "direct" ou "group"
+    isGroup: v.boolean(),
+    createdBy: v.id("users"),
+    lastMessage: v.optional(v.string()),
+    lastMessageAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  // Tabela de participantes das conversas
+  conversationParticipants: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    joinedAt: v.number(),
+    lastReadAt: v.optional(v.number()),
+    isActive: v.boolean(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_user", ["userId"])
+    .index("by_conversation_user", ["conversationId", "userId"]),
+
+  // Tabela de mensagens
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderId: v.id("users"),
+    content: v.string(),
+    messageType: v.string(), // "text", "image", "file", "system"
+    isEdited: v.boolean(),
+    editedAt: v.optional(v.number()),
+    isDeleted: v.boolean(),
+    deletedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_sender", ["senderId"])
+    .index("by_conversation_created", ["conversationId", "createdAt"]),
 });

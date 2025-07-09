@@ -8,7 +8,8 @@
     "lint": "next lint",
     "start": "next start",
     "convex:dev": "convex dev",
-    "convex:deploy": "convex deploy"
+    "convex:deploy": "convex deploy",
+    "seed:chat": "node scripts/seed-chat.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

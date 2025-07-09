@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useRef, useEffect } from "react";
 import { ResponsiveLayout } from "@/components/responsive-layout";
 import {
@@ -13,138 +12,57 @@ import {
   Smile,
   Paperclip,
   MessageSquare,
+  Plus,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-interface Message {
-  id: number;
-  sender: string;
-  content: string;
-  timestamp: string;
-  isOwn: boolean;
-}
-
-interface Contact {
-  id: number;
-  name: string;
-  avatar: string;
-  lastMessage: {
-    time: string;
-    preview: string;
-  };
-  timestamp: string;
-  online: boolean;
-  unread: number;
-  status: string;
-}
+import {
+  useConversations,
+  useMessages,
+  useChat,
+  useChatState,
+  useCurrentUser,
+  useSearchUsers,
+  useTimeFormat,
+  useNotifications,
+} from "@/hooks/use-chat";
+import { Id } from "@/convex/_generated/dataModel";
 
 export function ChatPage() {
-  const [selectedContact, setSelectedContact] = useState<number>(1);
+  const currentUser = useCurrentUser();
+  const {
+    selectedConversation,
+    setSelectedConversation,
+    searchQuery,
+    setSearchQuery,
+    showUserSearch,
+    setShowUserSearch,
+  } = useChatState();
+  const { formatTime, formatDate } = useTimeFormat();
+  const { addNotification } = useNotifications();
+
   const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      sender: "João Santos",
-      content: "Oi Paloma! Como está o projeto do cliente ABC?",
-      timestamp: "14:30",
-      isOwn: false,
-    },
-    {
-      id: 2,
-      sender: "Paloma",
-      content:
-        "Oi João! Está indo bem, já terminei a análise inicial. Vou enviar o relatório até amanhã.",
-      timestamp: "14:32",
-      isOwn: true,
-    },
-    {
-      id: 3,
-      sender: "João Santos",
-      content: "Perfeito! Precisa de ajuda com alguma coisa?",
-      timestamp: "14:33",
-      isOwn: false,
-    },
-    {
-      id: 4,
-      sender: "Paloma",
-      content: "Por enquanto está tudo ok. Se precisar de algo te aviso!",
-      timestamp: "14:35",
-      isOwn: true,
-    },
-  ]);
-
-  const contacts: Contact[] = [
-    {
-      id: 1,
-      name: "João Santos",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: {
-        time: "14:33",
-        preview: "Perfeito! Precisa de ajuda com alguma coisa?",
-      },
-      timestamp: "14:33",
-      online: true,
-      unread: 0,
-      status: "Online",
-    },
-    {
-      id: 2,
-      name: "Sarah Costa",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: {
-        time: "13:45",
-        preview: "Vamos marcar a reunião para amanhã?",
-      },
-      timestamp: "13:45",
-      online: true,
-      unread: 2,
-      status: "Online",
-    },
-    {
-      id: 3,
-      name: "Miguel Oliveira",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: {
-        time: "12:20",
-        preview: "Obrigado pelas informações!",
-      },
-      timestamp: "12:20",
-      online: false,
-      unread: 0,
-      status: "Offline",
-    },
-    {
-      id: 4,
-      name: "Lisa Ferreira",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: {
-        time: "11:15",
-        preview: "Pode me enviar os dados do relatório?",
-      },
-      timestamp: "11:15",
-      online: true,
-      unread: 1,
-      status: "Online",
-    },
-    {
-      id: 5,
-      name: "Carlos Silva",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: {
-        time: "10:30",
-        preview: "Ótimo trabalho na apresentação!",
-      },
-      timestamp: "10:30",
-      online: false,
-      unread: 0,
-      status: "Offline",
-    },
-  ];
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Buscar conversas do usuário
+  const conversations = useConversations(currentUser?.id);
+
+  // Buscar mensagens da conversa selecionada
+  const messages = useMessages(
+    selectedConversation || undefined,
+    currentUser?.id
+  );
+
+  // Buscar usuários para nova conversa
+  const searchResults = useSearchUsers(searchQuery, currentUser?.id, 10);
+
+  // Hooks para operações de chat
+  const { sendMessage, createDirectConversation, markAsRead } = useChat(
+    currentUser?.id
+  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -154,20 +72,23 @@ export function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const newMsg: Message = {
-        id: messages.length + 1,
-        sender: "Paloma",
-        content: newMessage,
-        timestamp: new Date().toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        isOwn: true,
-      };
-      setMessages([...messages, newMsg]);
-      setNewMessage("");
+  // Marcar mensagens como lidas quando seleciona uma conversa
+  useEffect(() => {
+    if (selectedConversation && currentUser?.id) {
+      markAsRead(selectedConversation);
+    }
+  }, [selectedConversation, currentUser?.id, markAsRead]);
+
+  const handleSendMessage = async () => {
+    if (newMessage.trim() && selectedConversation && currentUser?.id) {
+      try {
+        await sendMessage(selectedConversation, newMessage.trim());
+        setNewMessage("");
+        addNotification("Mensagem enviada");
+      } catch (error) {
+        addNotification("Erro ao enviar mensagem");
+        console.error(error);
+      }
     }
   };
 
@@ -178,7 +99,51 @@ export function ChatPage() {
     }
   };
 
-  const selectedContactData = contacts.find((c) => c.id === selectedContact);
+  const handleCreateConversation = async (otherUserId: Id<"users">) => {
+    if (!currentUser?.id) return;
+
+    try {
+      const conversationId = await createDirectConversation(otherUserId);
+      if (conversationId) {
+        setSelectedConversation(conversationId);
+        setShowUserSearch(false);
+        setSearchQuery("");
+        addNotification("Conversa criada");
+      }
+    } catch (error) {
+      addNotification("Erro ao criar conversa");
+      console.error(error);
+    }
+  };
+
+  // Se não há usuário logado, mostrar tela de login
+  if (!currentUser) {
+    return (
+      <ResponsiveLayout title="Chat">
+        <div className="flex items-center justify-center h-[400px]">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-center">
+                Faça login para usar o chat
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-gray-600 mb-4">
+                Você precisa estar logado para acessar o chat
+              </p>
+              <Button onClick={() => (window.location.href = "/auth")}>
+                Fazer Login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </ResponsiveLayout>
+    );
+  }
+
+  const selectedConversationData = conversations?.find(
+    (c: any) => c.id === selectedConversation
+  );
 
   return (
     <ResponsiveLayout title="Chat">
@@ -192,51 +157,121 @@ export function ChatPage() {
                 <CardTitle className="text-lg text-gray-800">
                   Conversas
                 </CardTitle>
-                <Button variant="ghost" size="icon">
-                  <Search className="h-4 w-4" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowUserSearch(!showUserSearch)}
+                >
+                  {showUserSearch ? (
+                    <X className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
+
+              {/* Search Input */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input placeholder="Buscar conversas..." className="pl-10" />
+                <Input
+                  placeholder={
+                    showUserSearch
+                      ? "Buscar usuários..."
+                      : "Buscar conversas..."
+                  }
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
             </CardHeader>
+
             <CardContent className="flex-1 overflow-y-auto">
-              <div className="space-y-2">
-                {contacts.map((contact) => (
-                  <div
-                    key={contact.id}
-                    onClick={() => setSelectedContact(contact.id)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedContact === contact.id
-                        ? "bg-blue-50 border-l-4 border-blue-500"
-                        : "hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={contact.avatar} />
-                        <AvatarFallback>
-                          {contact.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
+              {showUserSearch ? (
+                /* User Search Results */
+                <div className="space-y-2">
+                  {searchResults?.map((user: any) => (
+                    <div
+                      key={user.id}
+                      onClick={() => handleCreateConversation(user.id)}
+                      className="p-3 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user.avatarUrl} />
+                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900">
-                            {contact.name}
+                            {user.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {contact.lastMessage.time}
+                            {user.position} - {user.department}
                           </p>
                         </div>
-                        <p className="text-sm text-gray-600 truncate">
-                          {contact.lastMessage.preview}
-                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  {searchQuery && searchResults?.length === 0 && (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">Nenhum usuário encontrado</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Conversations List */
+                <div className="space-y-2">
+                  {conversations?.map((conversation: any) => (
+                    <div
+                      key={conversation.id}
+                      onClick={() => setSelectedConversation(conversation.id)}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedConversation === conversation.id
+                          ? "bg-blue-50 border-l-4 border-blue-500"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage
+                            src={conversation.otherUser?.avatarUrl}
+                          />
+                          <AvatarFallback>
+                            {conversation.otherUser?.name.charAt(0) || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-gray-900">
+                              {conversation.otherUser?.name ||
+                                "Conversa em grupo"}
+                            </p>
+                            <div className="flex items-center space-x-2">
+                              <p className="text-xs text-gray-500">
+                                {conversation.lastMessageAt &&
+                                  formatTime(conversation.lastMessageAt)}
+                              </p>
+                              {conversation.unreadCount > 0 && (
+                                <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                                  {conversation.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 truncate">
+                            {conversation.lastMessage || "Sem mensagens"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {conversations?.length === 0 && (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">Nenhuma conversa ainda</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -244,24 +279,30 @@ export function ChatPage() {
         {/* Chat Area */}
         <div className="lg:col-span-3">
           <Card className="bg-white h-full flex flex-col">
-            {selectedContactData ? (
+            {selectedConversationData ? (
               <>
                 {/* Chat Header */}
                 <CardHeader className="pb-3 border-b">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={selectedContactData.avatar} />
+                        <AvatarImage
+                          src={selectedConversationData.otherUser?.avatarUrl}
+                        />
                         <AvatarFallback>
-                          {selectedContactData.name.charAt(0)}
+                          {selectedConversationData.otherUser?.name.charAt(0) ||
+                            "?"}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {selectedContactData.name}
+                          {selectedConversationData.otherUser?.name ||
+                            "Conversa em grupo"}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {selectedContactData.status}
+                          {selectedConversationData.otherUser?.isOnline
+                            ? "Online"
+                            : "Offline"}
                         </p>
                       </div>
                     </div>
@@ -282,7 +323,7 @@ export function ChatPage() {
                 {/* Messages Area */}
                 <CardContent className="flex-1 overflow-y-auto p-4">
                   <div className="space-y-4">
-                    {messages.map((message) => (
+                    {messages?.map((message: any) => (
                       <div
                         key={message.id}
                         className={`flex ${
@@ -307,6 +348,7 @@ export function ChatPage() {
                         </div>
                       </div>
                     ))}
+                    <div ref={messagesEndRef} />
                   </div>
                 </CardContent>
 
@@ -324,9 +366,7 @@ export function ChatPage() {
                         placeholder="Digite sua mensagem..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleSendMessage()
-                        }
+                        onKeyPress={handleKeyPress}
                       />
                     </div>
                     <Button onClick={handleSendMessage} size="icon">
