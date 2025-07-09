@@ -9,7 +9,11 @@
     "start": "next start",
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
-    "seed:chat": "node scripts/seed-chat.js"
+    "seed:chat": "node scripts/seed-chat.js",
+    "fix-login": "node scripts/fix-login.js",
+    "diagnose-login": "npx convex run diagnose_login:diagnoseLogin",
+    "repair-login": "npx convex run diagnose_login:fixLoginIssues",
+    "test-login": "npx convex run diagnose_login:testLogin"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
