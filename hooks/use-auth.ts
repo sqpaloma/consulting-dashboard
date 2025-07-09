@@ -23,6 +23,7 @@ export function useAuth() {
 
   // Queries
   const hasUsers = useQuery(api.auth.hasUsers);
+  const allowNewUsers = useQuery(api.auth.allowNewUsers);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -103,6 +104,7 @@ export function useAuth() {
     signOut,
     createUser,
     hasUsers,
+    allowNewUsers,
     isAuthenticated: !!user,
   };
 }

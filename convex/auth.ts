@@ -116,6 +116,14 @@ export const hasUsers = query({
   },
 });
 
+// Função para verificar se deve permitir criação de novos usuários
+export const allowNewUsers = query({
+  handler: async (ctx) => {
+    // Sempre permitir criação de novos usuários
+    return true;
+  },
+});
+
 // Verificar se uma senha está correta
 export const verifyPassword = mutation({
   args: {

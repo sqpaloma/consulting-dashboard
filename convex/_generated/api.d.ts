@@ -14,8 +14,10 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as auth from "../auth.js";
+import type * as auto_conversations from "../auto_conversations.js";
 import type * as chat from "../chat.js";
 import type * as cleanup from "../cleanup.js";
+import type * as diagnose_login from "../diagnose_login.js";
 import type * as events from "../events.js";
 import type * as seed from "../seed.js";
 import type * as seed_chat from "../seed_chat.js";
@@ -33,8 +35,10 @@ import type * as users from "../users.js";
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  auto_conversations: typeof auto_conversations;
   chat: typeof chat;
   cleanup: typeof cleanup;
+  diagnose_login: typeof diagnose_login;
   events: typeof events;
   seed: typeof seed;
   seed_chat: typeof seed_chat;

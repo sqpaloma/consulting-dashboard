@@ -20,7 +20,13 @@ import {
 import Image from "next/image";
 
 export function LoginPage() {
-  const { signIn, createUser, hasUsers, isLoading: authLoading } = useAuth();
+  const {
+    signIn,
+    createUser,
+    hasUsers,
+    allowNewUsers,
+    isLoading: authLoading,
+  } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -365,7 +371,7 @@ export function LoginPage() {
                 </div>
               )}
 
-              {hasUsers === true && (
+              {allowNewUsers === true && (
                 <div className="text-center">
                   <Button
                     variant="ghost"
