@@ -43,6 +43,35 @@ export function AnalyticsPage() {
     return name?.toLowerCase().replace(/\s+/g, "").trim();
   }
 
+  // Função para agregar dados dos engenheiros
+  function aggregateEngineerData(data: any[]) {
+    const engineerMap = new Map();
+
+    data.forEach((row) => {
+      const engineerName = row.engenheiro;
+
+      if (engineerMap.has(engineerName)) {
+        const existing = engineerMap.get(engineerName);
+        engineerMap.set(engineerName, {
+          ...existing,
+          registros: existing.registros + row.registros,
+          servicos: existing.servicos + row.servicos,
+          pecas: existing.pecas + row.pecas,
+          valorTotal: existing.valorTotal + row.valorTotal,
+          valorPecas: existing.valorPecas + row.valorPecas,
+          valorServicos: existing.valorServicos + row.valorServicos,
+          valorOrcamentos: existing.valorOrcamentos + row.valorOrcamentos,
+          projetos: existing.projetos + row.projetos,
+          quantidade: existing.quantidade + row.quantidade,
+        });
+      } else {
+        engineerMap.set(engineerName, { ...row });
+      }
+    });
+
+    return Array.from(engineerMap.values());
+  }
+
   // Mapeamento dos departamentos e colaboradores (igual do filtro)
   const departmentMap = {
     vendas: {
@@ -111,6 +140,15 @@ export function AnalyticsPage() {
     );
   }
 
+  // Agregar dados dos engenheiros quando não há filtros específicos de mês/ano/engenheiro
+  const shouldAggregate =
+    selectedYear === "todos" &&
+    selectedMonth === "todos" &&
+    selectedEngineer === "todos";
+  const displayData = shouldAggregate
+    ? aggregateEngineerData(filteredData)
+    : filteredData;
+
   // Carregar dados salvos ao inicializar
   useEffect(() => {
     loadSavedData();
@@ -141,7 +179,7 @@ export function AnalyticsPage() {
         onPrint={handlePrint}
         onGenerateReport={generateDetailedReport}
         onClearData={handleClearData}
-        // Passar filtros e setters
+        // Passar filtros e setters - usar dados originais para filtros
         selectedDepartment={selectedDepartment}
         setSelectedDepartment={setSelectedDepartment}
         selectedEngineer={selectedEngineer}
@@ -170,16 +208,16 @@ export function AnalyticsPage() {
       {!isLoading && uploadedData && uploadedData.length > 0 && (
         <div className="space-y-6">
           {/* Metrics Grid */}
-          <AnalyticsMetrics uploadedData={filteredData} />
+          <AnalyticsMetrics uploadedData={displayData} />
 
           {/* Charts Grid */}
-          <AnalyticsCharts uploadedData={filteredData} />
+          <AnalyticsCharts uploadedData={displayData} />
 
           {/* Ranking */}
-          <AnalyticsRanking uploadedData={filteredData} />
+          <AnalyticsRanking uploadedData={displayData} />
 
           {/* Admin Data Table */}
-          <AnalyticsAdminData uploadedData={filteredData} />
+          <AnalyticsAdminData uploadedData={displayData} />
         </div>
       )}
 

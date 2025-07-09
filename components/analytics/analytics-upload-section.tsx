@@ -54,6 +54,7 @@ export function AnalyticsUploadSection({
   onFileUpload,
   onSaveData,
   onPrint,
+  onGenerateReport,
   onClearData,
   selectedDepartment,
   setSelectedDepartment,
@@ -66,8 +67,8 @@ export function AnalyticsUploadSection({
   topEngineersFilter,
   setTopEngineersFilter,
 }: AnalyticsUploadSectionProps) {
-  const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
+  const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
 
   const handleHistoryClick = () => {
     setHistoryDropdownOpen(!historyDropdownOpen);
@@ -90,10 +91,83 @@ export function AnalyticsUploadSection({
     };
   }, []);
 
+  // Função para normalizar nomes (igual do filtro)
+  function normalizeName(name: string) {
+    return name?.toLowerCase().replace(/\s+/g, "").trim();
+  }
+
+  // Mapeamento dos departamentos e colaboradores (igual do filtro)
+  const departmentMap = {
+    vendas: {
+      gerente: "Sobrinho",
+      colaboradores: [
+        "Sobrinho",
+        "Mamede",
+        "Giovana",
+        "Rafael Massa",
+        "LENILTON",
+      ],
+    },
+    servicos: {
+      gerente: "Giovanni",
+      colaboradores: ["Giovanni", "Paloma", "Lucas", "Marcelo M", "Raquel"],
+    },
+    engenhariaeassistencia: {
+      gerente: "Carlinhos",
+      colaboradores: ["Carlinhos", "Claudio", "Anderson"],
+    },
+    externos: {
+      gerente: "Carvalho",
+      colaboradores: ["RONAN NONATO", "Jefferson", "Edison", "Sandro"],
+    },
+  };
+
+  // Filtragem dos dados conforme os filtros selecionados para os filtros (sem agregação)
+  let filteredDataForFilters = uploadedData;
+  if (selectedDepartment !== "todos") {
+    if (
+      selectedDepartment === "vendas" ||
+      selectedDepartment === "servicos" ||
+      selectedDepartment === "engenhariaeassistencia" ||
+      selectedDepartment === "externos"
+    ) {
+      const colabs =
+        departmentMap[selectedDepartment].colaboradores.map(normalizeName);
+      filteredDataForFilters = filteredDataForFilters.filter((row) =>
+        colabs.includes(normalizeName(row.engenheiro))
+      );
+    } else if (selectedDepartment === "outros") {
+      const allColabs = [
+        ...departmentMap.vendas.colaboradores,
+        ...departmentMap.servicos.colaboradores,
+        ...departmentMap.engenhariaeassistencia.colaboradores,
+        ...departmentMap.externos.colaboradores,
+      ].map(normalizeName);
+      filteredDataForFilters = filteredDataForFilters.filter(
+        (row) => !allColabs.includes(normalizeName(row.engenheiro))
+      );
+    }
+  }
+  if (selectedEngineer !== "todos") {
+    filteredDataForFilters = filteredDataForFilters.filter(
+      (row) => normalizeName(row.engenheiro) === selectedEngineer
+    );
+  }
+  if (selectedYear !== "todos") {
+    filteredDataForFilters = filteredDataForFilters.filter(
+      (row) => row.ano?.toString() === selectedYear
+    );
+  }
+  if (selectedMonth !== "todos") {
+    filteredDataForFilters = filteredDataForFilters.filter(
+      (row) => row.mes?.toString().padStart(2, "0") === selectedMonth
+    );
+  }
+
   return (
     <div className="flex items-center space-x-4 flex-wrap gap-2">
       <AnalyticsFilters
-        uploadedData={uploadedData}
+        uploadedData={filteredDataForFilters}
         selectedDepartment={selectedDepartment}
         setSelectedDepartment={setSelectedDepartment}
         selectedEngineer={selectedEngineer}
