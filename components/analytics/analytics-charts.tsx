@@ -13,8 +13,38 @@ export function AnalyticsCharts({ uploadedData }: AnalyticsChartsProps) {
     }).format(value);
   };
 
-  // Filter data function - simplified for now
-  const filteredData = uploadedData;
+  // Function to sort engineers alphabetically with special characters/numbers at the end
+  const sortEngineers = (data: any[]) => {
+    return data.sort((a, b) => {
+      const nameA = a.engenheiro || "";
+      const nameB = b.engenheiro || "";
+
+      // Check if name starts with a letter
+      const isLetterA = /^[a-zA-ZÀ-ÿ]/.test(nameA);
+      const isLetterB = /^[a-zA-ZÀ-ÿ]/.test(nameB);
+
+      // If both start with letters, sort alphabetically
+      if (isLetterA && isLetterB) {
+        return nameA.localeCompare(nameB, "pt-BR", { sensitivity: "base" });
+      }
+
+      // If A starts with letter but B doesn't, A comes first
+      if (isLetterA && !isLetterB) {
+        return -1;
+      }
+
+      // If B starts with letter but A doesn't, B comes first
+      if (!isLetterA && isLetterB) {
+        return 1;
+      }
+
+      // If both start with special characters/numbers, sort them alphabetically
+      return nameA.localeCompare(nameB, "pt-BR", { sensitivity: "base" });
+    });
+  };
+
+  // Filter and sort data
+  const filteredData = sortEngineers([...uploadedData]);
 
   return (
     <div className="space-y-6">
