@@ -7,6 +7,7 @@ import {
   clearAllAnalyticsData,
   type AnalyticsData,
   type AnalyticsUpload,
+  type RawDataRow,
 } from "@/lib/supabase-client";
 
 interface DataRow {
@@ -22,10 +23,12 @@ interface DataRow {
   valorOrcamentos: number;
   projetos: number;
   quantidade: number;
+  cliente?: string;
 }
 
 export function useAnalyticsData() {
   const [uploadedData, setUploadedData] = useState<DataRow[]>([]);
+  const [rawData, setRawData] = useState<RawDataRow[]>([]);
   const [fileName, setFileName] = useState<string>("");
   const [uploadHistory, setUploadHistory] = useState<AnalyticsUpload[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +50,8 @@ export function useAnalyticsData() {
   const loadSavedData = async () => {
     setIsLoading(true);
     try {
-      const savedData = await loadAnalyticsData();
+      const { data: savedData, rawData: savedRawData } =
+        await loadAnalyticsData();
       if (savedData.length > 0) {
         const convertedData: DataRow[] = savedData.map((item) => ({
           engenheiro: item.engenheiro,
@@ -62,8 +66,11 @@ export function useAnalyticsData() {
           valorOrcamentos: item.valor_orcamentos,
           projetos: item.projetos,
           quantidade: item.quantidade,
+          cliente: item.cliente,
         }));
         setUploadedData(convertedData);
+        // Now we load raw data from the database too
+        setRawData(savedRawData);
       }
     } catch (error) {
       console.error("Erro ao carregar dados salvos:", error);
@@ -186,6 +193,12 @@ export function useAnalyticsData() {
             descricaoIndex !== -1
               ? row[descricaoIndex]?.toString() || "Não informado"
               : "Não informado";
+
+          // Extrai o cliente se disponível
+          const cliente =
+            parceiroIndex !== -1 && row[parceiroIndex]
+              ? row[parceiroIndex]?.toString().trim()
+              : "Cliente não informado";
 
           // Extrai o ID do orçamento se disponível
           const orcamentoId =
@@ -311,6 +324,7 @@ export function useAnalyticsData() {
               valorOrcamentos: 0,
               projetos: 0,
               quantidade: 0,
+              cliente: undefined, // Não agrupa por cliente - isso será feito na análise
             };
             // Inicializa o set de conversões únicas para este engenheiro
             uniqueConversions[chaveUnica] = new Set();
@@ -366,6 +380,130 @@ export function useAnalyticsData() {
 
         // Atualiza o estado
         setUploadedData(finalData);
+
+        // Armazena dados brutos para análise do cliente
+        const rawRows: RawDataRow[] = [];
+        for (let i = 3; i < jsonData.length; i++) {
+          const row = jsonData[i] as any[];
+          if (!row || row.length === 0) continue;
+
+          const responsavel =
+            responsavelIndex !== -1
+              ? row[responsavelIndex]?.toString() || "Vendedor não informado"
+              : "Vendedor não informado";
+          const valorStr =
+            valorIndex !== -1 ? row[valorIndex]?.toString() || "0" : "0";
+          const descricao =
+            descricaoIndex !== -1
+              ? row[descricaoIndex]?.toString() || "Não informado"
+              : "Não informado";
+          const cliente =
+            parceiroIndex !== -1 && row[parceiroIndex]
+              ? row[parceiroIndex]?.toString().trim()
+              : "Cliente não informado";
+          const orcamentoId =
+            orcamentoIndex !== -1 && row[orcamentoIndex]
+              ? row[orcamentoIndex]?.toString().trim()
+              : null;
+
+          // Processa a data para esta linha específica
+          let ano = 2025;
+          let mes = 6;
+          if (dtNegIndex !== -1 && row[dtNegIndex]) {
+            const dtNegStr = row[dtNegIndex].toString().trim();
+            let dataProcessada: Date | null = null;
+
+            if (!isNaN(Number(dtNegStr)) && dtNegStr.length > 4) {
+              const excelDate = Number(dtNegStr);
+              dataProcessada = new Date((excelDate - 25569) * 86400 * 1000);
+            } else {
+              const formatosBrasil = [
+                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+                /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+                /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+                /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/,
+              ];
+
+              for (const formato of formatosBrasil) {
+                const match = dtNegStr.match(formato);
+                if (match) {
+                  if (
+                    formato.source.includes("(\\d{4})-(\\d{1,2})-(\\d{1,2})")
+                  ) {
+                    dataProcessada = new Date(
+                      Number.parseInt(match[1]),
+                      Number.parseInt(match[2]) - 1,
+                      Number.parseInt(match[3])
+                    );
+                  } else {
+                    let anoCompleto = Number.parseInt(match[3]);
+                    if (anoCompleto < 100) {
+                      anoCompleto += 2000;
+                    }
+                    dataProcessada = new Date(
+                      anoCompleto,
+                      Number.parseInt(match[2]) - 1,
+                      Number.parseInt(match[1])
+                    );
+                  }
+                  break;
+                }
+              }
+
+              if (!dataProcessada || isNaN(dataProcessada.getTime())) {
+                if (dtNegStr.includes("/")) {
+                  const partes = dtNegStr.split("/");
+                  if (partes.length === 3) {
+                    const dataAmericana = `${partes[1]}/${partes[0]}/${partes[2]}`;
+                    dataProcessada = new Date(dataAmericana);
+                  }
+                }
+              }
+            }
+
+            if (dataProcessada && !isNaN(dataProcessada.getTime())) {
+              ano = dataProcessada.getFullYear();
+              mes = dataProcessada.getMonth() + 1;
+            }
+          }
+
+          const valor =
+            Number.parseFloat(
+              valorStr
+                .toString()
+                .replace(/[^\d,.-]/g, "")
+                .replace(",", ".")
+            ) || 0;
+
+          const isOrcamento =
+            descricao.toLowerCase().includes("orçamento de venda") ||
+            descricao.toLowerCase().includes("orcamento de venda");
+
+          const isVendaNormal =
+            descricao.toLowerCase().includes("venda normal") ||
+            descricao.toLowerCase().includes("venda de peças") ||
+            descricao.toLowerCase().includes("venda de pecas");
+
+          const isVendaServicos =
+            descricao.toLowerCase().includes("venda de serviços") ||
+            descricao.toLowerCase().includes("venda de servicos") ||
+            descricao.toLowerCase().includes("serviço") ||
+            descricao.toLowerCase().includes("servico");
+
+          rawRows.push({
+            responsavel,
+            cliente,
+            ano,
+            mes,
+            valor,
+            descricao,
+            orcamentoId,
+            isOrcamento,
+            isVendaNormal,
+            isVendaServicos,
+          });
+        }
+        setRawData(rawRows);
 
         // Contadores por tipo para o relatório
         let totalOrcamentos = 0;
@@ -491,9 +629,15 @@ export function useAnalyticsData() {
         valor_orcamentos: item.valorOrcamentos,
         projetos: item.projetos,
         quantidade: item.quantidade,
+        cliente: item.cliente,
       }));
 
-      const result = await saveAnalyticsData(analyticsData, fileName, "Paloma");
+      const result = await saveAnalyticsData(
+        analyticsData,
+        rawData,
+        fileName,
+        "Paloma"
+      );
 
       if (result.success) {
         setSaveStatus("saved");
@@ -505,7 +649,19 @@ export function useAnalyticsData() {
       } else {
         setSaveStatus("error");
         setTimeout(() => setSaveStatus("idle"), 3000);
-        alert("Erro ao salvar dados. Tente novamente.");
+
+        // Verifica se é erro de migração
+        if (result.error === "migration_needed") {
+          alert(
+            "Para salvar com dados de cliente, execute primeiro o script de migração no Supabase:\n\n" +
+              "1. Acesse o painel do Supabase\n" +
+              "2. Vá para SQL Editor\n" +
+              "3. Execute: scripts/migrate-analytics-add-cliente.sql\n\n" +
+              "Depois tente salvar novamente."
+          );
+        } else {
+          alert("Erro ao salvar dados. Tente novamente.");
+        }
       }
     } catch (error) {
       setSaveStatus("error");
@@ -525,6 +681,7 @@ export function useAnalyticsData() {
       try {
         await clearAllAnalyticsData();
         setUploadedData([]);
+        setRawData([]);
         setFileName("");
         setUploadHistory([]);
         alert("Dados limpos com sucesso!");
@@ -850,5 +1007,7 @@ export function useAnalyticsData() {
     handleSaveData,
     handleClearData,
     generateDetailedReport,
+    rawData,
+    setRawData,
   };
 }

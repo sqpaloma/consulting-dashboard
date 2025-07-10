@@ -13,10 +13,13 @@ import { AnalyticsAdminData } from "./analytics-admin-data";
 import { AnalyticsMetrics } from "./analytics-metrics";
 import { AnalyticsCharts } from "./analytics-charts";
 import { AnalyticsRanking } from "./analytics-ranking";
+import { AnalyticsConversionRate } from "./analytics-conversion-rate";
+import { AnalyticsClientAnalysis } from "./analytics-client-analysis";
 
 export function AnalyticsPage() {
   const {
     uploadedData,
+    rawData,
     fileName,
     uploadHistory,
     isLoading,
@@ -63,6 +66,7 @@ export function AnalyticsPage() {
           valorOrcamentos: existing.valorOrcamentos + row.valorOrcamentos,
           projetos: existing.projetos + row.projetos,
           quantidade: existing.quantidade + row.quantidade,
+          cliente: existing.cliente || row.cliente,
         });
       } else {
         engineerMap.set(engineerName, { ...row });
@@ -140,6 +144,48 @@ export function AnalyticsPage() {
     );
   }
 
+  // Filtrar dados brutos também
+  let filteredRawData = rawData;
+  if (selectedDepartment !== "todos") {
+    if (
+      selectedDepartment === "vendas" ||
+      selectedDepartment === "servicos" ||
+      selectedDepartment === "engenhariaeassistencia" ||
+      selectedDepartment === "externos"
+    ) {
+      const colabs =
+        departmentMap[selectedDepartment].colaboradores.map(normalizeName);
+      filteredRawData = filteredRawData.filter((row) =>
+        colabs.includes(normalizeName(row.responsavel))
+      );
+    } else if (selectedDepartment === "outros") {
+      const allColabs = [
+        ...departmentMap.vendas.colaboradores,
+        ...departmentMap.servicos.colaboradores,
+        ...departmentMap.engenhariaeassistencia.colaboradores,
+        ...departmentMap.externos.colaboradores,
+      ].map(normalizeName);
+      filteredRawData = filteredRawData.filter(
+        (row) => !allColabs.includes(normalizeName(row.responsavel))
+      );
+    }
+  }
+  if (selectedEngineer !== "todos") {
+    filteredRawData = filteredRawData.filter(
+      (row) => normalizeName(row.responsavel) === selectedEngineer
+    );
+  }
+  if (selectedYear !== "todos") {
+    filteredRawData = filteredRawData.filter(
+      (row) => row.ano?.toString() === selectedYear
+    );
+  }
+  if (selectedMonth !== "todos") {
+    filteredRawData = filteredRawData.filter(
+      (row) => row.mes?.toString().padStart(2, "0") === selectedMonth
+    );
+  }
+
   // Agregar dados dos engenheiros quando não há filtros específicos de mês/ano/engenheiro
   const shouldAggregate =
     selectedYear === "todos" &&
@@ -209,6 +255,15 @@ export function AnalyticsPage() {
         <div className="space-y-6">
           {/* Metrics Grid */}
           <AnalyticsMetrics uploadedData={displayData} />
+
+          {/* Conversion Rate and Client Analysis */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AnalyticsConversionRate uploadedData={displayData} />
+            <AnalyticsClientAnalysis
+              uploadedData={displayData}
+              rawData={filteredRawData}
+            />
+          </div>
 
           {/* Charts Grid */}
           <AnalyticsCharts uploadedData={displayData} />
