@@ -7,6 +7,10 @@ import {
   loadDevolucaoData,
   loadMovimentacaoData,
 } from "@/lib/returns-movements-supabase-client";
+import {
+  loadDashboardData,
+  getDashboardItemsByCategory,
+} from "@/lib/dashboard-supabase-client";
 
 interface DashboardData {
   totalItens: number;
@@ -19,6 +23,12 @@ interface DashboardData {
 interface DashboardMetricsProps {
   dashboardData: DashboardData;
   openModal: (type: string) => void;
+}
+
+interface ItemMetrics {
+  total: number;
+  overdue: number;
+  onTime: number;
 }
 
 export function DashboardMetrics({
@@ -35,6 +45,138 @@ export function DashboardMetrics({
     entrada: 0,
     saida: 0,
   });
+
+  // Estados para as métricas de itens atrasados
+  const [itemMetrics, setItemMetrics] = useState<{
+    total: ItemMetrics;
+    aprovacao: ItemMetrics;
+    analises: ItemMetrics;
+    orcamentos: ItemMetrics;
+    execucao: ItemMetrics;
+  }>({
+    total: { total: 0, overdue: 0, onTime: 0 },
+    aprovacao: { total: 0, overdue: 0, onTime: 0 },
+    analises: { total: 0, overdue: 0, onTime: 0 },
+    orcamentos: { total: 0, overdue: 0, onTime: 0 },
+    execucao: { total: 0, overdue: 0, onTime: 0 },
+  });
+
+  // Função para fazer parse de diferentes formatos de data
+  const parseDate = (dateString: string): Date | null => {
+    if (!dateString) return null;
+
+    // Remove espaços extras
+    const cleanDate = dateString.toString().trim();
+
+    // Tenta diferentes formatos
+    const formats = [
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+      /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
+      /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
+    ];
+
+    for (const format of formats) {
+      const match = cleanDate.match(format);
+      if (match) {
+        if (format.source.includes("yyyy")) {
+          // Formato com ano completo
+          const [, day, month, year] = match;
+          return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+          // Formato com ano abreviado
+          const [, day, month, year] = match;
+          const fullYear =
+            parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
+          return new Date(fullYear, parseInt(month) - 1, parseInt(day));
+        }
+      }
+    }
+
+    // Se for uma data ISO (YYYY-MM-DD), usa diretamente
+    if (cleanDate.includes("-") && cleanDate.length === 10) {
+      const date = new Date(cleanDate);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+
+    // Se for um número (data do Excel)
+    if (!isNaN(Number(cleanDate)) && cleanDate.length > 4) {
+      const excelDate = Number(cleanDate);
+      return new Date((excelDate - 25569) * 86400 * 1000);
+    }
+
+    return null;
+  };
+
+  // Função para verificar se um item está atrasado
+  const isItemOverdue = (item: any): boolean => {
+    let deadlineDate = null;
+
+    // Tenta usar data_registro primeiro
+    if (item.data_registro) {
+      deadlineDate = new Date(item.data_registro);
+    } else if (item.raw_data?.prazo) {
+      deadlineDate = parseDate(item.raw_data.prazo);
+    }
+
+    if (!deadlineDate || isNaN(deadlineDate.getTime())) {
+      return false; // Se não tem data válida, considera no prazo
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    deadlineDate.setHours(0, 0, 0, 0);
+
+    return deadlineDate < today;
+  };
+
+  // Função para calcular métricas de uma categoria
+  const calculateMetrics = (items: any[]): ItemMetrics => {
+    const total = items.length;
+    const overdue = items.filter(isItemOverdue).length;
+    const onTime = total - overdue;
+
+    return { total, overdue, onTime };
+  };
+
+  useEffect(() => {
+    const loadItemMetrics = async () => {
+      try {
+        // Carrega todos os itens
+        const { items: allItems } = await loadDashboardData();
+
+        // Carrega itens por categoria
+        const [
+          totalItems,
+          aprovacaoItems,
+          analisesItems,
+          orcamentosItems,
+          execucaoItems,
+        ] = await Promise.all([
+          Promise.resolve(allItems), // Todos os itens
+          getDashboardItemsByCategory("aprovacao"),
+          getDashboardItemsByCategory("analises"),
+          getDashboardItemsByCategory("orcamentos"),
+          getDashboardItemsByCategory("execucao"),
+        ]);
+
+        // Calcula métricas para cada categoria
+        setItemMetrics({
+          total: calculateMetrics(totalItems),
+          aprovacao: calculateMetrics(aprovacaoItems),
+          analises: calculateMetrics(analisesItems),
+          orcamentos: calculateMetrics(orcamentosItems),
+          execucao: calculateMetrics(execucaoItems),
+        });
+      } catch (error) {
+        console.error("Erro ao carregar métricas de itens:", error);
+      }
+    };
+
+    loadItemMetrics();
+  }, [dashboardData]); // Recarrega quando dashboardData muda
 
   useEffect(() => {
     const loadData = async () => {
@@ -62,6 +204,42 @@ export function DashboardMetrics({
     loadData();
   }, []);
 
+  // Função para calcular percentual seguro
+  const calculatePercentage = (value: number, total: number): number => {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
+  };
+
+  // Função para calcular a média dos percentuais de todos os cards
+  const calculateAveragePercentages = () => {
+    const categories = [
+      itemMetrics.aprovacao,
+      itemMetrics.analises,
+      itemMetrics.orcamentos,
+      itemMetrics.execucao,
+    ];
+    const validCategories = categories.filter((cat) => cat.total > 0);
+
+    if (validCategories.length === 0) {
+      return { overdue: 0, onTime: 0 };
+    }
+
+    const overduePercentages = validCategories.map((cat) =>
+      calculatePercentage(cat.overdue, cat.total)
+    );
+    const onTimePercentages = validCategories.map((cat) =>
+      calculatePercentage(cat.onTime, cat.total)
+    );
+
+    const avgOverdue = Math.round(
+      overduePercentages.reduce((sum, p) => sum + p, 0) / validCategories.length
+    );
+    const avgOnTime = Math.round(
+      onTimePercentages.reduce((sum, p) => sum + p, 0) / validCategories.length
+    );
+
+    return { overdue: avgOverdue, onTime: avgOnTime };
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
       {/* Total Itens */}
@@ -78,6 +256,14 @@ export function DashboardMetrics({
           </div>
           <div className="text-3xl font-bold text-gray-800">
             {dashboardData.totalItens}
+          </div>
+          <div className="flex items-center space-x-2 text-xs mt-2">
+            <span className="text-red-500">
+              {calculateAveragePercentages().overdue}%
+            </span>
+            <span className="text-green-500">
+              {calculateAveragePercentages().onTime}%
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -111,24 +297,17 @@ export function DashboardMetrics({
           </div>
           <div className="flex items-center space-x-2 text-xs">
             <span className="text-red-500">
-              {dashboardData.totalItens > 0
-                ? Math.round(
-                    (dashboardData.aguardandoAprovacao /
-                      dashboardData.totalItens) *
-                      100
-                  )
-                : 0}
+              {calculatePercentage(
+                itemMetrics.aprovacao.overdue,
+                itemMetrics.aprovacao.total
+              )}
               %
             </span>
             <span className="text-green-500">
-              {dashboardData.totalItens > 0
-                ? Math.round(
-                    ((dashboardData.totalItens -
-                      dashboardData.aguardandoAprovacao) /
-                      dashboardData.totalItens) *
-                      100
-                  )
-                : 100}
+              {calculatePercentage(
+                itemMetrics.aprovacao.onTime,
+                itemMetrics.aprovacao.total
+              )}
               %
             </span>
           </div>
@@ -162,21 +341,17 @@ export function DashboardMetrics({
           </div>
           <div className="flex items-center space-x-2 text-xs">
             <span className="text-red-500">
-              {dashboardData.totalItens > 0
-                ? Math.round(
-                    (dashboardData.analises / dashboardData.totalItens) * 100
-                  )
-                : 0}
+              {calculatePercentage(
+                itemMetrics.analises.overdue,
+                itemMetrics.analises.total
+              )}
               %
             </span>
             <span className="text-green-500">
-              {dashboardData.totalItens > 0
-                ? Math.round(
-                    ((dashboardData.totalItens - dashboardData.analises) /
-                      dashboardData.totalItens) *
-                      100
-                  )
-                : 100}
+              {calculatePercentage(
+                itemMetrics.analises.onTime,
+                itemMetrics.analises.total
+              )}
               %
             </span>
           </div>
@@ -200,21 +375,17 @@ export function DashboardMetrics({
           </div>
           <div className="flex items-center space-x-2 text-xs">
             <span className="text-red-500">
-              {dashboardData.totalItens > 0
-                ? Math.round(
-                    (dashboardData.orcamentos / dashboardData.totalItens) * 100
-                  )
-                : 0}
+              {calculatePercentage(
+                itemMetrics.orcamentos.overdue,
+                itemMetrics.orcamentos.total
+              )}
               %
             </span>
             <span className="text-green-500">
-              {dashboardData.totalItens > 0
-                ? Math.round(
-                    ((dashboardData.totalItens - dashboardData.orcamentos) /
-                      dashboardData.totalItens) *
-                      100
-                  )
-                : 100}
+              {calculatePercentage(
+                itemMetrics.orcamentos.onTime,
+                itemMetrics.orcamentos.total
+              )}
               %
             </span>
           </div>
@@ -256,21 +427,17 @@ export function DashboardMetrics({
           </div>
           <div className="flex items-center space-x-2 text-xs">
             <span className="text-red-500">
-              {dashboardData.totalItens > 0
-                ? Math.round(
-                    (dashboardData.emExecucao / dashboardData.totalItens) * 100
-                  )
-                : 0}
+              {calculatePercentage(
+                itemMetrics.execucao.overdue,
+                itemMetrics.execucao.total
+              )}
               %
             </span>
             <span className="text-green-500">
-              {dashboardData.totalItens > 0
-                ? Math.round(
-                    ((dashboardData.totalItens - dashboardData.emExecucao) /
-                      dashboardData.totalItens) *
-                      100
-                  )
-                : 100}
+              {calculatePercentage(
+                itemMetrics.execucao.onTime,
+                itemMetrics.execucao.total
+              )}
               %
             </span>
           </div>
@@ -303,19 +470,17 @@ export function DashboardMetrics({
           </div>
           <div className="flex items-center space-x-2 text-xs">
             <span className="text-red-500">
-              {devolucaoData.total > 0
-                ? Math.round(
-                    (devolucaoData.pendentes / devolucaoData.total) * 100
-                  )
-                : 0}
+              {calculatePercentage(
+                devolucaoData.pendentes,
+                devolucaoData.total
+              )}
               %
             </span>
             <span className="text-green-500">
-              {devolucaoData.total > 0
-                ? Math.round(
-                    (devolucaoData.concluidas / devolucaoData.total) * 100
-                  )
-                : 100}
+              {calculatePercentage(
+                devolucaoData.concluidas,
+                devolucaoData.total
+              )}
               %
             </span>
           </div>
@@ -348,19 +513,17 @@ export function DashboardMetrics({
           </div>
           <div className="flex items-center space-x-2 text-xs">
             <span className="text-red-500">
-              {movimentacaoData.total > 0
-                ? Math.round(
-                    (movimentacaoData.saida / movimentacaoData.total) * 100
-                  )
-                : 0}
+              {calculatePercentage(
+                movimentacaoData.saida,
+                movimentacaoData.total
+              )}
               %
             </span>
             <span className="text-green-500">
-              {movimentacaoData.total > 0
-                ? Math.round(
-                    (movimentacaoData.entrada / movimentacaoData.total) * 100
-                  )
-                : 100}
+              {calculatePercentage(
+                movimentacaoData.entrada,
+                movimentacaoData.total
+              )}
               %
             </span>
           </div>
