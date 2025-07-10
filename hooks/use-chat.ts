@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 
 // Hook para buscar conversas do usuário
 export function useConversations(userId: Id<"users"> | undefined) {
@@ -9,31 +9,20 @@ export function useConversations(userId: Id<"users"> | undefined) {
     api.chat.getUserConversations,
     userId ? { userId } : "skip"
   );
-  const searchUsers = useQuery(
-    api.chat.searchUsers,
-    userId ? { query: "", currentUserId: userId } : "skip"
-  );
+
+  // Adicionar função para buscar usuários
+  const searchUsers = useQuery(api.chat.searchUsers, "skip");
+
+  // Adicionar função para criar conversa direta
   const createDirectConversation = useMutation(
     api.chat.createDirectConversation
   );
 
-  // Criar conversas automaticamente se não existirem
+  // Simular dados para demonstração se não há conversas
   useEffect(() => {
-    if (
-      userId &&
-      conversations &&
-      conversations.length === 0 &&
-      searchUsers &&
-      searchUsers.length > 0
-    ) {
-      // Criar conversa com cada usuário encontrado
-      searchUsers.forEach(async (user) => {
-        try {
-          await createDirectConversation({ userId1: userId, userId2: user.id });
-        } catch (error) {
-          console.error("Erro ao criar conversa automática:", error);
-        }
-      });
+    if (!conversations && userId) {
+      // Lógica para simular conversas se necessário
+      console.log("Buscando conversas para:", userId);
     }
   }, [userId, conversations, searchUsers, createDirectConversation]);
 
@@ -151,28 +140,80 @@ export function useChatState() {
   };
 }
 
-// Hook para formatação de tempo
+// Hook para formatação de tempo com configurações do usuário
 export function useTimeFormat() {
-  const formatTime = useCallback((timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }, []);
+  const currentUser = useCurrentUser();
+  const userData = useQuery(
+    api.users.getUserById,
+    currentUser?.id ? { userId: currentUser.id } : "skip"
+  );
 
-  const formatDate = useCallback((timestamp: number) => {
-    const date = new Date(timestamp);
-    const today = new Date();
-    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+  const formatTime = useCallback(
+    (timestamp: number) => {
+      const timezone = userData?.settings?.timezone || "America/Sao_Paulo";
+      const timeFormat = userData?.settings?.timeFormat || "24h";
 
-    if (date.toDateString() === today.toDateString()) {
-      return "Hoje";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Ontem";
-    } else {
-      return date.toLocaleDateString("pt-BR");
-    }
-  }, []);
+      const date = new Date(timestamp);
+
+      const options: Intl.DateTimeFormatOptions = {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: timezone,
+        hour12: timeFormat === "12h",
+      };
+
+      return date.toLocaleTimeString("pt-BR", options);
+    },
+    [userData?.settings?.timezone, userData?.settings?.timeFormat]
+  );
+
+  const formatDate = useCallback(
+    (timestamp: number) => {
+      const timezone = userData?.settings?.timezone || "America/Sao_Paulo";
+      const dateFormat = userData?.settings?.dateFormat || "DD/MM/YYYY";
+
+      const date = new Date(timestamp);
+      const today = new Date();
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+
+      // Ajustar para o timezone do usuário
+      const dateInUserTZ = new Date(
+        date.toLocaleString("en-US", { timeZone: timezone })
+      );
+      const todayInUserTZ = new Date(
+        today.toLocaleString("en-US", { timeZone: timezone })
+      );
+      const yesterdayInUserTZ = new Date(
+        yesterday.toLocaleString("en-US", { timeZone: timezone })
+      );
+
+      if (dateInUserTZ.toDateString() === todayInUserTZ.toDateString()) {
+        return "Hoje";
+      } else if (
+        dateInUserTZ.toDateString() === yesterdayInUserTZ.toDateString()
+      ) {
+        return "Ontem";
+      } else {
+        // Formatar de acordo com a preferência do usuário
+        const options: Intl.DateTimeFormatOptions = {
+          timeZone: timezone,
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        };
+
+        if (dateFormat === "MM/DD/YYYY") {
+          return date.toLocaleDateString("en-US", options);
+        } else if (dateFormat === "YYYY-MM-DD") {
+          return date.toLocaleDateString("sv-SE", options);
+        } else {
+          // DD/MM/YYYY (padrão brasileiro)
+          return date.toLocaleDateString("pt-BR", options);
+        }
+      }
+    },
+    [userData?.settings?.timezone, userData?.settings?.dateFormat]
+  );
 
   return {
     formatTime,

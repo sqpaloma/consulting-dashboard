@@ -76,6 +76,8 @@ export default defineSchema({
     createdBy: v.id("users"),
     lastMessage: v.optional(v.string()),
     lastMessageAt: v.optional(v.number()),
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   }),
@@ -87,6 +89,7 @@ export default defineSchema({
     joinedAt: v.number(),
     lastReadAt: v.optional(v.number()),
     isActive: v.boolean(),
+    leftAt: v.optional(v.number()),
   })
     .index("by_conversation", ["conversationId"])
     .index("by_user", ["userId"])

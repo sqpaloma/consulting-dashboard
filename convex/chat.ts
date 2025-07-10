@@ -16,7 +16,7 @@ export const getUserConversations = query({
     const conversations = await Promise.all(
       participations.map(async (participation) => {
         const conversation = await ctx.db.get(participation.conversationId);
-        if (!conversation) return null;
+        if (!conversation || conversation.isDeleted) return null;
 
         // Buscar outros participantes
         const otherParticipants = await ctx.db
@@ -418,5 +418,91 @@ export const getConversationInfo = query({
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,
     };
+  },
+});
+
+// Deletar mensagem
+export const deleteMessage = mutation({
+  args: {
+    messageId: v.id("messages"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) {
+      throw new Error("Mensagem não encontrada");
+    }
+
+    // Verificar se o usuário participa da conversa
+    const participation = await ctx.db
+      .query("conversationParticipants")
+      .withIndex("by_conversation_user", (q) =>
+        q.eq("conversationId", message.conversationId).eq("userId", args.userId)
+      )
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .first();
+
+    if (!participation) {
+      throw new Error(
+        "Você não tem permissão para deletar mensagens nesta conversa"
+      );
+    }
+
+    // Marcar como deletada ao invés de remover completamente
+    await ctx.db.patch(args.messageId, {
+      isDeleted: true,
+      deletedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return args.messageId;
+  },
+});
+
+// Deletar conversa
+export const deleteConversation = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Verificar se o usuário participa da conversa
+    const participation = await ctx.db
+      .query("conversationParticipants")
+      .withIndex("by_conversation_user", (q) =>
+        q.eq("conversationId", args.conversationId).eq("userId", args.userId)
+      )
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .first();
+
+    if (!participation) {
+      throw new Error("Acesso negado a esta conversa");
+    }
+
+    // Marcar participação como inativa ao invés de deletar
+    await ctx.db.patch(participation._id, {
+      isActive: false,
+      leftAt: Date.now(),
+    });
+
+    // Verificar se ainda há participantes ativos
+    const activeParticipants = await ctx.db
+      .query("conversationParticipants")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId)
+      )
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    // Se não há mais participantes ativos, marcar conversa como deletada
+    if (activeParticipants.length === 0) {
+      await ctx.db.patch(args.conversationId, {
+        isDeleted: true,
+        deletedAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+
+    return args.conversationId;
   },
 });
