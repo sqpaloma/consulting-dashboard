@@ -13,12 +13,8 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [name, setName] = useState("");
-  const [position, setPosition] = useState("");
-  const [department, setDepartment] = useState("");
 
-  const { signIn, createUser } = useAuth();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,22 +22,9 @@ export function LoginForm() {
     setError("");
 
     try {
-      if (isSignUp) {
-        const result = await createUser({
-          name,
-          email,
-          password,
-          position,
-          department,
-        });
-        if (!result.success) {
-          throw new Error(result.error);
-        }
-      } else {
-        const result = await signIn(email, password);
-        if (!result.success) {
-          throw new Error(result.error);
-        }
+      const result = await signIn(email, password);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       // Redirecionar para a página de chat
@@ -57,56 +40,14 @@ export function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-            {isSignUp ? "Criar Conta" : "Login"}
-          </CardTitle>
+          <CardTitle className="text-2xl font-bold">Login</CardTitle>
           <p className="text-gray-600">
-            {isSignUp
-              ? "Crie sua conta para usar o chat"
-              : "Entre com suas credenciais para acessar o chat"}
+            Entre com suas credenciais para acessar o chat
           </p>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
-              <>
-                <div>
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome completo"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="position">Cargo (opcional)</Label>
-                  <Input
-                    id="position"
-                    type="text"
-                    value={position}
-                    onChange={(e) => setPosition(e.target.value)}
-                    placeholder="Seu cargo"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="department">Departamento (opcional)</Label>
-                  <Input
-                    id="department"
-                    type="text"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    placeholder="Seu departamento"
-                  />
-                </div>
-              </>
-            )}
-
             <div>
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -147,25 +88,13 @@ export function LoginForm() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isSignUp ? "Criando conta..." : "Entrando..."}
+                  Entrando...
                 </>
               ) : (
-                <>{isSignUp ? "Criar Conta" : "Entrar"}</>
+                <>Entrar</>
               )}
             </Button>
           </form>
-
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-blue-600 hover:text-blue-800 text-sm"
-            >
-              {isSignUp
-                ? "Já tem uma conta? Faça login"
-                : "Não tem uma conta? Crie uma"}
-            </button>
-          </div>
         </CardContent>
       </Card>
     </div>
