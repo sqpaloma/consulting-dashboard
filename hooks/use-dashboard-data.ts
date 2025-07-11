@@ -9,6 +9,7 @@ import {
   type DashboardItem,
   type DashboardUpload,
 } from "@/lib/dashboard-supabase-client";
+import { mapEngineerResponsible } from "@/lib/engineer-mapping";
 
 // Estado global para controlar salvamento
 let isSavingGlobal = false;
@@ -158,211 +159,218 @@ export function useDashboardData() {
     }
   }, []);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    setFileName(file.name);
+      setFileName(file.name);
+      setIsLoading(true);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            raw: false,
+            defval: "",
+          });
 
-        // Pega a primeira planilha
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
+          if (jsonData.length === 0) {
+            alert("Planilha está vazia.");
+            setIsLoading(false);
+            return;
+          }
 
-        // Converte para JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          // Busca o cabeçalho na primeira linha
+          const headers = jsonData[0] as string[];
 
-        if (jsonData.length < 2) {
-          alert(
-            "Planilha deve conter pelo menos uma linha de cabeçalho e uma linha de dados."
+          // Encontra os índices das colunas
+          const osIndex = headers.findIndex(
+            (header) =>
+              header &&
+              (header.toLowerCase().includes("os") ||
+                header.toLowerCase().includes("ordem") ||
+                header.toLowerCase().includes("número"))
           );
-          return;
-        }
 
-        // Primeira linha são os cabeçalhos
-        const headers = jsonData[0] as string[];
-
-        // Encontra os índices das colunas importantes
-        const statusIndex = headers.findIndex(
-          (header) => header && header.toLowerCase().includes("status")
-        );
-        const osIndex = headers.findIndex(
-          (header) =>
-            header &&
-            (header.toLowerCase().includes("os") ||
-              header.toLowerCase().includes("ordem"))
-        );
-        const prazoIndex = headers.findIndex(
-          (header) => header && header.toLowerCase().includes("prazo")
-        );
-        const responsavelIndex = headers.findIndex((header) => {
-          if (!header) return false;
-          const headerLower = header.toLowerCase().trim();
-          return (
-            headerLower.includes("responsavel") ||
-            headerLower.includes("responsável") ||
-            headerLower === "responsavel" ||
-            headerLower === "responsável" ||
-            headerLower === "resp" ||
-            headerLower.includes("responsible") ||
-            headerLower.includes("encarregado")
+          const statusIndex = headers.findIndex(
+            (header) =>
+              header &&
+              (header.toLowerCase().includes("status") ||
+                header.toLowerCase().includes("situação"))
           );
-        });
 
-        // Se não encontrou a coluna responsável pelo nome, vamos tentar algumas posições comuns
-        let finalResponsavelIndex = responsavelIndex;
-        if (responsavelIndex === -1) {
-          // Tentar algumas posições comuns baseadas na estrutura típica das planilhas
-          // Posição 4 é comum para responsável (após OS, titulo, cliente)
-          const possiblePositions = [4, 3, 5, 6, 7];
-          for (const pos of possiblePositions) {
-            if (pos < headers.length && headers[pos]) {
-              const headerLower = headers[pos].toLowerCase().trim();
+          const prazoIndex = headers.findIndex(
+            (header) =>
+              header &&
+              (header.toLowerCase().includes("prazo") ||
+                header.toLowerCase().includes("data") ||
+                header.toLowerCase().includes("vencimento"))
+          );
 
-              // Se a coluna não for vazia e não for claramente outra coisa
-              if (
-                headers[pos].trim() !== "" &&
-                !headerLower.includes("status") &&
-                !headerLower.includes("prazo") &&
-                !headerLower.includes("data") &&
-                !headerLower.includes("valor") &&
-                !headerLower.includes("preco") &&
-                !headerLower.includes("quantidade") &&
-                headers[pos].length > 1 // pelo menos 2 caracteres
-              ) {
-                // Confirmar se há dados nesta coluna checando algumas linhas
-                let hasData = false;
-                for (
-                  let checkRow = 1;
-                  checkRow < Math.min(6, jsonData.length);
-                  checkRow++
+          const responsavelIndex = headers.findIndex((header) => {
+            if (!header) return false;
+            const headerLower = header.toLowerCase().trim();
+            return (
+              headerLower.includes("responsavel") ||
+              headerLower.includes("responsável") ||
+              headerLower === "responsavel" ||
+              headerLower === "responsável" ||
+              headerLower === "resp" ||
+              headerLower.includes("responsible") ||
+              headerLower.includes("encarregado")
+            );
+          });
+
+          // Se não encontrou a coluna responsável pelo nome, vamos tentar algumas posições comuns
+          let finalResponsavelIndex = responsavelIndex;
+          if (responsavelIndex === -1) {
+            // Tentar algumas posições comuns baseadas na estrutura típica das planilhas
+            // Posição 4 é comum para responsável (após OS, titulo, cliente)
+            const possiblePositions = [4, 3, 5, 6, 7];
+            for (const pos of possiblePositions) {
+              if (pos < headers.length && headers[pos]) {
+                const headerLower = headers[pos].toLowerCase().trim();
+
+                // Se a coluna não for vazia e não for claramente outra coisa
+                if (
+                  headers[pos].trim() !== "" &&
+                  !headerLower.includes("status") &&
+                  !headerLower.includes("prazo") &&
+                  !headerLower.includes("data") &&
+                  !headerLower.includes("valor") &&
+                  !headerLower.includes("preco") &&
+                  !headerLower.includes("quantidade") &&
+                  headers[pos].length > 1 // pelo menos 2 caracteres
                 ) {
-                  const row = jsonData[checkRow] as any[];
-                  if (row && row[pos] && row[pos].toString().trim() !== "") {
-                    hasData = true;
+                  // Confirmar se há dados nesta coluna checando algumas linhas
+                  let hasData = false;
+                  for (
+                    let checkRow = 1;
+                    checkRow < Math.min(6, jsonData.length);
+                    checkRow++
+                  ) {
+                    const row = jsonData[checkRow] as any[];
+                    if (row && row[pos] && row[pos].toString().trim() !== "") {
+                      hasData = true;
+                      break;
+                    }
+                  }
+
+                  if (hasData) {
+                    finalResponsavelIndex = pos;
                     break;
                   }
-                }
-
-                if (hasData) {
-                  finalResponsavelIndex = pos;
-                  break;
                 }
               }
             }
           }
-        }
 
-        if (statusIndex === -1) {
-          alert("Coluna 'status' não encontrada na planilha.");
-          return;
-        }
+          if (statusIndex === -1) {
+            alert("Coluna 'status' não encontrada na planilha.");
+            return;
+          }
 
-        // Processa os dados
-        const processedData = {
-          totalItens: 0,
-          aguardandoAprovacao: 0,
-          analises: 0,
-          orcamentos: 0,
-          emExecucao: 0,
-          items: [] as DashboardItemRow[],
-        };
-
-        // Processa cada linha de dados (pula o cabeçalho)
-        for (let i = 1; i < jsonData.length; i++) {
-          const row = jsonData[i] as any[];
-          if (!row || row.length === 0) continue;
-
-          const status = row[statusIndex]?.toString().toLowerCase().trim();
-          const os = osIndex !== -1 ? row[osIndex]?.toString() : `OS-${i}`;
-
-          // Extrair responsável
-          const responsavelValue =
-            finalResponsavelIndex !== -1
-              ? row[finalResponsavelIndex]?.toString()?.trim() ||
-                "Não informado"
-              : "Não informado";
-
-          // Cria o item
-          const item: DashboardItemRow = {
-            id: os,
-            os: os,
-            status: row[statusIndex]?.toString() || "Não definido",
-            titulo: row[1] || `Item ${i}`, // Assume que a segunda coluna é o título
-            cliente: row[2] || "Cliente não informado", // Assume que a terceira coluna é o cliente
-            responsavel: responsavelValue,
-            data: new Date().toLocaleDateString("pt-BR"),
-            prazo: prazoIndex !== -1 ? row[prazoIndex]?.toString() || "" : "",
-            rawData: row,
-            data_registro:
-              prazoIndex !== -1
-                ? parseDateBRtoISO(row[prazoIndex]?.toString() || "")
-                : "",
+          // Processa os dados
+          const processedData = {
+            totalItens: 0,
+            aguardandoAprovacao: 0,
+            analises: 0,
+            orcamentos: 0,
+            emExecucao: 0,
+            items: [] as DashboardItemRow[],
           };
 
-          processedData.items.push(item);
-          processedData.totalItens++;
+          // Processa cada linha de dados (pula o cabeçalho)
+          for (let i = 1; i < jsonData.length; i++) {
+            const row = jsonData[i] as any[];
+            if (!row || row.length === 0) continue;
 
-          // Categoriza baseado no status
-          if (
-            status.includes("aguardando") ||
-            status.includes("pendente") ||
-            status.includes("aprovação")
-          ) {
-            processedData.aguardandoAprovacao++;
-          } else if (
-            status.includes("análise") ||
-            status.includes("analise") ||
-            status.includes("revisão") ||
-            status.includes("revisao")
-          ) {
-            processedData.analises++;
-          } else if (
-            status.includes("orçamento") ||
-            status.includes("orcamento") ||
-            status.includes("cotação") ||
-            status.includes("cotacao")
-          ) {
-            processedData.orcamentos++;
-          } else if (
-            status.includes("execução") ||
-            status.includes("execucao") ||
-            status.includes("andamento") ||
-            status.includes("progresso")
-          ) {
-            processedData.emExecucao++;
+            const status = row[statusIndex]?.toString().toLowerCase().trim();
+            const os = osIndex !== -1 ? row[osIndex]?.toString() : `OS-${i}`;
+
+            // Extrair responsável e aplicar mapeamento
+            const responsavelOriginal =
+              finalResponsavelIndex !== -1
+                ? row[finalResponsavelIndex]?.toString()?.trim() ||
+                  "Não informado"
+                : "Não informado";
+
+            const responsavelMapeado =
+              mapEngineerResponsible(responsavelOriginal);
+
+            // Cria o item
+            const item: DashboardItemRow = {
+              id: os,
+              os: os,
+              status: row[statusIndex]?.toString() || "Não definido",
+              titulo: row[1] || `Item ${i}`, // Assume que a segunda coluna é o título
+              cliente: row[2] || "Cliente não informado", // Assume que a terceira coluna é o cliente
+              responsavel: responsavelMapeado, // Usa o nome mapeado
+              data: new Date().toLocaleDateString("pt-BR"),
+              prazo: prazoIndex !== -1 ? row[prazoIndex]?.toString() || "" : "",
+              rawData: row,
+              data_registro:
+                prazoIndex !== -1
+                  ? parseDateBRtoISO(row[prazoIndex]?.toString() || "")
+                  : "",
+            };
+
+            processedData.items.push(item);
+            processedData.totalItens++;
+
+            // Categoriza baseado no status
+            if (
+              status.includes("aguardando") ||
+              status.includes("pendente") ||
+              status.includes("aprovação") ||
+              status.includes("aprovacao")
+            ) {
+              processedData.aguardandoAprovacao++;
+            } else if (
+              status.includes("análise") ||
+              status.includes("analise") ||
+              status.includes("revisão") ||
+              status.includes("revisao")
+            ) {
+              processedData.analises++;
+            } else if (
+              status.includes("orçamento") ||
+              status.includes("orcamento") ||
+              status.includes("cotação") ||
+              status.includes("cotacao")
+            ) {
+              processedData.orcamentos++;
+            } else if (
+              status.includes("execução") ||
+              status.includes("execucao") ||
+              status.includes("andamento") ||
+              status.includes("progresso")
+            ) {
+              processedData.emExecucao++;
+            }
           }
+
+          // Atualiza os estados
+          setDashboardData(processedData);
+          setProcessedItems(processedData.items);
+          setIsLoading(false);
+        } catch (error) {
+          console.error("Erro ao processar planilha:", error);
+          alert("Erro ao processar planilha. Verifique o formato.");
+          setIsLoading(false);
         }
+      };
 
-        // Atualiza o estado
-        setDashboardData({
-          totalItens: processedData.totalItens,
-          aguardandoAprovacao: processedData.aguardandoAprovacao,
-          analises: processedData.analises,
-          orcamentos: processedData.orcamentos,
-          emExecucao: processedData.emExecucao,
-        });
-
-        // Armazena os itens processados para uso nos modais
-        setProcessedItems(processedData.items);
-
-        alert(
-          `Planilha carregada com sucesso! ${processedData.totalItens} itens processados.`
-        );
-      } catch (error) {
-        console.error("Erro ao processar planilha:", error);
-        alert(
-          "Erro ao processar a planilha. Verifique se o arquivo está no formato correto (.xlsx ou .xls)."
-        );
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  };
+      reader.readAsArrayBuffer(file);
+    },
+    []
+  );
 
   const handleSaveData = useCallback(async () => {
     console.log("=== DEBUG: Iniciando salvamento do dashboard ===");

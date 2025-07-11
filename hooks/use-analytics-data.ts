@@ -9,6 +9,7 @@ import {
   type AnalyticsUpload,
   type RawDataRow,
 } from "@/lib/supabase-client";
+import { mapEngineerResponsible } from "@/lib/engineer-mapping";
 
 interface DataRow {
   engenheiro: string;
@@ -47,6 +48,7 @@ export function useAnalyticsData() {
     engineerBreakdown: any[];
   } | null>(null);
 
+  // Função para carregar dados salvos
   const loadSavedData = async () => {
     setIsLoading(true);
     try {
@@ -183,10 +185,13 @@ export function useAnalyticsData() {
           const row = jsonData[i] as any[];
           if (!row || row.length === 0) continue;
 
-          const responsavel =
+          const responsavelOriginal =
             responsavelIndex !== -1
               ? row[responsavelIndex]?.toString() || "Vendedor não informado"
               : "Vendedor não informado";
+
+          // Aplica o mapeamento do responsável
+          const responsavel = mapEngineerResponsible(responsavelOriginal);
           const valorStr =
             valorIndex !== -1 ? row[valorIndex]?.toString() || "0" : "0";
           const descricao =
@@ -387,10 +392,13 @@ export function useAnalyticsData() {
           const row = jsonData[i] as any[];
           if (!row || row.length === 0) continue;
 
-          const responsavel =
+          const responsavelOriginal =
             responsavelIndex !== -1
               ? row[responsavelIndex]?.toString() || "Vendedor não informado"
               : "Vendedor não informado";
+
+          // Aplica o mapeamento do responsável
+          const responsavel = mapEngineerResponsible(responsavelOriginal);
           const valorStr =
             valorIndex !== -1 ? row[valorIndex]?.toString() || "0" : "0";
           const descricao =
