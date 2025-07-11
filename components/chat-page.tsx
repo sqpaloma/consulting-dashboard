@@ -15,11 +15,21 @@ import {
   X,
   Trash2,
   MessageSquareX,
+  ListTodo,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   useConversations,
   useMessages,
@@ -52,6 +62,18 @@ export function ChatPage() {
     show: boolean;
   } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showTodoModal, setShowTodoModal] = useState(false);
+  const [selectedMessageForTodo, setSelectedMessageForTodo] = useState<{
+    id: string;
+    content: string;
+  } | null>(null);
+  const [todoForm, setTodoForm] = useState({
+    title: "",
+    description: "",
+    priority: "medium",
+    dueDate: "",
+    category: "",
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Buscar conversas do usuário
@@ -74,6 +96,9 @@ export function ChatPage() {
   // Mutations para deletar
   const deleteMessage = useMutation(api.chat.deleteMessage);
   const deleteConversation = useMutation(api.chat.deleteConversation);
+
+  // Mutation para criar todo
+  const createTodo = useMutation(api.todos.createTodo);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -170,6 +195,61 @@ export function ChatPage() {
     } else {
       handleDeleteConversation(deleteConfirmation.id);
     }
+  };
+
+  const handleCreateTodoFromMessage = (messageId: string, content: string) => {
+    setSelectedMessageForTodo({ id: messageId, content });
+    setTodoForm({
+      title: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
+      description: content,
+      priority: "medium",
+      dueDate: "",
+      category: "Chat",
+    });
+    setShowTodoModal(true);
+  };
+
+  const handleTodoSubmit = async () => {
+    if (!todoForm.title.trim()) {
+      addNotification("Título é obrigatório");
+      return;
+    }
+
+    try {
+      await createTodo({
+        title: todoForm.title,
+        description: todoForm.description,
+        priority: todoForm.priority,
+        dueDate: todoForm.dueDate || undefined,
+        category: todoForm.category || undefined,
+      });
+
+      addNotification("Todo criado com sucesso!");
+      setShowTodoModal(false);
+      setSelectedMessageForTodo(null);
+      setTodoForm({
+        title: "",
+        description: "",
+        priority: "medium",
+        dueDate: "",
+        category: "",
+      });
+    } catch (error) {
+      addNotification("Erro ao criar todo");
+      console.error(error);
+    }
+  };
+
+  const handleTodoModalClose = () => {
+    setShowTodoModal(false);
+    setSelectedMessageForTodo(null);
+    setTodoForm({
+      title: "",
+      description: "",
+      priority: "medium",
+      dueDate: "",
+      category: "",
+    });
   };
 
   // Lista de emojis mais usados
@@ -528,19 +608,33 @@ export function ChatPage() {
                       >
                         <div className="flex items-center space-x-2">
                           {message.isOwn && (
-                            <button
-                              onClick={() =>
-                                setDeleteConfirmation({
-                                  type: "message",
-                                  id: message.id,
-                                  show: true,
-                                })
-                              }
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                              title="Deletar mensagem"
-                            >
-                              <Trash2 className="h-3 w-3 text-gray-500" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() =>
+                                  setDeleteConfirmation({
+                                    type: "message",
+                                    id: message.id,
+                                    show: true,
+                                  })
+                                }
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-700"
+                                title="Deletar mensagem"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-500" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleCreateTodoFromMessage(
+                                    message.id,
+                                    message.content
+                                  )
+                                }
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
+                                title="Criar todo desta mensagem"
+                              >
+                                <ListTodo className="h-3 w-3 text-blue-500" />
+                              </button>
+                            </>
                           )}
                           <div
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
@@ -561,19 +655,33 @@ export function ChatPage() {
                             </p>
                           </div>
                           {!message.isOwn && (
-                            <button
-                              onClick={() =>
-                                setDeleteConfirmation({
-                                  type: "message",
-                                  id: message.id,
-                                  show: true,
-                                })
-                              }
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                              title="Deletar mensagem"
-                            >
-                              <Trash2 className="h-3 w-3 text-gray-500" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() =>
+                                  setDeleteConfirmation({
+                                    type: "message",
+                                    id: message.id,
+                                    show: true,
+                                  })
+                                }
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-700"
+                                title="Deletar mensagem"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-500" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleCreateTodoFromMessage(
+                                    message.id,
+                                    message.content
+                                  )
+                                }
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
+                                title="Criar todo desta mensagem"
+                              >
+                                <ListTodo className="h-3 w-3 text-blue-500" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -689,6 +797,106 @@ export function ChatPage() {
                 {deleteConfirmation.type === "message"
                   ? "Deletar mensagem"
                   : "Deletar conversa"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para criar todo */}
+      {showTodoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Criar Todo</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleTodoModalClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="todo-title">Título</Label>
+                <Input
+                  id="todo-title"
+                  value={todoForm.title}
+                  onChange={(e) =>
+                    setTodoForm({ ...todoForm, title: e.target.value })
+                  }
+                  placeholder="Título do todo"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="todo-description">Descrição</Label>
+                <Textarea
+                  id="todo-description"
+                  value={todoForm.description}
+                  onChange={(e) =>
+                    setTodoForm({ ...todoForm, description: e.target.value })
+                  }
+                  placeholder="Descrição do todo"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="todo-priority">Prioridade</Label>
+                <Select
+                  value={todoForm.priority}
+                  onValueChange={(value) =>
+                    setTodoForm({ ...todoForm, priority: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Baixa</SelectItem>
+                    <SelectItem value="medium">Média</SelectItem>
+                    <SelectItem value="high">Alta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="todo-dueDate">Data de Vencimento</Label>
+                <Input
+                  id="todo-dueDate"
+                  type="date"
+                  value={todoForm.dueDate}
+                  onChange={(e) =>
+                    setTodoForm({ ...todoForm, dueDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="todo-category">Categoria</Label>
+                <Input
+                  id="todo-category"
+                  value={todoForm.category}
+                  onChange={(e) =>
+                    setTodoForm({ ...todoForm, category: e.target.value })
+                  }
+                  placeholder="Categoria do todo"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button variant="outline" onClick={handleTodoModalClose}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleTodoSubmit}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Criar Todo
               </Button>
             </div>
           </div>
