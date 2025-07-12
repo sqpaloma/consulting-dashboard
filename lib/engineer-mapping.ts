@@ -4,7 +4,7 @@ export function mapEngineerResponsible(nome: string): string {
 
   // Mapeamento para PALOMA
   const palomaTeam = [
-    "GUSTAVO",
+    "GUSTAVOBEL",
     "GUILHERME",
     "EDUARDO",
     "YURI",
@@ -91,7 +91,7 @@ export function mapEngineerResponsible(nome: string): string {
 export function isEngineerMapped(nome: string): boolean {
   const nomeUpper = nome.toUpperCase().trim();
   const palomaTeam = [
-    "GUSTAVO",
+    "GUSTAVOBEL",
     "GUILHERME",
     "EDUARDO",
     "YURI",
@@ -159,7 +159,7 @@ export function isEngineerMapped(nome: string): boolean {
 export function getAllMappedNames(): string[] {
   return [
     // Equipe PALOMA
-    "GUSTAVO",
+    "GUSTAVOBEL",
     "GUILHERME",
     "EDUARDO",
     "YURI",
