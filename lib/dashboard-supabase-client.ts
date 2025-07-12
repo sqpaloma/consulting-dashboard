@@ -171,7 +171,7 @@ export async function loadDashboardData(): Promise<{
       .from("dashboard_itens")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(5000); // Adicionar limite explícito maior
+      .limit(100000); // Limite muito alto para garantir todos os itens
 
     if (itemsError && itemsError.code !== "42P01") {
       throw itemsError;
@@ -271,9 +271,10 @@ export async function getDashboardItemsByCategory(
       .order("created_at", {
         ascending: false,
       })
-      .limit(5000); // Adicionar limite explícito maior
+      .limit(100000); // Limite muito alto para garantir todos os itens
 
     if (error && error.code !== "42P01") throw error;
+
     return data || [];
   } catch (error) {
     return [];
@@ -337,7 +338,7 @@ export async function getDashboardItemsByResponsavel(
       .select("*")
       .eq("responsavel", responsavel)
       .order("created_at", { ascending: false })
-      .limit(5000); // Adicionar limite explícito maior
+      .limit(100000); // Limite muito alto para garantir todos os itens
 
     if (error && error.code !== "42P01") throw error;
     return data || [];
