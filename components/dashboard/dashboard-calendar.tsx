@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar, RefreshCw } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  RefreshCw,
+  AlertTriangle,
+  X,
+} from "lucide-react";
 import { loadDashboardData } from "@/lib/dashboard-supabase-client";
 
 interface CalendarItem {
@@ -36,6 +43,7 @@ export function DashboardCalendar({
   }>({});
   const [databaseItems, setDatabaseItems] = useState<CalendarItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showOverdueModal, setShowOverdueModal] = useState(false);
 
   // Carrega dados do banco de dados
   const loadDatabaseItems = async () => {
@@ -69,7 +77,7 @@ export function DashboardCalendar({
 
       setDatabaseItems(dbItems);
     } catch (error) {
-      } finally {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -78,6 +86,23 @@ export function DashboardCalendar({
   useEffect(() => {
     loadDatabaseItems();
   }, [filteredByResponsavel]);
+
+  // Fecha o modal com a tecla ESC
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && showOverdueModal) {
+        setShowOverdueModal(false);
+      }
+    };
+
+    if (showOverdueModal) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showOverdueModal]);
 
   // Processa os itens para extrair datas de prazo
   useEffect(() => {
@@ -157,6 +182,37 @@ export function DashboardCalendar({
 
     return null;
   };
+
+  // Calcula itens em atraso usando useMemo para otimizar performance
+  const overdueItemsList = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const allItems = [...processedItems, ...databaseItems];
+    const overdueItems: CalendarItem[] = [];
+
+    allItems.forEach((item) => {
+      let itemDate = null;
+
+      // Tenta extrair a data do prazo
+      if (item.data && item.data.includes("-")) {
+        itemDate = new Date(item.data);
+        if (isNaN(itemDate.getTime())) {
+          itemDate = null;
+        }
+      } else if (item.prazo) {
+        itemDate = parseDate(item.prazo);
+      } else if (item.data) {
+        itemDate = parseDate(item.data);
+      }
+
+      if (itemDate && itemDate < today) {
+        overdueItems.push(item);
+      }
+    });
+
+    return overdueItems;
+  }, [processedItems, databaseItems]);
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -272,6 +328,19 @@ export function DashboardCalendar({
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setShowOverdueModal(true)}
+              className={`text-xs ${
+                overdueItemsList.length > 0
+                  ? "text-red-600 border-red-200 hover:bg-red-50"
+                  : "text-gray-600 border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Atrasados ({overdueItemsList.length})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={loadDatabaseItems}
               disabled={isLoading}
               className="text-xs"
@@ -367,6 +436,99 @@ export function DashboardCalendar({
           ))}
         </div>
       </CardContent>
+
+      {/* Modal de Itens em Atraso */}
+      {showOverdueModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setShowOverdueModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-red-600 flex items-center">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                Itens em Atraso ({overdueItemsList.length})
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowOverdueModal(false)}
+                className="hover:bg-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {overdueItemsList.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg">Nenhum item em atraso encontrado</p>
+                <p className="text-sm">Todos os itens estão em dia!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {overdueItemsList.map((item: CalendarItem, index: number) => {
+                  const itemDate =
+                    item.data && item.data.includes("-")
+                      ? new Date(item.data)
+                      : parseDate(item.prazo || item.data);
+                  const daysOverdue = itemDate
+                    ? Math.floor(
+                        (new Date().getTime() - itemDate.getTime()) /
+                          (1000 * 60 * 60 * 24)
+                      )
+                    : 0;
+
+                  return (
+                    <div
+                      key={`overdue-${item.id || item.os}-${index}-${item.data || item.prazo}`}
+                      className="border border-red-200 rounded-lg p-4 bg-red-50 hover:bg-red-100 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-800">
+                            OS: {item.os}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-1">
+                            {item.titulo}
+                          </p>
+                          <p className="text-sm text-gray-600 mb-1">
+                            <strong>Cliente:</strong> {item.cliente}
+                          </p>
+                          {item.responsavel && (
+                            <p className="text-sm text-gray-600 mb-1">
+                              <strong>Responsável:</strong> {item.responsavel}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600">
+                            <strong>Status:</strong> {item.status}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-red-600 font-medium">
+                            {daysOverdue > 0
+                              ? `${daysOverdue} dias em atraso`
+                              : "Em atraso"}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Prazo:{" "}
+                            {itemDate
+                              ? itemDate.toLocaleDateString("pt-BR")
+                              : "Data inválida"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
