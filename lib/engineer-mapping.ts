@@ -40,7 +40,7 @@ export function mapEngineerResponsible(nome: string): string {
     "LUCAS",
     "MARCELO",
     "GIOVANNI",
-    "SHEINE",
+
     "SANDRO",
     "RONAN",
     "RICARDO",
@@ -60,6 +60,8 @@ export function mapEngineerResponsible(nome: string): string {
     "RAQUEL",
   ];
 
+  const carlinhosTeam = ["SHEINE"];
+
   if (palomaTeam.includes(nomeUpper)) {
     return "PALOMA";
   }
@@ -70,6 +72,10 @@ export function mapEngineerResponsible(nome: string): string {
 
   if (marceloTeam.includes(nomeUpper)) {
     return "MARCELO";
+  }
+
+  if (carlinhosTeam.includes(nomeUpper)) {
+    return "CARLINHOS";
   }
 
   // Se é um responsável principal, mantém o nome original
@@ -112,13 +118,15 @@ export function isEngineerMapped(nome: string): boolean {
     "VINICIUS",
   ];
 
+  const carlinhosTeam = ["SHEINE"];
+
   const principalResponsaveis = [
     "SOBRINHO",
     "PALOMA",
     "LUCAS",
     "MARCELO",
     "GIOVANNI",
-    "SHEINE",
+
     "SANDRO",
     "RONAN",
     "RICARDO",
@@ -142,6 +150,7 @@ export function isEngineerMapped(nome: string): boolean {
     palomaTeam.includes(nomeUpper) ||
     lucasTeam.includes(nomeUpper) ||
     marceloTeam.includes(nomeUpper) ||
+    carlinhosTeam.includes(nomeUpper) ||
     principalResponsaveis.includes(nomeUpper)
   );
 }
@@ -178,7 +187,6 @@ export function getAllMappedNames(): string[] {
     "LUCAS",
     "MARCELO",
     "GIOVANNI",
-    "SHEINE",
     "SANDRO",
     "RONAN",
     "RICARDO",
@@ -196,5 +204,7 @@ export function getAllMappedNames(): string[] {
     "EDISON",
     "MARCELO M",
     "RAQUEL",
+    // Equipe CARLINHOS
+    "SHEINE",
   ];
 }
