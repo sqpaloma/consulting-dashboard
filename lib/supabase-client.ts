@@ -58,9 +58,6 @@ export async function saveAnalyticsData(
   uploadedBy?: string
 ) {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { success: false, error: "Supabase not configured" };
   }
 
@@ -144,9 +141,6 @@ export async function saveAnalyticsData(
           rawInsertError?.code === "42P01" ||
           rawInsertError?.code === "PGRST116"
         ) {
-          console.warn(
-            "Tabela analytics_raw_data não existe - dados brutos não foram salvos"
-          );
           // Continua sem falhar
         } else {
           throw rawInsertError;
@@ -162,8 +156,6 @@ export async function saveAnalyticsData(
 
     return { success: true, uploadId: uploadRecord.id };
   } catch (error: any) {
-    console.error("Erro ao salvar dados:", error);
-
     // Tratamento específico para tabelas não existentes
     if (error?.code === "42P01" || error?.code === "PGRST116") {
       const friendly = {
@@ -172,7 +164,6 @@ export async function saveAnalyticsData(
         details: error?.details,
         hint: error?.hint,
       };
-      console.error("Erro de tabela não encontrada:", friendly);
 
       return {
         success: false,
@@ -192,9 +183,6 @@ export async function loadAnalyticsData(): Promise<{
   rawData: RawDataRow[];
 }> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { data: [], rawData: [] };
   }
 
@@ -222,9 +210,6 @@ export async function loadAnalyticsData(): Promise<{
       if (rawError?.code !== "42P01" && rawError?.code !== "PGRST116") {
         throw rawError;
       }
-      console.warn(
-        "Tabela analytics_raw_data não existe - carregando apenas dados agregados"
-      );
       rawAnalyticsData = [];
     }
 
@@ -267,7 +252,6 @@ export async function loadAnalyticsData(): Promise<{
 
     return { data: convertedData, rawData: convertedRawData };
   } catch (error) {
-    console.error("Erro ao carregar dados:", error);
     return { data: [], rawData: [] };
   }
 }
@@ -275,9 +259,6 @@ export async function loadAnalyticsData(): Promise<{
 // Função para obter histórico de uploads
 export async function getUploadHistory(): Promise<AnalyticsUpload[]> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return [];
   }
 
@@ -291,7 +272,6 @@ export async function getUploadHistory(): Promise<AnalyticsUpload[]> {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error("Erro ao carregar histórico:", error);
     return [];
   }
 }
@@ -299,9 +279,6 @@ export async function getUploadHistory(): Promise<AnalyticsUpload[]> {
 // Função para limpar todos os dados
 export async function clearAllAnalyticsData() {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { success: false, error: "Supabase not configured" };
   }
 
@@ -321,7 +298,6 @@ export async function clearAllAnalyticsData() {
 
     return { success: true };
   } catch (error) {
-    console.error("Erro ao limpar dados:", error);
     return { success: false, error };
   }
 }

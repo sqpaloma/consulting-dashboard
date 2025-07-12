@@ -22,7 +22,6 @@ export function useConversations(userId: Id<"users"> | undefined) {
   useEffect(() => {
     if (!conversations && userId) {
       // Lógica para simular conversas se necessário
-      console.log("Buscando conversas para:", userId);
     }
   }, [userId, conversations, searchUsers, createDirectConversation]);
 
@@ -246,7 +245,6 @@ export function useCurrentUser() {
           });
         }
       } catch (error) {
-        console.error("Error parsing user data:", error);
         localStorage.removeItem("user");
       }
     }

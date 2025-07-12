@@ -146,7 +146,6 @@ function SettingsPageContent() {
 
       toast.success("Configurações salvas com sucesso!");
     } catch (error) {
-      console.error("Erro ao salvar configurações:", error);
       toast.error("Erro ao salvar configurações. Tente novamente.");
     }
   };

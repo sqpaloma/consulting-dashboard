@@ -13,7 +13,7 @@ import {
 import { User, X } from "lucide-react";
 import {
   getUniqueResponsaveis,
-  getDashboardItemsByResponsavel,
+  loadDashboardData,
 } from "@/lib/dashboard-supabase-client";
 
 interface ResponsavelFilterProps {
@@ -43,24 +43,36 @@ export function ResponsavelFilter({
 
       if (responsaveisFromDB.length > 0) {
         setResponsaveis(responsaveisFromDB);
-      } else {
-        // Fallback para itens locais se não houver dados no banco
-        const localResponsaveis = Array.from(
-          new Set(
-            processedItems
-              .map((item) => item.responsavel)
-              .filter(
-                (responsavel) =>
-                  responsavel &&
-                  responsavel.trim() !== "" &&
-                  responsavel !== "Não informado"
-              )
-          )
-        );
-        setResponsaveis(localResponsaveis);
+        return;
       }
+
+      const localResponsaveis = Array.from(
+        new Set(
+          processedItems
+            .map((item) => item.responsavel)
+            .filter(
+              (responsavel) =>
+                responsavel &&
+                responsavel.trim() !== "" &&
+                responsavel !== "Não informado"
+            )
+        )
+      ).sort();
+      setResponsaveis(localResponsaveis);
     } catch (error) {
-      console.error("Erro ao carregar responsáveis:", error);
+      const localResponsaveis = Array.from(
+        new Set(
+          processedItems
+            .map((item) => item.responsavel)
+            .filter(
+              (responsavel) =>
+                responsavel &&
+                responsavel.trim() !== "" &&
+                responsavel !== "Não informado"
+            )
+        )
+      ).sort();
+      setResponsaveis(localResponsaveis);
     } finally {
       setIsLoading(false);
     }
@@ -70,31 +82,9 @@ export function ResponsavelFilter({
     try {
       setIsLoading(true);
       setSelectedResponsavel(responsavel);
-
-      // Tentar carregar dados do banco primeiro
-      const itemsFromDB = await getDashboardItemsByResponsavel(responsavel);
-
-      if (itemsFromDB.length > 0) {
-        const formattedItems = itemsFromDB.map((item) => ({
-          id: item.os,
-          os: item.os,
-          titulo: item.titulo || `Item ${item.os}`,
-          cliente: item.cliente || "Cliente não informado",
-          responsavel: item.responsavel,
-          status: item.status,
-          data: item.data_registro || new Date().toLocaleDateString("pt-BR"),
-          rawData: item.raw_data,
-        }));
-        onFilterChange(responsavel);
-      } else {
-        // Fallback para filtrar itens locais
-        const filteredItems = processedItems.filter((item) => {
-          return item.responsavel && item.responsavel.trim() === responsavel;
-        });
-        onFilterChange(responsavel);
-      }
+      onFilterChange(responsavel);
     } catch (error) {
-      console.error("Erro ao filtrar por responsável:", error);
+      // Silently handle error
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +106,7 @@ export function ResponsavelFilter({
           <User className="h-4 w-4 mr-2" />
           <SelectValue placeholder="Filtrar por responsável" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-48 overflow-y-auto">
           {responsaveis.map((responsavel) => (
             <SelectItem key={responsavel} value={responsavel}>
               {responsavel}

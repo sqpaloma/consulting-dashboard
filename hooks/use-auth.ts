@@ -33,7 +33,6 @@ export function useAuth() {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
       } catch (error) {
-        console.error("Error parsing saved user:", error);
         localStorage.removeItem("user");
       }
     }
@@ -55,7 +54,6 @@ export function useAuth() {
       localStorage.setItem("user", JSON.stringify(userData));
       return { success: true };
     } catch (error) {
-      console.error("Login error:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Erro ao fazer login",
@@ -89,7 +87,6 @@ export function useAuth() {
       localStorage.setItem("user", JSON.stringify(userDataResult));
       return { success: true };
     } catch (error) {
-      console.error("Create user error:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Erro ao criar usuário",

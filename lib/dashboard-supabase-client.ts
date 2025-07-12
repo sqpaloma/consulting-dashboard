@@ -3,20 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-console.log("=== DEBUG: Configuração do Supabase Dashboard ===");
-console.log("supabaseUrl:", supabaseUrl ? "Configurado" : "NÃO CONFIGURADO");
-console.log(
-  "supabaseAnonKey:",
-  supabaseAnonKey ? "Configurado" : "NÃO CONFIGURADO"
-);
-
 // Only create the client if environment variables are available
 export const supabase =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
-
-console.log("Supabase client criado:", supabase ? "SIM" : "NÃO");
 
 export interface DashboardData {
   id?: number;
@@ -61,9 +52,6 @@ export async function saveDashboardData(
   uploadedBy?: string
 ) {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { success: false, error: "Supabase not configured" };
   }
 
@@ -128,17 +116,13 @@ export async function saveDashboardData(
 
     return { success: true, uploadId: uploadRecord.id };
   } catch (error: any) {
-    // ---------- LOG DETALHADO ----------
     const friendly = {
       code: error?.code,
       message: error?.message,
       details: error?.details,
       hint: error?.hint,
     };
-    console.error("Erro ao salvar dados do dashboard (raw):", error);
-    console.error("Erro ao salvar dados do dashboard (friendly):", friendly);
 
-    // ---------- TRATAMENTO 42P01 / PGRST116 ----------
     if (error?.code === "42P01" || error?.code === "PGRST116") {
       alert(
         "As tabelas do dashboard ainda não existem no banco.\n" +
@@ -161,9 +145,6 @@ export async function loadDashboardData(): Promise<{
   items: DashboardItem[];
 }> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { dashboardData: null, items: [] };
   }
 
@@ -189,7 +170,8 @@ export async function loadDashboardData(): Promise<{
     const { data: items, error: itemsError } = await supabase
       .from("dashboard_itens")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(5000); // Adicionar limite explícito maior
 
     if (itemsError && itemsError.code !== "42P01") {
       throw itemsError;
@@ -200,7 +182,6 @@ export async function loadDashboardData(): Promise<{
       items: items || [],
     };
   } catch (error) {
-    console.error("Erro ao carregar dados do dashboard:", error);
     return { dashboardData: null, items: [] };
   }
 }
@@ -208,9 +189,6 @@ export async function loadDashboardData(): Promise<{
 // Função para obter histórico de uploads do dashboard
 export async function getDashboardUploadHistory(): Promise<DashboardUpload[]> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return [];
   }
 
@@ -229,7 +207,6 @@ export async function getDashboardUploadHistory(): Promise<DashboardUpload[]> {
 
     return data || [];
   } catch (error) {
-    console.error("Erro ao carregar histórico do dashboard:", error);
     return [];
   }
 }
@@ -237,9 +214,6 @@ export async function getDashboardUploadHistory(): Promise<DashboardUpload[]> {
 // Função para limpar todos os dados do dashboard
 export async function clearAllDashboardData() {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { success: false, error: "Supabase not configured" };
   }
 
@@ -249,7 +223,6 @@ export async function clearAllDashboardData() {
     await supabase.from("dashboard_uploads").delete().neq("id", 0);
     return { success: true };
   } catch (error) {
-    console.error("Erro ao limpar dados do dashboard:", error);
     return { success: false, error };
   }
 }
@@ -259,9 +232,6 @@ export async function getDashboardItemsByCategory(
   category: string
 ): Promise<DashboardItem[]> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return [];
   }
 
@@ -269,6 +239,9 @@ export async function getDashboardItemsByCategory(
     let query = supabase.from("dashboard_itens").select("*");
 
     switch (category) {
+      case "total":
+        // Retorna todos os itens sem filtro
+        break;
       case "aprovacao":
         query = query.or(
           "status.ilike.%aguardando%,status.ilike.%pendente%,status.ilike.%aprovação%,status.ilike.%aprovacao%"
@@ -294,14 +267,15 @@ export async function getDashboardItemsByCategory(
         break;
     }
 
-    const { data, error } = await query.order("created_at", {
-      ascending: false,
-    });
+    const { data, error } = await query
+      .order("created_at", {
+        ascending: false,
+      })
+      .limit(5000); // Adicionar limite explícito maior
 
     if (error && error.code !== "42P01") throw error;
     return data || [];
   } catch (error) {
-    console.error("Erro ao carregar itens por categoria:", error);
     return [];
   }
 }
@@ -309,37 +283,42 @@ export async function getDashboardItemsByCategory(
 // Função para obter responsáveis únicos
 export async function getUniqueResponsaveis(): Promise<string[]> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return [];
   }
 
   try {
-    const { data, error } = await supabase
+    const { data: allItems, error: itemsError } = await supabase
       .from("dashboard_itens")
       .select("responsavel")
-      .not("responsavel", "is", null)
-      .not("responsavel", "eq", "")
-      .not("responsavel", "eq", "Não informado")
-      .order("responsavel", { ascending: true });
+      .limit(50000);
 
-    if (error && error.code !== "42P01") throw error;
+    if (itemsError) {
+      if (itemsError.code === "42P01" || itemsError.code === "PGRST116") {
+        return [];
+      }
+      throw itemsError;
+    }
 
-    if (!data) return [];
+    if (!allItems || allItems.length === 0) {
+      return [];
+    }
 
-    // Extrair valores únicos e filtrar valores nulos/vazios
     const uniqueResponsaveis = Array.from(
       new Set(
-        data
+        allItems
           .map((item) => item.responsavel)
-          .filter((responsavel) => responsavel && responsavel.trim() !== "")
+          .filter(
+            (responsavel): responsavel is string =>
+              responsavel !== null &&
+              responsavel !== undefined &&
+              responsavel.trim() !== "" &&
+              responsavel !== "Não informado"
+          )
       )
-    );
+    ).sort();
 
     return uniqueResponsaveis;
   } catch (error) {
-    console.error("Erro ao carregar responsáveis únicos:", error);
     return [];
   }
 }
@@ -349,9 +328,6 @@ export async function getDashboardItemsByResponsavel(
   responsavel: string
 ): Promise<DashboardItem[]> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return [];
   }
 
@@ -360,12 +336,12 @@ export async function getDashboardItemsByResponsavel(
       .from("dashboard_itens")
       .select("*")
       .eq("responsavel", responsavel)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(5000); // Adicionar limite explícito maior
 
     if (error && error.code !== "42P01") throw error;
     return data || [];
   } catch (error) {
-    console.error("Erro ao carregar itens por responsável:", error);
     return [];
   }
 }

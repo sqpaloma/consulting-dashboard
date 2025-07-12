@@ -41,7 +41,6 @@ export function LoginPage() {
         toast.error(result.error || "Erro ao fazer login");
       }
     } catch (error) {
-      console.error("Login error:", error);
       toast.error("Erro inesperado ao fazer login");
     } finally {
       setIsLoading(false);

@@ -114,7 +114,7 @@ export function DashboardModal({
                       <h3 className="font-semibold text-gray-800 mb-2">
                         {item.titulo}
                       </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm text-gray-600">
+                      <div className="grid grid-cols-2 md:grid-cols-7 gap-4 text-sm text-gray-600">
                         <div>
                           <span className="font-medium">OS:</span>
                           <div className="font-mono text-blue-600">
@@ -128,6 +128,10 @@ export function DashboardModal({
                         <div>
                           <span className="font-medium">Data:</span>
                           <div>{item.data}</div>
+                        </div>
+                        <div>
+                          <span className="font-medium">Responsável:</span>
+                          <div>{item.responsavel || "N/A"}</div>
                         </div>
                         {activeModal === "calendar" && item.prazo && (
                           <div>

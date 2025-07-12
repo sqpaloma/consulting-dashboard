@@ -31,12 +31,10 @@ export function SettingsSystem({
 }: SettingsSystemProps) {
   const handleExportData = () => {
     // Export user data
-    console.log("Exporting data...");
   };
 
   const handleImportData = () => {
     // Import user data
-    console.log("Importing data...");
   };
 
   const handleDeleteAccount = () => {
@@ -46,7 +44,6 @@ export function SettingsSystem({
         "Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita."
       )
     ) {
-      console.log("Account deletion requested");
     }
   };
 

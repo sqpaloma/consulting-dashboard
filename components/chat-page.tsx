@@ -123,8 +123,7 @@ export function ChatPage() {
         addNotification("Mensagem enviada");
       } catch (error) {
         addNotification("Erro ao enviar mensagem");
-        console.error(error);
-      }
+        }
     }
   };
 
@@ -148,8 +147,7 @@ export function ChatPage() {
       }
     } catch (error) {
       addNotification("Erro ao criar conversa");
-      console.error(error);
-    }
+      }
   };
 
   const handleDeleteMessage = async (messageId: string) => {
@@ -165,8 +163,7 @@ export function ChatPage() {
       setDeleteConfirmation(null);
     } catch (error) {
       addNotification("Erro ao deletar mensagem");
-      console.error(error);
-    }
+      }
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
@@ -183,8 +180,7 @@ export function ChatPage() {
       setDeleteConfirmation(null);
     } catch (error) {
       addNotification("Erro ao deletar conversa");
-      console.error(error);
-    }
+      }
   };
 
   const confirmDelete = () => {
@@ -236,8 +232,7 @@ export function ChatPage() {
       });
     } catch (error) {
       addNotification("Erro ao criar todo");
-      console.error(error);
-    }
+      }
   };
 
   const handleTodoModalClose = () => {

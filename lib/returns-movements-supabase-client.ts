@@ -84,9 +84,6 @@ export async function saveDevolucaoData(
   uploadedBy?: string
 ) {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { success: false, error: "Supabase not configured" };
   }
 
@@ -151,8 +148,6 @@ export async function saveDevolucaoData(
 
     return { success: true, uploadId: uploadRecord.id };
   } catch (error: any) {
-    console.error("Erro ao salvar dados de devolução:", error);
-
     if (error?.code === "42P01" || error?.code === "PGRST116") {
       alert(
         "As tabelas de devoluções ainda não existem no banco.\n" +
@@ -174,9 +169,6 @@ export async function loadDevolucaoData(): Promise<{
   items: DevolucaoItem[];
 }> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { devolucaoData: null, items: [] };
   }
 
@@ -212,16 +204,12 @@ export async function loadDevolucaoData(): Promise<{
       items: items || [],
     };
   } catch (error) {
-    console.error("Erro ao carregar dados de devoluções:", error);
     return { devolucaoData: null, items: [] };
   }
 }
 
 export async function getDevolucaoUploadHistory(): Promise<DevolucaoUpload[]> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return [];
   }
 
@@ -238,7 +226,6 @@ export async function getDevolucaoUploadHistory(): Promise<DevolucaoUpload[]> {
 
     return data || [];
   } catch (error) {
-    console.error("Erro ao carregar histórico de devoluções:", error);
     return [];
   }
 }
@@ -252,9 +239,6 @@ export async function saveMovimentacaoData(
   uploadedBy?: string
 ) {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { success: false, error: "Supabase not configured" };
   }
 
@@ -320,8 +304,6 @@ export async function saveMovimentacaoData(
 
     return { success: true, uploadId: uploadRecord.id };
   } catch (error: any) {
-    console.error("Erro ao salvar dados de movimentação:", error);
-
     if (error?.code === "42P01" || error?.code === "PGRST116") {
       alert(
         "As tabelas de movimentações ainda não existem no banco.\n" +
@@ -343,9 +325,6 @@ export async function loadMovimentacaoData(): Promise<{
   items: MovimentacaoItem[];
 }> {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { movimentacaoData: null, items: [] };
   }
 
@@ -381,7 +360,6 @@ export async function loadMovimentacaoData(): Promise<{
       items: items || [],
     };
   } catch (error) {
-    console.error("Erro ao carregar dados de movimentações:", error);
     return { movimentacaoData: null, items: [] };
   }
 }
@@ -390,9 +368,6 @@ export async function getMovimentacaoUploadHistory(): Promise<
   MovimentacaoUpload[]
 > {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return [];
   }
 
@@ -409,7 +384,6 @@ export async function getMovimentacaoUploadHistory(): Promise<
 
     return data || [];
   } catch (error) {
-    console.error("Erro ao carregar histórico de movimentações:", error);
     return [];
   }
 }
@@ -418,9 +392,6 @@ export async function getMovimentacaoUploadHistory(): Promise<
 
 export async function clearAllDevolucaoData() {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { success: false, error: "Supabase not configured" };
   }
 
@@ -430,16 +401,12 @@ export async function clearAllDevolucaoData() {
     await supabase.from("devolucoes_uploads").delete().neq("id", 0);
     return { success: true };
   } catch (error) {
-    console.error("Erro ao limpar dados de devoluções:", error);
     return { success: false, error };
   }
 }
 
 export async function clearAllMovimentacaoData() {
   if (!supabase) {
-    console.warn(
-      "Supabase client not initialized - environment variables missing"
-    );
     return { success: false, error: "Supabase not configured" };
   }
 
@@ -449,7 +416,6 @@ export async function clearAllMovimentacaoData() {
     await supabase.from("movimentacoes_uploads").delete().neq("id", 0);
     return { success: true };
   } catch (error) {
-    console.error("Erro ao limpar dados de movimentações:", error);
     return { success: false, error };
   }
 }

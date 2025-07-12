@@ -96,8 +96,7 @@ export function useReturnsData() {
         );
       }
     } catch (error) {
-      console.error("Erro ao carregar dados salvos de devoluções:", error);
-    } finally {
+      } finally {
       setIsLoading(false);
     }
   }, []);
@@ -107,8 +106,7 @@ export function useReturnsData() {
       const history = await getDevolucaoUploadHistory();
       setUploadHistory(history);
     } catch (error) {
-      console.error("Erro ao carregar histórico de devoluções:", error);
-    }
+      }
   }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -274,7 +272,6 @@ export function useReturnsData() {
           `Planilha de devoluções carregada com sucesso! ${processedData.total} itens processados.`
         );
       } catch (error) {
-        console.error("Erro ao processar planilha:", error);
         alert(
           "Erro ao processar a planilha. Verifique se o arquivo está no formato correto (.xlsx ou .xls)."
         );
@@ -343,7 +340,6 @@ export function useReturnsData() {
         }, 3000);
       }
     } catch (error) {
-      console.error("Erro ao salvar dados:", error);
       setSaveStatus("error");
       setTimeout(() => {
         setSaveStatus("idle");
@@ -366,7 +362,6 @@ export function useReturnsData() {
         setFileName("");
         alert("Dados de devoluções limpos com sucesso!");
       } catch (error) {
-        console.error("Erro ao limpar dados:", error);
         alert("Erro ao limpar dados. Verifique o console para mais detalhes.");
       }
     }

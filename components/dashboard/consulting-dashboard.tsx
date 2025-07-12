@@ -103,27 +103,82 @@ export function ConsultingDashboard() {
 
     let items: any[] = [];
     try {
-      switch (modalType) {
-        case "total":
-          items = await getDashboardItemsByCategory("total");
-          break;
-        case "aprovacao":
-          items = await getDashboardItemsByCategory("aprovacao");
-          break;
-        case "analises":
-          items = await getDashboardItemsByCategory("analises");
-          break;
-        case "orcamentos":
-          items = await getDashboardItemsByCategory("orcamentos");
-          break;
-        case "execucao":
-          items = await getDashboardItemsByCategory("execucao");
-          break;
-        default:
-          items = [];
+      // Se há filtro por responsável, usar os dados já filtrados
+      if (filteredByResponsavel) {
+        switch (modalType) {
+          case "total":
+            items = filteredItems;
+            break;
+          case "aprovacao":
+            items = filteredItems.filter((item) => {
+              const status = item.status.toLowerCase();
+              return (
+                status.includes("aguardando") ||
+                status.includes("pendente") ||
+                status.includes("aprovação") ||
+                status.includes("aprovacao")
+              );
+            });
+            break;
+          case "analises":
+            items = filteredItems.filter((item) => {
+              const status = item.status.toLowerCase();
+              return (
+                status.includes("análise") ||
+                status.includes("analise") ||
+                status.includes("revisão") ||
+                status.includes("revisao")
+              );
+            });
+            break;
+          case "orcamentos":
+            items = filteredItems.filter((item) => {
+              const status = item.status.toLowerCase();
+              return (
+                status.includes("orçamento") ||
+                status.includes("orcamento") ||
+                status.includes("cotação") ||
+                status.includes("cotacao")
+              );
+            });
+            break;
+          case "execucao":
+            items = filteredItems.filter((item) => {
+              const status = item.status.toLowerCase();
+              return (
+                status.includes("execução") ||
+                status.includes("execucao") ||
+                status.includes("andamento") ||
+                status.includes("progresso")
+              );
+            });
+            break;
+          default:
+            items = [];
+        }
+      } else {
+        // Se não há filtro, usar dados do banco
+        switch (modalType) {
+          case "total":
+            items = await getDashboardItemsByCategory("total");
+            break;
+          case "aprovacao":
+            items = await getDashboardItemsByCategory("aprovacao");
+            break;
+          case "analises":
+            items = await getDashboardItemsByCategory("analises");
+            break;
+          case "orcamentos":
+            items = await getDashboardItemsByCategory("orcamentos");
+            break;
+          case "execucao":
+            items = await getDashboardItemsByCategory("execucao");
+            break;
+          default:
+            items = [];
+        }
       }
     } catch (error) {
-      console.error("Erro ao carregar dados do modal:", error);
       items = [];
     }
 

@@ -20,6 +20,44 @@ export function mapEngineerResponsible(nome: string): string {
     "ROBERTO P",
     "KAUAN",
     "MARCELINO",
+    "LEANDRO",
+    "RODRIGO N",
+  ];
+
+  const marceloTeam = [
+    "ALZIRO",
+    "G SIMAO",
+    "HENRIQUE",
+    "NICOLAS C",
+    "RONALD",
+    "VINICIUS",
+  ];
+
+  // Mapeamento para nomes que devem permanecer como estão (responsáveis principais)
+  const principalResponsaveis = [
+    "SOBRINHO",
+    "PALOMA",
+    "LUCAS",
+    "MARCELO",
+    "GIOVANNI",
+    "SHEINE",
+    "SANDRO",
+    "RONAN",
+    "RICARDO",
+    "VENDAS1",
+    "MAMEDE",
+    "GIOVANA",
+    "RAFAEL MASSA",
+    "LENILTON",
+    "CARLINHOS",
+    "CLAUDIO",
+    "ANDERSON",
+    "CARVALHO",
+    "RONAN NONATO",
+    "JEFFERSON",
+    "EDISON",
+    "MARCELO M",
+    "RAQUEL",
   ];
 
   if (palomaTeam.includes(nomeUpper)) {
@@ -28,6 +66,15 @@ export function mapEngineerResponsible(nome: string): string {
 
   if (lucasTeam.includes(nomeUpper)) {
     return "LUCAS";
+  }
+
+  if (marceloTeam.includes(nomeUpper)) {
+    return "MARCELO";
+  }
+
+  // Se é um responsável principal, mantém o nome original
+  if (principalResponsaveis.includes(nomeUpper)) {
+    return nome;
   }
 
   // Retorna o nome original se não há mapeamento
@@ -52,9 +99,51 @@ export function isEngineerMapped(nome: string): boolean {
     "ROBERTO P",
     "KAUAN",
     "MARCELINO",
+    "LEANDRO",
+    "RODRIGO N",
   ];
 
-  return palomaTeam.includes(nomeUpper) || lucasTeam.includes(nomeUpper);
+  const marceloTeam = [
+    "ALZIRO",
+    "G SIMAO",
+    "HENRIQUE",
+    "NICOLAS C",
+    "RONALD",
+    "VINICIUS",
+  ];
+
+  const principalResponsaveis = [
+    "SOBRINHO",
+    "PALOMA",
+    "LUCAS",
+    "MARCELO",
+    "GIOVANNI",
+    "SHEINE",
+    "SANDRO",
+    "RONAN",
+    "RICARDO",
+    "VENDAS1",
+    "MAMEDE",
+    "GIOVANA",
+    "RAFAEL MASSA",
+    "LENILTON",
+    "CARLINHOS",
+    "CLAUDIO",
+    "ANDERSON",
+    "CARVALHO",
+    "RONAN NONATO",
+    "JEFFERSON",
+    "EDISON",
+    "MARCELO M",
+    "RAQUEL",
+  ];
+
+  return (
+    palomaTeam.includes(nomeUpper) ||
+    lucasTeam.includes(nomeUpper) ||
+    marceloTeam.includes(nomeUpper) ||
+    principalResponsaveis.includes(nomeUpper)
+  );
 }
 
 // Função para obter todos os nomes que são mapeados
@@ -74,5 +163,38 @@ export function getAllMappedNames(): string[] {
     "ROBERTO P",
     "KAUAN",
     "MARCELINO",
+    "LEANDRO",
+    "RODRIGO N",
+    // Equipe MARCELO
+    "ALZIRO",
+    "G SIMAO",
+    "HENRIQUE",
+    "NICOLAS C",
+    "RONALD",
+    "VINICIUS",
+    // Responsáveis principais
+    "SOBRINHO",
+    "PALOMA",
+    "LUCAS",
+    "MARCELO",
+    "GIOVANNI",
+    "SHEINE",
+    "SANDRO",
+    "RONAN",
+    "RICARDO",
+    "VENDAS1",
+    "MAMEDE",
+    "GIOVANA",
+    "RAFAEL MASSA",
+    "LENILTON",
+    "CARLINHOS",
+    "CLAUDIO",
+    "ANDERSON",
+    "CARVALHO",
+    "RONAN NONATO",
+    "JEFFERSON",
+    "EDISON",
+    "MARCELO M",
+    "RAQUEL",
   ];
 }

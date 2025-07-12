@@ -144,7 +144,7 @@ export function useDashboardData() {
         );
       }
     } catch (error) {
-      console.error("Erro ao carregar dados salvos do dashboard:", error);
+      // Silently handle error
     } finally {
       setIsLoading(false);
     }
@@ -155,7 +155,7 @@ export function useDashboardData() {
       const history = await getDashboardUploadHistory();
       setUploadHistory(history);
     } catch (error) {
-      console.error("Erro ao carregar histórico do dashboard:", error);
+      // Silently handle error
     }
   }, []);
 
@@ -361,7 +361,6 @@ export function useDashboardData() {
           setProcessedItems(processedData.items);
           setIsLoading(false);
         } catch (error) {
-          console.error("Erro ao processar planilha:", error);
           alert("Erro ao processar planilha. Verifique o formato.");
           setIsLoading(false);
         }
@@ -373,11 +372,6 @@ export function useDashboardData() {
   );
 
   const handleSaveData = useCallback(async () => {
-    console.log("=== DEBUG: Iniciando salvamento do dashboard ===");
-    console.log("processedItems.length:", processedItems.length);
-    console.log("dashboardData:", dashboardData);
-    console.log("fileName:", fileName);
-
     if (processedItems.length === 0) {
       alert("Nenhum dado para salvar. Faça upload de uma planilha primeiro.");
       return;
@@ -385,9 +379,6 @@ export function useDashboardData() {
 
     // Verificar se já está salvando GLOBALMENTE para evitar múltiplas chamadas
     if (isSavingGlobal || saveStatus === "saving") {
-      console.log(
-        "DEBUG: Salvamento já em andamento, ignorando chamada duplicada"
-      );
       return;
     }
 
@@ -416,17 +407,12 @@ export function useDashboardData() {
         raw_data: item.rawData,
       }));
 
-      console.log("dashboardDataToSave:", dashboardDataToSave);
-      console.log("itemsToSave (primeiros 2):", itemsToSave.slice(0, 2));
-
       const result = await saveDashboardData(
         dashboardDataToSave,
         itemsToSave,
         fileName,
         "Paloma"
       );
-
-      console.log("Resultado do salvamento:", result);
 
       if (result.success) {
         setSaveStatus("saved");
@@ -438,13 +424,13 @@ export function useDashboardData() {
       } else {
         setSaveStatus("error");
         setTimeout(() => setSaveStatus("idle"), 3000);
-        console.error("Erro retornado pelo saveDashboardData:", result.error);
+
         alert("Erro ao salvar dados do dashboard. Tente novamente.");
       }
     } catch (error) {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
-      console.error("Erro ao salvar dados do dashboard:", error);
+
       alert("Erro ao salvar dados do dashboard. Tente novamente.");
     } finally {
       // Sempre desmarcar o estado global

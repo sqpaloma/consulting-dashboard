@@ -75,8 +75,7 @@ export function useAnalyticsData() {
         setRawData(savedRawData);
       }
     } catch (error) {
-      console.error("Erro ao carregar dados salvos:", error);
-    } finally {
+      } finally {
       setIsLoading(false);
     }
   };
@@ -86,8 +85,7 @@ export function useAnalyticsData() {
       const history = await getUploadHistory();
       setUploadHistory(history);
     } catch (error) {
-      console.error("Erro ao carregar histórico:", error);
-    }
+      }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -607,7 +605,6 @@ export function useAnalyticsData() {
 
         alert(alertMessage);
       } catch (error) {
-        console.error("Erro ao processar planilha:", error);
         alert(
           "Erro ao processar a planilha. Verifique se o arquivo está no formato correto (.xlsx ou .xls)."
         );
@@ -674,7 +671,6 @@ export function useAnalyticsData() {
     } catch (error) {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
-      console.error("Erro ao salvar:", error);
       alert("Erro ao salvar dados. Tente novamente.");
     }
   };

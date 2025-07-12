@@ -69,8 +69,7 @@ export function DashboardCalendar({
 
       setDatabaseItems(dbItems);
     } catch (error) {
-      console.error("Erro ao carregar dados do banco:", error);
-    } finally {
+      } finally {
       setIsLoading(false);
     }
   };

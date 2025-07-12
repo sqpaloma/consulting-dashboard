@@ -101,8 +101,7 @@ export function useMovementsData() {
         );
       }
     } catch (error) {
-      console.error("Erro ao carregar dados salvos de movimentações:", error);
-    } finally {
+      } finally {
       setIsLoading(false);
     }
   }, []);
@@ -112,8 +111,7 @@ export function useMovementsData() {
       const history = await getMovimentacaoUploadHistory();
       setUploadHistory(history);
     } catch (error) {
-      console.error("Erro ao carregar histórico de movimentações:", error);
-    }
+      }
   }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,7 +289,6 @@ export function useMovementsData() {
           `Planilha de movimentações carregada com sucesso! ${processedData.total} itens processados.`
         );
       } catch (error) {
-        console.error("Erro ao processar planilha:", error);
         alert(
           "Erro ao processar a planilha. Verifique se o arquivo está no formato correto (.xlsx ou .xls)."
         );
@@ -359,7 +356,6 @@ export function useMovementsData() {
         }, 3000);
       }
     } catch (error) {
-      console.error("Erro ao salvar dados:", error);
       setSaveStatus("error");
       setTimeout(() => {
         setSaveStatus("idle");
@@ -382,7 +378,6 @@ export function useMovementsData() {
         setFileName("");
         alert("Dados de movimentações limpos com sucesso!");
       } catch (error) {
-        console.error("Erro ao limpar dados:", error);
         alert("Erro ao limpar dados. Verifique o console para mais detalhes.");
       }
     }

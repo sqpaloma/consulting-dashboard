@@ -171,8 +171,7 @@ export function DashboardMetrics({
           execucao: calculateMetrics(execucaoItems),
         });
       } catch (error) {
-        console.error("Erro ao carregar métricas de itens:", error);
-      }
+        }
     };
 
     loadItemMetrics();
@@ -194,11 +193,7 @@ export function DashboardMetrics({
           setMovimentacaoData(movimentacaoResult.movimentacaoData);
         }
       } catch (error) {
-        console.error(
-          "Erro ao carregar dados de devoluções e movimentações:",
-          error
-        );
-      }
+        }
     };
 
     loadData();

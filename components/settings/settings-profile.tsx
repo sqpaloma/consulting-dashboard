@@ -76,7 +76,6 @@ export function SettingsProfile({
 
       toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
-      console.error("Erro ao salvar perfil:", error);
       toast.error("Erro ao salvar perfil");
     } finally {
       setIsSaving(false);
@@ -129,7 +128,6 @@ export function SettingsProfile({
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      console.error("Erro ao alterar senha:", error);
       toast.error("Erro ao alterar senha. Verifique a senha atual.");
     } finally {
       setIsChangingPassword(false);
