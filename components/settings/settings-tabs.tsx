@@ -7,15 +7,18 @@ import { SettingsPrivacy } from "./settings-privacy";
 import { SettingsAppearance } from "./settings-appearance";
 import { SettingsSystem } from "./settings-system";
 import { SettingsDataManagement } from "./settings-data-management";
+
+import { Id } from "@/convex/_generated/dataModel";
 import {
-  User,
   Bell,
-  Shield,
-  Palette,
   Database,
   FileSpreadsheet,
+  Palette,
+  Shield,
+  User,
+  Users,
 } from "lucide-react";
-import { Id } from "@/convex/_generated/dataModel";
+import { SettingsUserManagement } from "./settings-user-management";
 
 export interface UserSettings {
   // Profile
@@ -67,7 +70,7 @@ export function SettingsTabs({
 }: SettingsTabsProps) {
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-6 bg-white/10 backdrop-blur-sm">
+      <TabsList className="grid w-full grid-cols-7 bg-white/10 backdrop-blur-sm">
         <TabsTrigger
           value="profile"
           className="text-white data-[state=active]:bg-gray-50"
@@ -110,6 +113,13 @@ export function SettingsTabs({
           <Database className="h-4 w-4 mr-2" />
           Sistema
         </TabsTrigger>
+        <TabsTrigger
+          value="users"
+          className="text-white data-[state=active]:bg-gray-50"
+        >
+          <Users className="h-4 w-4 mr-2" />
+          Usuários
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="profile" className="space-y-6">
@@ -150,6 +160,10 @@ export function SettingsTabs({
           userSettings={userSettings}
           onSettingChange={onSettingChange}
         />
+      </TabsContent>
+
+      <TabsContent value="users" className="space-y-6">
+        <SettingsUserManagement />
       </TabsContent>
     </Tabs>
   );

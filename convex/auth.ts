@@ -38,6 +38,7 @@ export const login = mutation({
       email: user.email,
       position: user.position,
       department: user.department,
+      isAdmin: user.isAdmin || false,
     };
   },
 });
@@ -50,6 +51,7 @@ export const createInitialUser = mutation({
     password: v.string(),
     position: v.optional(v.string()),
     department: v.optional(v.string()),
+    isAdmin: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Verificar se o usuário já existe
@@ -65,6 +67,12 @@ export const createInitialUser = mutation({
     // Hash da senha
     const hashedPassword = await hashPassword(args.password);
 
+    // Definir se é admin - Paloma é sempre admin
+    const isAdmin =
+      args.email === "paloma.silva@novakgouveia.com.br" ||
+      args.isAdmin ||
+      false;
+
     // Criar usuário
     const userId = await ctx.db.insert("users", {
       name: args.name,
@@ -72,6 +80,7 @@ export const createInitialUser = mutation({
       position: args.position,
       department: args.department,
       hashedPassword,
+      isAdmin,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -104,6 +113,7 @@ export const createInitialUser = mutation({
       email: args.email,
       position: args.position,
       department: args.department,
+      isAdmin,
     };
   },
 });
@@ -180,13 +190,17 @@ export const changeUserPassword = mutation({
       throw new Error("Usuário não encontrado");
     }
 
+    if (!user.hashedPassword) {
+      throw new Error("Usuário não possui senha configurada");
+    }
+
     // Verificar senha atual
     const currentHashedPassword = await hashPassword(args.currentPassword);
-    if (user.hashedPassword && user.hashedPassword !== currentHashedPassword) {
+    if (user.hashedPassword !== currentHashedPassword) {
       throw new Error("Senha atual incorreta");
     }
 
-    // Hash da nova senha
+    // Gerar hash da nova senha
     const newHashedPassword = await hashPassword(args.newPassword);
 
     // Atualizar senha
@@ -195,47 +209,193 @@ export const changeUserPassword = mutation({
       updatedAt: Date.now(),
     });
 
-    return true;
+    return { success: true };
   },
 });
 
-// Função para validar senha
-export const validatePassword = query({
+// Função para criar usuário por administrador
+export const createUserByAdmin = mutation({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    password: v.string(),
+    position: v.optional(v.string()),
+    department: v.optional(v.string()),
+    isAdmin: v.optional(v.boolean()),
+    createdByUserId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Verificar se o usuário que está criando é admin
+    const createdBy = await ctx.db.get(args.createdByUserId);
+    if (
+      !createdBy ||
+      (!createdBy.isAdmin &&
+        createdBy.email !== "paloma.silva@novakgouveia.com.br")
+    ) {
+      throw new Error("Apenas administradores podem criar novos usuários");
+    }
+
+    // Verificar se o usuário já existe
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (existingUser) {
+      throw new Error("Usuário já existe");
+    }
+
+    // Hash da senha
+    const hashedPassword = await hashPassword(args.password);
+
+    // Definir se é admin - Paloma é sempre admin
+    const isAdmin =
+      args.email === "paloma.silva@novakgouveia.com.br" ||
+      args.isAdmin ||
+      false;
+
+    // Criar usuário
+    const userId = await ctx.db.insert("users", {
+      name: args.name,
+      email: args.email,
+      position: args.position,
+      department: args.department,
+      hashedPassword,
+      isAdmin,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    // Criar configurações padrão
+    await ctx.db.insert("userSettings", {
+      userId: userId,
+      emailNotifications: true,
+      pushNotifications: true,
+      calendarReminders: true,
+      projectUpdates: true,
+      weeklyReports: false,
+      profileVisibility: "public",
+      dataSharing: false,
+      analyticsTracking: true,
+      theme: "dark",
+      language: "pt-BR",
+      timezone: "America/Sao_Paulo",
+      dateFormat: "DD/MM/YYYY",
+      timeFormat: "24h",
+      autoSave: true,
+      backupFrequency: "daily",
+      sessionTimeout: "30min",
+      updatedAt: Date.now(),
+    });
+
+    return {
+      userId,
+      name: args.name,
+      email: args.email,
+      position: args.position,
+      department: args.department,
+      isAdmin,
+    };
+  },
+});
+
+// Função para validar critérios de senha
+export const validatePassword = mutation({
   args: {
     password: v.string(),
   },
   handler: async (ctx, args) => {
     const password = args.password;
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
 
-    // Validações básicas
-    if (password.length < 8) {
+    return {
+      isValid:
+        password.length >= minLength &&
+        hasUpperCase &&
+        hasLowerCase &&
+        hasNumbers,
+      criteria: {
+        minLength: password.length >= minLength,
+        hasUpperCase,
+        hasLowerCase,
+        hasNumbers,
+      },
+    };
+  },
+});
+
+// Função para configurar administrador
+export const setupAdmin = mutation({
+  args: {
+    email: v.string(),
+    password: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Verificar se o usuário já existe
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+
+    if (existingUser) {
+      // Atualizar usuário existente para ser admin e redefinir senha
+      const hashedPassword = await hashPassword(args.password);
+      await ctx.db.patch(existingUser._id, {
+        isAdmin: true,
+        hashedPassword,
+        updatedAt: Date.now(),
+      });
+
       return {
-        valid: false,
-        error: "A senha deve ter pelo menos 8 caracteres",
+        success: true,
+        message: "Usuário atualizado como administrador",
+        userId: existingUser._id,
+      };
+    } else {
+      // Criar novo usuário admin
+      const hashedPassword = await hashPassword(args.password);
+
+      const userId = await ctx.db.insert("users", {
+        name: "Paloma Queiroz",
+        email: args.email,
+        position: "Administradora",
+        department: "Administrativo",
+        hashedPassword,
+        isAdmin: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // Criar configurações padrão
+      await ctx.db.insert("userSettings", {
+        userId: userId,
+        emailNotifications: true,
+        pushNotifications: true,
+        calendarReminders: true,
+        projectUpdates: true,
+        weeklyReports: false,
+        profileVisibility: "public",
+        dataSharing: false,
+        analyticsTracking: true,
+        theme: "dark",
+        language: "pt-BR",
+        timezone: "America/Sao_Paulo",
+        dateFormat: "DD/MM/YYYY",
+        timeFormat: "24h",
+        autoSave: true,
+        backupFrequency: "daily",
+        sessionTimeout: "30min",
+        updatedAt: Date.now(),
+      });
+
+      return {
+        success: true,
+        message: "Usuário criado como administrador",
+        userId,
       };
     }
-
-    if (!/[A-Z]/.test(password)) {
-      return {
-        valid: false,
-        error: "A senha deve conter pelo menos uma letra maiúscula",
-      };
-    }
-
-    if (!/[a-z]/.test(password)) {
-      return {
-        valid: false,
-        error: "A senha deve conter pelo menos uma letra minúscula",
-      };
-    }
-
-    if (!/[0-9]/.test(password)) {
-      return {
-        valid: false,
-        error: "A senha deve conter pelo menos um número",
-      };
-    }
-
-    return { valid: true };
   },
 });

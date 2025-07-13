@@ -11,6 +11,7 @@ interface User {
   email: string;
   position?: string;
   department?: string;
+  isAdmin?: boolean;
 }
 
 export function useAuth() {
@@ -48,6 +49,7 @@ export function useAuth() {
         email: result.email,
         position: result.position,
         department: result.department,
+        isAdmin: result.isAdmin || false,
       };
 
       setUser(userData);
@@ -72,6 +74,7 @@ export function useAuth() {
     password: string;
     position?: string;
     department?: string;
+    isAdmin?: boolean;
   }) => {
     try {
       const result = await createInitialUser(userData);
@@ -81,6 +84,7 @@ export function useAuth() {
         email: result.email,
         position: result.position,
         department: result.department,
+        isAdmin: result.isAdmin || false,
       };
 
       setUser(userDataResult);

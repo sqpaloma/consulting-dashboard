@@ -13,6 +13,7 @@ export default defineSchema({
     company: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
     hashedPassword: v.optional(v.string()),
+    isAdmin: v.optional(v.boolean()),
     lastLogin: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),

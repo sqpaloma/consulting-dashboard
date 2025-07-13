@@ -13,6 +13,7 @@ import {
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { AdminProtection } from "@/components/admin-protection";
 
 function SettingsPageContent() {
   const searchParams = useSearchParams();
@@ -188,16 +189,18 @@ function SettingsPageContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense
-      fallback={
-        <ResponsiveLayout title="Configurações">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-white">Carregando...</div>
-          </div>
-        </ResponsiveLayout>
-      }
-    >
-      <SettingsPageContent />
-    </Suspense>
+    <AdminProtection>
+      <Suspense
+        fallback={
+          <ResponsiveLayout title="Configurações">
+            <div className="flex items-center justify-center py-20">
+              <div className="text-white">Carregando...</div>
+            </div>
+          </ResponsiveLayout>
+        }
+      >
+        <SettingsPageContent />
+      </Suspense>
+    </AdminProtection>
   );
 }

@@ -8,11 +8,14 @@ import {
   Settings,
   ArrowLeft,
   Bell,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 import Image from "next/image";
 import { NotificationsPanel } from "@/components/notifications/notifications-panel";
+import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
 
 interface HeaderProps {
   title: string;
@@ -27,6 +30,14 @@ export function Header({
   showBack = false,
   backHref = "/",
 }: HeaderProps) {
+  const { signOut } = useAuth();
+  const { isAdmin } = useAdmin();
+
+  const handleLogout = () => {
+    signOut();
+    window.location.href = "/";
+  };
+
   return (
     <>
       {/* Header */}
@@ -86,15 +97,17 @@ export function Header({
               <Calendar className="h-5 w-5" />
             </Button>
           </Link>
-          <Link href="/analytics">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-blue-700"
-            >
-              <BarChart3 className="h-5 w-5" />
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link href="/analytics">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-blue-700"
+              >
+                <BarChart3 className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
           <Link href="/manual">
             <Button
               variant="ghost"
@@ -113,15 +126,26 @@ export function Header({
               <Bell className="h-5 w-5" />
             </Button>
           </NotificationsPanel>
-          <Link href="/settings">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-blue-700"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-blue-700"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-blue-700"
+            onClick={handleLogout}
+            title="Sair"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 

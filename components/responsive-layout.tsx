@@ -23,12 +23,15 @@ import {
   Settings,
   Bell,
   Menu,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { NotificationsPanel } from "@/components/notifications/notifications-panel";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
 
 interface ResponsiveLayoutProps {
   children: React.ReactNode;
@@ -38,7 +41,7 @@ interface ResponsiveLayoutProps {
   backHref?: string;
 }
 
-const menuItems = [
+const baseMenuItems = [
   {
     icon: Grid3X3,
     label: "Dashboard",
@@ -55,14 +58,17 @@ const menuItems = [
     href: "/calendar",
   },
   {
-    icon: BarChart3,
-    label: "Análises",
-    href: "/analytics",
-  },
-  {
     icon: BookOpen,
     label: "Manual",
     href: "/manual",
+  },
+];
+
+const adminMenuItems = [
+  {
+    icon: BarChart3,
+    label: "Análises",
+    href: "/analytics",
   },
   {
     icon: Settings,
@@ -97,6 +103,15 @@ export function ResponsiveLayout({
 }: ResponsiveLayoutProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
+  const { signOut } = useAuth();
+  const { isAdmin } = useAdmin();
+
+  const handleLogout = () => {
+    signOut();
+    window.location.href = "/";
+  };
+
+  const menuItems = [...baseMenuItems, ...(isAdmin ? adminMenuItems : [])];
 
   if (isMobile) {
     return (
@@ -149,6 +164,16 @@ export function ResponsiveLayout({
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
+                  {/* Logout button */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={handleLogout}
+                      className="text-white hover:bg-blue-700"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      Sair
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarContent>
             </div>
@@ -183,16 +208,27 @@ export function ResponsiveLayout({
                     </div>
                   </div>
 
-                  {/* Notifications */}
-                  <NotificationsPanel>
+                  {/* Notifications and Logout */}
+                  <div className="flex items-center space-x-2">
+                    <NotificationsPanel>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:bg-blue-700"
+                      >
+                        <Bell className="h-5 w-5" />
+                      </Button>
+                    </NotificationsPanel>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="text-white hover:bg-blue-700"
+                      onClick={handleLogout}
+                      title="Sair"
                     >
-                      <Bell className="h-5 w-5" />
+                      <LogOut className="h-5 w-5" />
                     </Button>
-                  </NotificationsPanel>
+                  </div>
                 </div>
 
                 {/* Title and subtitle */}
