@@ -35,6 +35,14 @@ export function DashboardModal({
         return `Agendamentos - ${
           selectedDate ? new Date(selectedDate).toLocaleDateString("pt-BR") : ""
         }`;
+      case "followup-no-prazo":
+        return "Follow-up: Itens no Prazo";
+      case "followup-vencendo-breve":
+        return "Follow-up: Itens Vencendo em Breve";
+      case "followup-total":
+        return "Follow-up: Todos os Itens";
+      case "followup-atrasados":
+        return "Follow-up: Itens Atrasados";
       default:
         return "Detalhes";
     }

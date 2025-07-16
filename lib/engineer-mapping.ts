@@ -31,6 +31,7 @@ export function mapEngineerResponsible(nome: string): string {
     "NICOLAS C",
     "RONALD",
     "VINICIUS",
+    "DANIEL G",
   ];
 
   // Mapeamento para nomes que devem permanecer como estão (responsáveis principais)
@@ -116,6 +117,7 @@ export function isEngineerMapped(nome: string): boolean {
     "NICOLAS C",
     "RONALD",
     "VINICIUS",
+    "DANIEL G",
   ];
 
   const carlinhosTeam = ["SHEINE"];
@@ -181,6 +183,7 @@ export function getAllMappedNames(): string[] {
     "NICOLAS C",
     "RONALD",
     "VINICIUS",
+    "DANIEL G",
     // Responsáveis principais
     "SOBRINHO",
     "PALOMA",

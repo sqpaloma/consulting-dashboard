@@ -6,7 +6,7 @@ import { ResponsiveLayout } from "@/components/responsive-layout";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { WorkSessionTimer } from "./work-session-timer";
 import { DashboardCalendar } from "./dashboard-calendar";
-import { TotalProjectsCard, CompletedProjectsCard } from "./dashboard-projects";
+import { FollowUpCard, CompletedProjectsCard } from "./dashboard-projects";
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
 import { ResponsavelFilter } from "./responsavel-filter";
@@ -98,88 +98,94 @@ export function ConsultingDashboard() {
     setActiveModal("calendar");
   };
 
-  const openModal = async (modalType: string) => {
+  const openModal = async (modalType: string, data?: any[]) => {
     setActiveModal(modalType);
 
     let items: any[] = [];
-    try {
-      // Se há filtro por responsável, usar os dados já filtrados
-      if (filteredByResponsavel) {
-        switch (modalType) {
-          case "total":
-            items = filteredItems;
-            break;
-          case "aprovacao":
-            items = filteredItems.filter((item) => {
-              const status = item.status.toLowerCase();
-              return (
-                status.includes("aguardando") ||
-                status.includes("pendente") ||
-                status.includes("aprovação") ||
-                status.includes("aprovacao")
-              );
-            });
-            break;
-          case "analises":
-            items = filteredItems.filter((item) => {
-              const status = item.status.toLowerCase();
-              return (
-                status.includes("análise") ||
-                status.includes("analise") ||
-                status.includes("revisão") ||
-                status.includes("revisao")
-              );
-            });
-            break;
-          case "orcamentos":
-            items = filteredItems.filter((item) => {
-              const status = item.status.toLowerCase();
-              return (
-                status.includes("orçamento") ||
-                status.includes("orcamento") ||
-                status.includes("cotação") ||
-                status.includes("cotacao")
-              );
-            });
-            break;
-          case "execucao":
-            items = filteredItems.filter((item) => {
-              const status = item.status.toLowerCase();
-              return (
-                status.includes("execução") ||
-                status.includes("execucao") ||
-                status.includes("andamento") ||
-                status.includes("progresso")
-              );
-            });
-            break;
-          default:
-            items = [];
+
+    // Se os dados já foram fornecidos (para follow-up), use-os diretamente
+    if (data) {
+      items = data;
+    } else {
+      try {
+        // Se há filtro por responsável, usar os dados já filtrados
+        if (filteredByResponsavel) {
+          switch (modalType) {
+            case "total":
+              items = filteredItems;
+              break;
+            case "aprovacao":
+              items = filteredItems.filter((item) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("aguardando") ||
+                  status.includes("pendente") ||
+                  status.includes("aprovação") ||
+                  status.includes("aprovacao")
+                );
+              });
+              break;
+            case "analises":
+              items = filteredItems.filter((item) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("análise") ||
+                  status.includes("analise") ||
+                  status.includes("revisão") ||
+                  status.includes("revisao")
+                );
+              });
+              break;
+            case "orcamentos":
+              items = filteredItems.filter((item) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("orçamento") ||
+                  status.includes("orcamento") ||
+                  status.includes("cotação") ||
+                  status.includes("cotacao")
+                );
+              });
+              break;
+            case "execucao":
+              items = filteredItems.filter((item) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("execução") ||
+                  status.includes("execucao") ||
+                  status.includes("andamento") ||
+                  status.includes("progresso")
+                );
+              });
+              break;
+            default:
+              items = [];
+          }
+        } else {
+          // Se não há filtro, usar dados do banco
+          switch (modalType) {
+            case "total":
+              items = await getDashboardItemsByCategory("total");
+              break;
+            case "aprovacao":
+              items = await getDashboardItemsByCategory("aprovacao");
+              break;
+            case "analises":
+              items = await getDashboardItemsByCategory("analises");
+              break;
+            case "orcamentos":
+              items = await getDashboardItemsByCategory("orcamentos");
+              break;
+            case "execucao":
+              items = await getDashboardItemsByCategory("execucao");
+              break;
+            default:
+              items = [];
+          }
         }
-      } else {
-        // Se não há filtro, usar dados do banco
-        switch (modalType) {
-          case "total":
-            items = await getDashboardItemsByCategory("total");
-            break;
-          case "aprovacao":
-            items = await getDashboardItemsByCategory("aprovacao");
-            break;
-          case "analises":
-            items = await getDashboardItemsByCategory("analises");
-            break;
-          case "orcamentos":
-            items = await getDashboardItemsByCategory("orcamentos");
-            break;
-          case "execucao":
-            items = await getDashboardItemsByCategory("execucao");
-            break;
-          default:
-            items = [];
-        }
+      } catch (error) {
+        items = [];
       }
-    } catch (error) {
-      items = [];
     }
 
     setModalData(items);
@@ -210,13 +216,18 @@ export function ConsultingDashboard() {
 
         {/* Layout reorganizado: Coluna esquerda com componentes menores e coluna direita com calendário */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[650px]">
-          {/* Coluna esquerda: WorkSessionTimer, Total de Projetos e Concluídos */}
+          {/* Coluna esquerda: Follow-up, Concluídos e WorkSessionTimer */}
           <div className="flex flex-col space-y-4 h-full">
+            <FollowUpCard
+              filteredItems={filteredItems}
+              filteredByResponsavel={filteredByResponsavel}
+              dashboardData={filteredDashboardData}
+              openModal={openModal}
+            />
+            <CompletedProjectsCard />
             <div className="flex-1">
               <WorkSessionTimer />
             </div>
-            <TotalProjectsCard />
-            <CompletedProjectsCard />
           </div>
 
           {/* Coluna direita: Calendário */}
