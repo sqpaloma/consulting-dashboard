@@ -30,6 +30,7 @@ export function mapEngineerResponsible(nome: string): string {
     "G SIMAO",
     "HENRIQUE",
     "NICOLAS C",
+    "DANIEL",
     "RONALD",
     "VINICIUS",
     "DANIEL G",
@@ -118,6 +119,7 @@ export function isEngineerMapped(nome: string): boolean {
     "HENRIQUE",
     "NICOLAS C",
     "RONALD",
+    "DANIEL",
     "VINICIUS",
     "DANIEL G",
   ];
@@ -185,6 +187,7 @@ export function getAllMappedNames(): string[] {
     "HENRIQUE",
     "NICOLAS C",
     "RONALD",
+    "DANIEL",
     "VINICIUS",
     "DANIEL G",
     // Responsáveis principais
