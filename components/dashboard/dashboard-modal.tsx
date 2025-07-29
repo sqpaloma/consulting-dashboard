@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import jsPDF from "jspdf";
 
 interface DashboardModalProps {
   activeModal: string | null;
@@ -223,6 +224,49 @@ export function DashboardModal({
     }
   };
 
+  const [isExporting, setIsExporting] = useState(false);
+  const [showExportConfirm, setShowExportConfirm] = useState(false);
+
+  const generatePDF = () => {
+    setIsExporting(true);
+    const doc = new jsPDF();
+
+    // Configurar fonte para suportar caracteres especiais
+    doc.setFont("helvetica");
+    doc.setFontSize(16);
+    doc.text(getModalTitle(), 10, 10);
+    doc.setFontSize(12);
+    doc.text(`Total: ${sortedData.length} itens`, 10, 20);
+
+    let y = 30;
+    sortedData.forEach((item, index) => {
+      // Verificar se precisa de nova página
+      if (y > 250) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text(`Item ${index + 1}: ${item.titulo}`, 10, y);
+      doc.setFontSize(10);
+      doc.text(`OS: ${item.os || item.id}`, 15, y + 5);
+      doc.text(`Cliente: ${item.cliente}`, 15, y + 10);
+      doc.text(`Data: ${formatDisplayDate(item)}`, 15, y + 15);
+      doc.text(`Responsável: ${item.responsavel || "N/A"}`, 15, y + 20);
+      doc.text(`Status: ${item.status}`, 15, y + 25);
+      y += 35;
+    });
+
+    const fileName = `${getModalTitle().replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+    doc.save(fileName);
+    setIsExporting(false);
+    setShowExportConfirm(false);
+  };
+
+  const handleExportClick = () => {
+    setShowExportConfirm(true);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
@@ -360,13 +404,69 @@ export function DashboardModal({
               <Button variant="outline" onClick={() => setActiveModal(null)}>
                 Fechar
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                Exportar Lista
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={handleExportClick}
+                disabled={isExporting}
+              >
+                {isExporting ? "Exportando..." : "Exportar Lista"}
               </Button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Popup de confirmação de exportação */}
+      {showExportConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-8 w-8 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Exportar Lista
+                </h3>
+              </div>
+            </div>
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Deseja exportar a lista "{getModalTitle()}" com{" "}
+                {sortedData.length} itens para PDF?
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowExportConfirm(false)}
+                disabled={isExporting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={generatePDF}
+                disabled={isExporting}
+              >
+                {isExporting ? "Exportando..." : "Confirmar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
