@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, Calendar, RefreshCw } from "lucide-react";
+import { Clock, Calendar, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loadDashboardData } from "@/lib/dashboard-supabase-client";
 
@@ -31,6 +31,9 @@ export function ActivityPlanner({
   const [todayActivities, setTodayActivities] = useState<CalendarItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [databaseItems, setDatabaseItems] = useState<CalendarItem[]>([]);
+  const [completedActivities, setCompletedActivities] = useState<Set<string>>(
+    new Set()
+  );
 
   const timeSlots = [
     "08:00",
@@ -77,7 +80,7 @@ export function ActivityPlanner({
 
       setDatabaseItems(dbItems);
     } catch (error) {
-      } finally {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -86,6 +89,88 @@ export function ActivityPlanner({
   useEffect(() => {
     loadDatabaseItems();
   }, [filteredByResponsavel]);
+
+  // Carrega atividades concluídas do localStorage
+  useEffect(() => {
+    const today = new Date();
+    const todayKey = today.toISOString().split("T")[0]; // YYYY-MM-DD
+
+    // Limpa atividades concluídas de dias anteriores
+    const cleanupOldCompletedActivities = () => {
+      try {
+        const keys = Object.keys(localStorage);
+        const completedKeys = keys.filter((key) =>
+          key.startsWith("completedActivities_")
+        );
+
+        completedKeys.forEach((key) => {
+          const dateKey = key.replace("completedActivities_", "");
+          if (dateKey !== todayKey) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (error) {
+        console.error("Erro ao limpar atividades antigas:", error);
+      }
+    };
+
+    cleanupOldCompletedActivities();
+
+    try {
+      const stored = localStorage.getItem(`completedActivities_${todayKey}`);
+      if (stored) {
+        const completedIds = JSON.parse(stored);
+        setCompletedActivities(new Set(completedIds));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar atividades concluídas:", error);
+    }
+  }, []);
+
+  // Função para marcar uma atividade como concluída
+  const completeActivity = (activityId: string) => {
+    const today = new Date();
+    const todayKey = today.toISOString().split("T")[0];
+
+    setCompletedActivities((prev) => {
+      const newSet = new Set([...prev, activityId]);
+
+      // Salva no localStorage
+      try {
+        localStorage.setItem(
+          `completedActivities_${todayKey}`,
+          JSON.stringify([...newSet])
+        );
+      } catch (error) {
+        console.error("Erro ao salvar atividade concluída:", error);
+      }
+
+      return newSet;
+    });
+  };
+
+  // Função para desmarcar uma atividade como concluída
+  const uncompleteActivity = (activityId: string) => {
+    const today = new Date();
+    const todayKey = today.toISOString().split("T")[0];
+
+    setCompletedActivities((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(activityId);
+
+      // Salva no localStorage
+      try {
+        localStorage.setItem(
+          `completedActivities_${todayKey}`,
+          JSON.stringify([...newSet])
+        );
+      } catch (error) {
+        console.error("Erro ao salvar atividade desmarcada:", error);
+      }
+
+      return newSet;
+    });
+  };
 
   // Processa os itens para extrair atividades do dia atual
   useEffect(() => {
@@ -122,8 +207,19 @@ export function ActivityPlanner({
       return false;
     });
 
-    setTodayActivities(activitiesForToday);
-  }, [processedItems, databaseItems]);
+    // Separa atividades concluídas e não concluídas
+    const pendingActivities = activitiesForToday.filter(
+      (activity) => !completedActivities.has(activity.id)
+    );
+    const completedActivitiesList = activitiesForToday.filter((activity) =>
+      completedActivities.has(activity.id)
+    );
+
+    // Combina as listas: pendentes primeiro, concluídas no final
+    const sortedActivities = [...pendingActivities, ...completedActivitiesList];
+
+    setTodayActivities(sortedActivities);
+  }, [processedItems, databaseItems, completedActivities]);
 
   // Função para fazer parse de diferentes formatos de data
   const parseDate = (dateString: string): Date | null => {
@@ -228,6 +324,22 @@ export function ActivityPlanner({
               <RefreshCw className="h-3 w-3 mr-1" />
               {isLoading ? "Carregando..." : "Atualizar"}
             </Button>
+            {completedActivities.size > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const today = new Date();
+                  const todayKey = today.toISOString().split("T")[0];
+                  localStorage.removeItem(`completedActivities_${todayKey}`);
+                  setCompletedActivities(new Set());
+                }}
+                className="text-xs text-red-600 hover:text-red-700"
+                title="Limpar todas as atividades concluídas"
+              >
+                Limpar Concluídas
+              </Button>
+            )}
           </div>
         </div>
         <p className="text-sm text-gray-600 mt-2">
@@ -250,9 +362,23 @@ export function ActivityPlanner({
             todayActivities.map((activity, index) => (
               <div
                 key={`activity-${activity.id}-${index}`}
-                className={`rounded-lg p-4 border ${getStatusColor(
-                  activity.status
-                )}`}
+                className={`rounded-lg p-4 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                  completedActivities.has(activity.id)
+                    ? "bg-green-50 border-green-200 opacity-75"
+                    : getStatusColor(activity.status)
+                }`}
+                onClick={() => {
+                  if (completedActivities.has(activity.id)) {
+                    uncompleteActivity(activity.id);
+                  } else {
+                    completeActivity(activity.id);
+                  }
+                }}
+                title={
+                  completedActivities.has(activity.id)
+                    ? "Clique para desmarcar como concluída"
+                    : "Clique para marcar como concluída"
+                }
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -267,56 +393,90 @@ export function ActivityPlanner({
                         {activity.prazo}
                       </div>
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-2 flex items-center space-x-2">
                       <span
                         className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          activity.status.toLowerCase().includes("concluído") ||
-                          activity.status.toLowerCase().includes("concluido")
+                          completedActivities.has(activity.id)
                             ? "bg-green-100 text-green-800"
                             : activity.status
                                   .toLowerCase()
-                                  .includes("andamento") ||
+                                  .includes("concluído") ||
                                 activity.status
                                   .toLowerCase()
-                                  .includes("execução") ||
-                                activity.status
-                                  .toLowerCase()
-                                  .includes("execucao")
-                              ? "bg-blue-100 text-blue-800"
+                                  .includes("concluido")
+                              ? "bg-green-100 text-green-800"
                               : activity.status
                                     .toLowerCase()
-                                    .includes("pendente") ||
+                                    .includes("andamento") ||
                                   activity.status
                                     .toLowerCase()
-                                    .includes("aguardando")
+                                    .includes("execução") ||
+                                  activity.status
+                                    .toLowerCase()
+                                    .includes("execucao")
                                 ? "bg-blue-100 text-blue-800"
                                 : activity.status
                                       .toLowerCase()
-                                      .includes("revisão") ||
+                                      .includes("pendente") ||
                                     activity.status
                                       .toLowerCase()
-                                      .includes("revisao") ||
-                                    activity.status
-                                      .toLowerCase()
-                                      .includes("análise") ||
-                                    activity.status
-                                      .toLowerCase()
-                                      .includes("analise")
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-gray-100 text-gray-800"
+                                      .includes("aguardando")
+                                  ? "bg-blue-100 text-blue-800"
+                                  : activity.status
+                                        .toLowerCase()
+                                        .includes("revisão") ||
+                                      activity.status
+                                        .toLowerCase()
+                                        .includes("revisao") ||
+                                      activity.status
+                                        .toLowerCase()
+                                        .includes("análise") ||
+                                      activity.status
+                                        .toLowerCase()
+                                        .includes("analise")
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {activity.status}
+                        {completedActivities.has(activity.id)
+                          ? "CONCLUÍDO"
+                          : activity.status}
                       </span>
+                      {completedActivities.has(activity.id) && (
+                        <span className="text-xs text-green-600 font-medium">
+                          ✓ Concluído
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center">
-                    <Avatar className="w-8 h-8 border-2 border-white">
-                      <AvatarImage src="/placeholder.svg" />
-                      <AvatarFallback>
-                        {activity.cliente.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    {completedActivities.has(activity.id) ? (
+                      // Atividade concluída - indicador visual
+                      <div className="relative group">
+                        <Avatar className="w-8 h-8 border-2 border-green-300 bg-green-50 transition-all duration-200">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback className="text-green-600">
+                            {activity.cliente.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                          ✓
+                        </div>
+                      </div>
+                    ) : (
+                      // Atividade pendente - indicador visual
+                      <div className="relative group">
+                        <Avatar className="w-8 h-8 border-2 border-white transition-all duration-200">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback>
+                            {activity.cliente.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -top-1 -right-1 bg-gray-300 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          ✓
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
