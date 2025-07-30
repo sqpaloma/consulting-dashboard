@@ -199,19 +199,6 @@ export function ActivityPlanner({
   );
   const [activityOrder, setActivityOrder] = useState<string[]>([]);
 
-  const timeSlots = [
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-  ];
-
   // Configuração dos sensors para drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -617,16 +604,7 @@ export function ActivityPlanner({
         </p>
       </CardHeader>
       <CardContent>
-        <div className="flex space-x-4 overflow-x-auto pb-4">
-          {timeSlots.map((time) => (
-            <div key={time} className="flex-shrink-0 text-center">
-              <div className="text-sm text-gray-500 mb-4">{time}</div>
-              <div className="w-24 h-2 bg-gray-100 rounded"></div>
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-3 mt-6">
+        <div className="space-y-3">
           {todayActivities.length > 0 ? (
             <DndContext
               sensors={sensors}
