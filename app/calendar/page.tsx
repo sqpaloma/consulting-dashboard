@@ -3,7 +3,7 @@ import { ResponsiveLayout } from "@/components/responsive-layout";
 
 export default function CalendarPage() {
   return (
-    <ResponsiveLayout title="Calendário & Tarefas">
+    <ResponsiveLayout title="Organize-se">
       <CalendarMain />
     </ResponsiveLayout>
   );

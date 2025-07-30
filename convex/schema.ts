@@ -62,9 +62,19 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     completed: v.boolean(),
+    status: v.string(), // "todo", "in-progress", "completed"
     priority: v.string(), // "low", "medium", "high"
     dueDate: v.optional(v.string()), // formato: YYYY-MM-DD
+    scheduledDate: v.optional(v.string()), // formato: YYYY-MM-DD
+    responsible: v.optional(v.string()), // nome do responsável
     category: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  notes: defineTable({
+    title: v.string(),
+    content: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
   }),
