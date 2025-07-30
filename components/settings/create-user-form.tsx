@@ -56,7 +56,7 @@ export function CreateUserForm({ onCancel, onSuccess }: CreateUserFormProps) {
     setIsLoading(true);
 
     try {
-      await createUserByAdmin({
+      const result = await createUserByAdmin({
         name: formData.name,
         email: formData.email,
         password: formData.password,

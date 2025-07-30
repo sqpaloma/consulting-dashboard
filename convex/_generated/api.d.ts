@@ -18,6 +18,7 @@ import type * as chat from "../chat.js";
 import type * as diagnose_login from "../diagnose_login.js";
 import type * as events from "../events.js";
 import type * as notes from "../notes.js";
+import type * as test_create_user from "../test_create_user.js";
 import type * as todos from "../todos.js";
 import type * as users from "../users.js";
 
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   diagnose_login: typeof diagnose_login;
   events: typeof events;
   notes: typeof notes;
+  test_create_user: typeof test_create_user;
   todos: typeof todos;
   users: typeof users;
 }>;
