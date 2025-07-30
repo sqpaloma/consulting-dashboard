@@ -92,3 +92,16 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Estilos para gráficos - nomes menores */
+.recharts-legend-item-text {
+  font-size: 8px !important;
+}
+
+.recharts-legend-item {
+  font-size: 8px !important;
+}
+
+.recharts-legend-wrapper {
+  font-size: 8px !important;
+}

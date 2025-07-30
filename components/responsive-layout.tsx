@@ -24,6 +24,7 @@ import {
   Bell,
   Menu,
   LogOut,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -56,6 +57,11 @@ const baseMenuItems = [
     icon: Calendar,
     label: "Calendário",
     href: "/calendar",
+  },
+  {
+    icon: TrendingUp,
+    label: "Indicadores",
+    href: "/indicadores",
   },
   {
     icon: BookOpen,

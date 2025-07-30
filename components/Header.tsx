@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Bell,
   LogOut,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -108,6 +109,15 @@ export function Header({
               </Button>
             </Link>
           )}
+          <Link href="/indicadores">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-blue-700"
+            >
+              <TrendingUp className="h-5 w-5" />
+            </Button>
+          </Link>
           <Link href="/manual">
             <Button
               variant="ghost"
