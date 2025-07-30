@@ -36,7 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, FileText, MoreHorizontal, Edit3, Trash2 } from "lucide-react";
 import { FixedSizeList as List } from "react-window";
 
-export function CalendarMain() {
+export function KanbanMain() {
   const [isAddingTodo, setIsAddingTodo] = useState(false);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [editingNote, setEditingNote] = useState<string | null>(null);
