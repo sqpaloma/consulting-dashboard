@@ -59,6 +59,7 @@ function SortableActivityCard({
 }) {
   const isCompleted = completedActivities.has(activity.id);
   const shouldDisableDrag = isCompleted;
+  const [isDragging, setIsDragging] = useState(false);
 
   const {
     attributes,
@@ -66,7 +67,7 @@ function SortableActivityCard({
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging: dndIsDragging,
   } = useSortable({
     id: activity.id,
     disabled: shouldDisableDrag,
@@ -75,7 +76,39 @@ function SortableActivityCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: dndIsDragging ? 0.5 : 1,
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Se o clique foi em um botão, não inicia o drag
+    if ((e.target as HTMLElement).closest("button")) {
+      e.stopPropagation();
+      return;
+    }
+
+    // Marca que pode ser um drag
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    // Se moveu o mouse, é um drag
+    setIsDragging(true);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Se o clique foi em um botão, não executa a ação do card
+    if ((e.target as HTMLElement).closest("button")) {
+      return;
+    }
+
+    // Se não estava arrastando, executa a ação de concluir
+    if (!isDragging) {
+      if (completedActivities.has(activity.id)) {
+        uncompleteActivity(activity.id);
+      } else {
+        completeActivity(activity.id);
+      }
+    }
   };
 
   return (
@@ -88,7 +121,7 @@ function SortableActivityCard({
         completedActivities.has(activity.id)
           ? "bg-green-50 border-green-200 opacity-75"
           : getStatusColor(activity.status)
-      } ${isDragging ? "shadow-lg" : ""} ${
+      } ${dndIsDragging ? "shadow-lg" : ""} ${
         shouldDisableDrag
           ? "cursor-not-allowed"
           : "cursor-grab active:cursor-grabbing"
@@ -97,9 +130,12 @@ function SortableActivityCard({
         shouldDisableDrag
           ? "Atividade concluída - não pode ser movida"
           : completedActivities.has(activity.id)
-            ? "Clique para desmarcar como concluída"
-            : "Clique para marcar como concluída"
+            ? "Clique em qualquer lugar para desmarcar como concluída"
+            : "Clique em qualquer lugar para marcar como concluída"
       }
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onClick={handleClick}
     >
       <div className="flex items-center justify-between">
         <div className="flex-1">
@@ -146,9 +182,10 @@ function SortableActivityCard({
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 pointer-events-auto">
           <button
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               if (completedActivities.has(activity.id)) {
                 uncompleteActivity(activity.id);
@@ -156,7 +193,14 @@ function SortableActivityCard({
                 completeActivity(activity.id);
               }
             }}
-            className={`p-2 rounded-full transition-all duration-200 ${
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+            }}
+            data-no-dnd="true"
+            className={`p-2 rounded-full transition-all duration-200 pointer-events-auto ${
               completedActivities.has(activity.id)
                 ? "bg-green-100 text-green-600 hover:bg-green-200"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -201,7 +245,11 @@ export function ActivityPlanner({
 
   // Configuração dos sensors para drag and drop
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Reduzido para ser mais responsivo
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
