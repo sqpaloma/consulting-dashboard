@@ -6,6 +6,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Clock, Calendar, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loadDashboardData } from "@/lib/dashboard-supabase-client";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface CalendarItem {
   id: string;
@@ -24,6 +41,152 @@ interface ActivityPlannerProps {
   filteredByResponsavel?: string | null;
 }
 
+// Componente para o card arrastável
+function SortableActivityCard({
+  activity,
+  index,
+  completedActivities,
+  getStatusColor,
+  completeActivity,
+  uncompleteActivity,
+}: {
+  activity: CalendarItem;
+  index: number;
+  completedActivities: Set<string>;
+  getStatusColor: (status: string) => string;
+  completeActivity: (id: string) => void;
+  uncompleteActivity: (id: string) => void;
+}) {
+  const isCompleted = completedActivities.has(activity.id);
+  const shouldDisableDrag = isCompleted;
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: activity.id,
+    disabled: shouldDisableDrag,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...(shouldDisableDrag ? {} : attributes)}
+      {...(shouldDisableDrag ? {} : listeners)}
+      className={`rounded-lg p-4 border transition-all duration-200 hover:shadow-md ${
+        completedActivities.has(activity.id)
+          ? "bg-green-50 border-green-200 opacity-75"
+          : getStatusColor(activity.status)
+      } ${isDragging ? "shadow-lg" : ""} ${
+        shouldDisableDrag
+          ? "cursor-not-allowed"
+          : "cursor-grab active:cursor-grabbing"
+      }`}
+      title={
+        shouldDisableDrag
+          ? "Atividade concluída - não pode ser movida"
+          : completedActivities.has(activity.id)
+            ? "Clique para desmarcar como concluída"
+            : "Clique para marcar como concluída"
+      }
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <h4 className="font-medium text-gray-800">{activity.titulo}</h4>
+          <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+            <span>OS: {activity.os}</span>
+            <span>Cliente: {activity.cliente}</span>
+            <div className="flex items-center">
+              <Clock className="h-3 w-3 mr-1" />
+              {activity.prazo}
+            </div>
+          </div>
+          <div className="mt-2 flex items-center space-x-2">
+            <span
+              className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                completedActivities.has(activity.id)
+                  ? "bg-green-100 text-green-800"
+                  : activity.status.toLowerCase().includes("concluído") ||
+                      activity.status.toLowerCase().includes("concluido")
+                    ? "bg-green-100 text-green-800"
+                    : activity.status.toLowerCase().includes("andamento") ||
+                        activity.status.toLowerCase().includes("execução") ||
+                        activity.status.toLowerCase().includes("execucao")
+                      ? "bg-blue-100 text-blue-800"
+                      : activity.status.toLowerCase().includes("pendente") ||
+                          activity.status.toLowerCase().includes("aguardando")
+                        ? "bg-blue-100 text-blue-800"
+                        : activity.status.toLowerCase().includes("revisão") ||
+                            activity.status.toLowerCase().includes("revisao") ||
+                            activity.status.toLowerCase().includes("análise") ||
+                            activity.status.toLowerCase().includes("analise")
+                          ? "bg-orange-100 text-orange-800"
+                          : "bg-gray-100 text-gray-800"
+              }`}
+            >
+              {completedActivities.has(activity.id)
+                ? "CONCLUÍDO"
+                : activity.status}
+            </span>
+            {completedActivities.has(activity.id) && (
+              <span className="text-xs text-green-600 font-medium">
+                ✓ Concluído
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (completedActivities.has(activity.id)) {
+                uncompleteActivity(activity.id);
+              } else {
+                completeActivity(activity.id);
+              }
+            }}
+            className={`p-2 rounded-full transition-all duration-200 ${
+              completedActivities.has(activity.id)
+                ? "bg-green-100 text-green-600 hover:bg-green-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+            title={
+              completedActivities.has(activity.id)
+                ? "Desmarcar como concluída"
+                : "Marcar como concluída"
+            }
+          >
+            {completedActivities.has(activity.id) ? (
+              <div className="w-4 h-4 flex items-center justify-center">✓</div>
+            ) : (
+              <div className="w-4 h-4 flex items-center justify-center">○</div>
+            )}
+          </button>
+          <div className="relative group">
+            <Avatar className="w-8 h-8 border-2 border-white transition-all duration-200">
+              <AvatarImage src="/placeholder.svg" />
+              <AvatarFallback>
+                {activity.cliente.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ActivityPlanner({
   processedItems = [],
   filteredByResponsavel,
@@ -34,6 +197,7 @@ export function ActivityPlanner({
   const [completedActivities, setCompletedActivities] = useState<Set<string>>(
     new Set()
   );
+  const [activityOrder, setActivityOrder] = useState<string[]>([]);
 
   const timeSlots = [
     "08:00",
@@ -47,6 +211,45 @@ export function ActivityPlanner({
     "16:00",
     "17:00",
   ];
+
+  // Configuração dos sensors para drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Função para lidar com o fim do drag and drop
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setTodayActivities((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over?.id);
+
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+
+        // Salva apenas a ordem das atividades pendentes no localStorage
+        const today = new Date();
+        // Converte para horário de Brasília (UTC-3)
+        const todayBrasilia = new Date(
+          today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+        );
+        const todayKey = todayBrasilia.toISOString().split("T")[0];
+        const pendingOrderIds = newOrder
+          .filter((item) => !completedActivities.has(item.id))
+          .map((item) => item.id);
+        localStorage.setItem(
+          `activityOrder_${todayKey}`,
+          JSON.stringify(pendingOrderIds)
+        );
+
+        return newOrder;
+      });
+    }
+  };
 
   // Carrega dados do banco de dados
   const loadDatabaseItems = async () => {
@@ -93,7 +296,11 @@ export function ActivityPlanner({
   // Carrega atividades concluídas do localStorage
   useEffect(() => {
     const today = new Date();
-    const todayKey = today.toISOString().split("T")[0]; // YYYY-MM-DD
+    // Converte para horário de Brasília (UTC-3)
+    const todayBrasilia = new Date(
+      today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+    );
+    const todayKey = todayBrasilia.toISOString().split("T")[0]; // YYYY-MM-DD
 
     // Limpa atividades concluídas de dias anteriores
     const cleanupOldCompletedActivities = () => {
@@ -130,7 +337,11 @@ export function ActivityPlanner({
   // Função para marcar uma atividade como concluída
   const completeActivity = (activityId: string) => {
     const today = new Date();
-    const todayKey = today.toISOString().split("T")[0];
+    // Converte para horário de Brasília (UTC-3)
+    const todayBrasilia = new Date(
+      today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+    );
+    const todayKey = todayBrasilia.toISOString().split("T")[0];
 
     setCompletedActivities((prev) => {
       const newSet = new Set([...prev, activityId]);
@@ -152,7 +363,11 @@ export function ActivityPlanner({
   // Função para desmarcar uma atividade como concluída
   const uncompleteActivity = (activityId: string) => {
     const today = new Date();
-    const todayKey = today.toISOString().split("T")[0];
+    // Converte para horário de Brasília (UTC-3)
+    const todayBrasilia = new Date(
+      today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+    );
+    const todayKey = todayBrasilia.toISOString().split("T")[0];
 
     setCompletedActivities((prev) => {
       const newSet = new Set(prev);
@@ -175,7 +390,11 @@ export function ActivityPlanner({
   // Processa os itens para extrair atividades do dia atual
   useEffect(() => {
     const today = new Date();
-    const todayKey = today.toISOString().split("T")[0]; // YYYY-MM-DD
+    // Converte para horário de Brasília (UTC-3)
+    const todayBrasilia = new Date(
+      today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+    );
+    const todayKey = todayBrasilia.toISOString().split("T")[0]; // YYYY-MM-DD
 
     // Combina dados da planilha com dados do banco
     const allItems = [...processedItems, ...databaseItems];
@@ -207,16 +426,55 @@ export function ActivityPlanner({
       return false;
     });
 
-    // Separa atividades concluídas e não concluídas
+    // Sempre separa atividades concluídas e não concluídas
     const pendingActivities = activitiesForToday.filter(
       (activity) => !completedActivities.has(activity.id)
     );
     const completedActivitiesList = activitiesForToday.filter((activity) =>
       completedActivities.has(activity.id)
     );
+    let sortedActivities = [...pendingActivities, ...completedActivitiesList];
 
-    // Combina as listas: pendentes primeiro, concluídas no final
-    const sortedActivities = [...pendingActivities, ...completedActivitiesList];
+    // Aplica a ordem salva no localStorage apenas para atividades pendentes
+    try {
+      const savedOrder = localStorage.getItem(`activityOrder_${todayKey}`);
+      if (savedOrder) {
+        const orderIds = JSON.parse(savedOrder);
+
+        // Filtra apenas os IDs de atividades pendentes que ainda existem
+        const validOrderIds = orderIds.filter((id: string) =>
+          pendingActivities.some((activity) => activity.id === id)
+        );
+
+        // Reordena apenas as atividades pendentes baseado na ordem salva
+        if (validOrderIds.length > 0) {
+          const orderedPendingActivities: CalendarItem[] = [];
+
+          // Adiciona primeiro as atividades pendentes na ordem salva
+          validOrderIds.forEach((id: string) => {
+            const activity = pendingActivities.find((a) => a.id === id);
+            if (activity) {
+              orderedPendingActivities.push(activity);
+            }
+          });
+
+          // Adiciona as atividades pendentes que não estão na ordem salva (novas atividades)
+          pendingActivities.forEach((activity) => {
+            if (!validOrderIds.includes(activity.id)) {
+              orderedPendingActivities.push(activity);
+            }
+          });
+
+          // Combina atividades pendentes ordenadas + concluídas no final
+          sortedActivities = [
+            ...orderedPendingActivities,
+            ...completedActivitiesList,
+          ];
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar ordem das atividades:", error);
+    }
 
     setTodayActivities(sortedActivities);
   }, [processedItems, databaseItems, completedActivities]);
@@ -297,10 +555,15 @@ export function ActivityPlanner({
       day: "numeric",
       month: "long",
       year: "numeric",
+      timeZone: "America/Sao_Paulo",
     });
   };
 
   const today = new Date();
+  // Converte para horário de Brasília (UTC-3)
+  const todayBrasilia = new Date(
+    today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+  );
 
   return (
     <Card className="bg-white">
@@ -330,7 +593,13 @@ export function ActivityPlanner({
                 size="sm"
                 onClick={() => {
                   const today = new Date();
-                  const todayKey = today.toISOString().split("T")[0];
+                  // Converte para horário de Brasília (UTC-3)
+                  const todayBrasilia = new Date(
+                    today.toLocaleString("en-US", {
+                      timeZone: "America/Sao_Paulo",
+                    })
+                  );
+                  const todayKey = todayBrasilia.toISOString().split("T")[0];
                   localStorage.removeItem(`completedActivities_${todayKey}`);
                   setCompletedActivities(new Set());
                 }}
@@ -343,7 +612,7 @@ export function ActivityPlanner({
           </div>
         </div>
         <p className="text-sm text-gray-600 mt-2">
-          {formatDate(today)} - {todayActivities.length} atividade(s)
+          {formatDate(todayBrasilia)} - {todayActivities.length} atividade(s)
           agendada(s)
         </p>
       </CardHeader>
@@ -359,128 +628,28 @@ export function ActivityPlanner({
 
         <div className="space-y-3 mt-6">
           {todayActivities.length > 0 ? (
-            todayActivities.map((activity, index) => (
-              <div
-                key={`activity-${activity.id}-${index}`}
-                className={`rounded-lg p-4 border transition-all duration-200 cursor-pointer hover:shadow-md ${
-                  completedActivities.has(activity.id)
-                    ? "bg-green-50 border-green-200 opacity-75"
-                    : getStatusColor(activity.status)
-                }`}
-                onClick={() => {
-                  if (completedActivities.has(activity.id)) {
-                    uncompleteActivity(activity.id);
-                  } else {
-                    completeActivity(activity.id);
-                  }
-                }}
-                title={
-                  completedActivities.has(activity.id)
-                    ? "Clique para desmarcar como concluída"
-                    : "Clique para marcar como concluída"
-                }
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={todayActivities.map((activity) => activity.id)}
+                strategy={verticalListSortingStrategy}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-800">
-                      {activity.titulo}
-                    </h4>
-                    <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                      <span>OS: {activity.os}</span>
-                      <span>Cliente: {activity.cliente}</span>
-                      <div className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {activity.prazo}
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-center space-x-2">
-                      <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          completedActivities.has(activity.id)
-                            ? "bg-green-100 text-green-800"
-                            : activity.status
-                                  .toLowerCase()
-                                  .includes("concluído") ||
-                                activity.status
-                                  .toLowerCase()
-                                  .includes("concluido")
-                              ? "bg-green-100 text-green-800"
-                              : activity.status
-                                    .toLowerCase()
-                                    .includes("andamento") ||
-                                  activity.status
-                                    .toLowerCase()
-                                    .includes("execução") ||
-                                  activity.status
-                                    .toLowerCase()
-                                    .includes("execucao")
-                                ? "bg-blue-100 text-blue-800"
-                                : activity.status
-                                      .toLowerCase()
-                                      .includes("pendente") ||
-                                    activity.status
-                                      .toLowerCase()
-                                      .includes("aguardando")
-                                  ? "bg-blue-100 text-blue-800"
-                                  : activity.status
-                                        .toLowerCase()
-                                        .includes("revisão") ||
-                                      activity.status
-                                        .toLowerCase()
-                                        .includes("revisao") ||
-                                      activity.status
-                                        .toLowerCase()
-                                        .includes("análise") ||
-                                      activity.status
-                                        .toLowerCase()
-                                        .includes("analise")
-                                    ? "bg-orange-100 text-orange-800"
-                                    : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {completedActivities.has(activity.id)
-                          ? "CONCLUÍDO"
-                          : activity.status}
-                      </span>
-                      {completedActivities.has(activity.id) && (
-                        <span className="text-xs text-green-600 font-medium">
-                          ✓ Concluído
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    {completedActivities.has(activity.id) ? (
-                      // Atividade concluída - indicador visual
-                      <div className="relative group">
-                        <Avatar className="w-8 h-8 border-2 border-green-300 bg-green-50 transition-all duration-200">
-                          <AvatarImage src="/placeholder.svg" />
-                          <AvatarFallback className="text-green-600">
-                            {activity.cliente.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                          ✓
-                        </div>
-                      </div>
-                    ) : (
-                      // Atividade pendente - indicador visual
-                      <div className="relative group">
-                        <Avatar className="w-8 h-8 border-2 border-white transition-all duration-200">
-                          <AvatarImage src="/placeholder.svg" />
-                          <AvatarFallback>
-                            {activity.cliente.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="absolute -top-1 -right-1 bg-gray-300 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          ✓
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
+                {todayActivities.map((activity, index) => (
+                  <SortableActivityCard
+                    key={`activity-${activity.id}-${index}`}
+                    activity={activity}
+                    index={index}
+                    completedActivities={completedActivities}
+                    getStatusColor={getStatusColor}
+                    completeActivity={completeActivity}
+                    uncompleteActivity={uncompleteActivity}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           ) : (
             <div className="text-center py-8 text-gray-500">
               {isLoading ? (
