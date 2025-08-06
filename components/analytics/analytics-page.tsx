@@ -13,7 +13,7 @@ import { AnalyticsAdminData } from "./analytics-admin-data";
 import { AnalyticsMetrics } from "./analytics-metrics";
 import { AnalyticsCharts } from "./analytics-charts";
 import { AnalyticsRanking } from "./analytics-ranking";
-import { AnalyticsConversionRate } from "./analytics-conversion-rate";
+
 import { AnalyticsClientAnalysis } from "./analytics-client-analysis";
 
 export function AnalyticsPage() {
@@ -256,20 +256,20 @@ export function AnalyticsPage() {
           {/* Metrics Grid */}
           <AnalyticsMetrics uploadedData={displayData} />
 
-          {/* Conversion Rate and Client Analysis */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AnalyticsConversionRate uploadedData={displayData} />
-            <AnalyticsClientAnalysis
-              uploadedData={displayData}
-              rawData={filteredRawData}
-            />
-          </div>
-
           {/* Charts Grid */}
-          <AnalyticsCharts uploadedData={displayData} />
+          <AnalyticsCharts
+            uploadedData={displayData}
+            originalData={filteredData}
+          />
 
           {/* Ranking */}
           <AnalyticsRanking uploadedData={displayData} />
+
+          {/* Client Analysis */}
+          <AnalyticsClientAnalysis
+            uploadedData={displayData}
+            rawData={filteredRawData}
+          />
 
           {/* Admin Data Table */}
           <AnalyticsAdminData uploadedData={displayData} />

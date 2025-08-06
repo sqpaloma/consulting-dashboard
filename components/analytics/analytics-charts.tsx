@@ -1,11 +1,16 @@
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalyticsMonthlyChart } from "./analytics-monthly-chart";
 
 interface AnalyticsChartsProps {
   uploadedData: any[];
+  originalData?: any[]; // Dados originais para o gráfico mensal
 }
 
-export function AnalyticsCharts({ uploadedData }: AnalyticsChartsProps) {
+export function AnalyticsCharts({
+  uploadedData,
+  originalData,
+}: AnalyticsChartsProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -50,6 +55,9 @@ export function AnalyticsCharts({ uploadedData }: AnalyticsChartsProps) {
 
   return (
     <div className="space-y-6">
+      {/* Monthly Chart */}
+      <AnalyticsMonthlyChart uploadedData={originalData || uploadedData} />
+
       {/* Performance Chart - Full Width */}
       <Card className="bg-white">
         <CardHeader>
