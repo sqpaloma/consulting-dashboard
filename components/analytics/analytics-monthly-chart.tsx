@@ -273,10 +273,7 @@ export function AnalyticsMonthlyChart({
                     <SelectItem key={dept.id} value={dept.id}>
                       <div className="flex items-center space-x-2">
                         <User className="h-4 w-4 text-blue-600" />
-                        <div className="flex flex-col">
-                          <span className="font-medium">{dept.responsavel}</span>
-                          <span className="text-xs text-gray-500">{dept.nome}</span>
-                        </div>
+                        <span className="font-medium">{dept.nome}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -379,12 +376,12 @@ export function AnalyticsMonthlyChart({
             <div className="h-full flex flex-col">
               <div className="flex-1 overflow-x-auto pb-8">
                 <div
-                  className="flex items-end justify-start space-x-4 min-w-max px-4"
-                  style={{ minWidth: `${comparisonData.length * 120}px` }}
+                  className="flex items-end justify-start space-x-8 min-w-max px-4"
+                  style={{ minWidth: `${comparisonData.length * 160}px` }}
                 >
                   {comparisonData.map((month, monthIndex) => (
                     <div key={monthIndex} className="flex flex-col items-center space-y-2 flex-shrink-0">
-                      <div className="flex items-end space-x-1">
+                      <div className="flex items-end space-x-3">
                         {availableYears.map((year, yearIndex) => {
                           const yearData = month.years[year];
                           if (!yearData) return null;
@@ -400,18 +397,18 @@ export function AnalyticsMonthlyChart({
                           
                           return (
                             <div key={year} className="flex flex-col items-center space-y-1">
-                              <div className="text-xs text-gray-600 font-medium text-center w-12">
+                              <div className="text-xs text-gray-600 font-medium text-center w-16">
                                 {comparisonMetric === "conversao" ? formatPercentage(yearData.value) : formatCurrency(yearData.value)}
                               </div>
                               <div
-                                className="w-8 rounded-t transition-all duration-500 hover:opacity-80 border border-gray-400"
+                                className="w-10 rounded-t transition-all duration-500 hover:opacity-80 border border-gray-400"
                                 style={{
                                   height: `${Math.max(height, 12)}px`,
                                   backgroundColor: colors[yearIndex % colors.length],
                                 }}
                                 title={`${month.mesNome} ${year}: ${comparisonMetric === "conversao" ? formatPercentage(yearData.value) : formatCurrency(yearData.value)}`}
                               ></div>
-                              <div className="text-xs text-gray-500 font-medium text-center w-8">
+                              <div className="text-xs text-gray-500 font-medium text-center w-10">
                                 {year}
                               </div>
                             </div>
