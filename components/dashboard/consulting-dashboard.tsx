@@ -328,9 +328,7 @@ export function ConsultingDashboard() {
                   filteredByResponsavel={filteredByResponsavel}
                 />
               </div>
-            </div>
-            <div className="flex justify-center">
-              <div className="w-full max-w-2xl">
+              <div className="mt-2">
                 <OverdueDistribution overdueItems={overdueItems} />
               </div>
             </div>

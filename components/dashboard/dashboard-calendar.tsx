@@ -289,7 +289,7 @@ export function DashboardCalendar({
   };
 
   return (
-    <Card className="bg-white h-[500px] flex flex-col">
+    <Card className="bg-white h-[750px] flex flex-col">
       <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-gray-800 flex items-center">
