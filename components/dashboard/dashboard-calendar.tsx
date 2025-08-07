@@ -292,7 +292,7 @@ export function DashboardCalendar({
     <Card className="bg-white h-[750px] flex flex-col">
       <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm text-gray-800 flex items-center">
+          <CardTitle className="text-xs lg:text-sm text-gray-800 flex items-center">
             <Calendar className="h-3 w-3 mr-2" />
             Agendamentos
             {isLoading && (
@@ -300,7 +300,7 @@ export function DashboardCalendar({
             )}
           </CardTitle>
         </div>
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-1">
           <Button
             variant="ghost"
             size="icon"
@@ -309,7 +309,7 @@ export function DashboardCalendar({
           >
             <ChevronLeft className="h-3 w-3" />
           </Button>
-          <span className="font-medium text-gray-700 text-xs">
+          <span className="font-medium text-gray-700 text-xs lg:text-sm">
             {getMonthName(currentMonth)} {currentYear}
           </span>
           <Button
@@ -322,8 +322,8 @@ export function DashboardCalendar({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-2">
-        <div className="grid grid-cols-7 gap-1 mb-2">
+      <CardContent className="flex-1 p-2 overflow-hidden">
+        <div className="grid grid-cols-7 gap-0.5 mb-1">
           {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
             <div
               key={day}
@@ -333,12 +333,12 @@ export function DashboardCalendar({
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5">
           {calendarDays.map((day, index) => (
             <div
               key={index}
               className={`
-                aspect-square p-1 text-center text-xs cursor-pointer rounded-lg
+                aspect-square p-0.5 text-center text-xs cursor-pointer rounded-lg
                 ${
                   day === null
                     ? "invisible"
@@ -369,7 +369,7 @@ export function DashboardCalendar({
               {day}
               {day && hasItemsOnDate(day) && (
                 <div
-                  className={`w-1 h-1 rounded-full mx-auto mt-1 ${
+                  className={`w-0.5 h-0.5 rounded-full mx-auto mt-0.5 ${
                     day === today &&
                     currentMonth === new Date().getMonth() &&
                     currentYear === new Date().getFullYear()
