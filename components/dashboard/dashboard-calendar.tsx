@@ -333,7 +333,9 @@ export function DashboardCalendar({
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-0.5">
+
+        {/* Calendário com Scroll Otimizado */}
+        <div className="grid grid-cols-7 gap-0.5 overflow-y-auto max-h-[600px]">
           {calendarDays.map((day, index) => (
             <div
               key={index}
