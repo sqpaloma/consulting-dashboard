@@ -16,6 +16,7 @@ export interface DashboardData {
   analises: number;
   orcamentos: number;
   em_execucao: number;
+  pronto: number;
   devolucoes: number;
   movimentacoes: number;
   created_at?: string;
@@ -83,6 +84,7 @@ export async function saveDashboardData(
         analises: dashboardData.analises,
         orcamentos: dashboardData.orcamentos,
         em_execucao: dashboardData.em_execucao,
+        pronto: dashboardData.pronto,
         devolucoes: dashboardData.devolucoes,
         movimentacoes: dashboardData.movimentacoes,
       });
@@ -260,6 +262,11 @@ export async function getDashboardItemsByCategory(
       case "execucao":
         query = query.or(
           "status.ilike.%execução%,status.ilike.%execucao%,status.ilike.%andamento%,status.ilike.%progresso%"
+        );
+        break;
+      case "pronto":
+        query = query.or(
+          "status.ilike.%pronto%,status.ilike.%concluído%,status.ilike.%concluido%,status.ilike.%finalizado%,status.ilike.%entregue%"
         );
         break;
       default:

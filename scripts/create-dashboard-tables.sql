@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS dashboard_data (
   analises INTEGER,
   orcamentos INTEGER,
   em_execucao INTEGER,
+  pronto INTEGER,
   devolucoes INTEGER,
   movimentacoes INTEGER,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
