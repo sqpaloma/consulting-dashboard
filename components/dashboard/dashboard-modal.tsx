@@ -189,6 +189,8 @@ export function DashboardModal({
         return "Follow-up: Todos os Itens";
       case "followup-atrasados":
         return "Follow-up: Itens Atrasados";
+      case "overdue-items":
+        return "Itens em Atraso";
       default:
         return "Detalhes";
     }

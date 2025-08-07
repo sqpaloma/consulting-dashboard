@@ -6,7 +6,7 @@ import { ResponsiveLayout } from "@/components/responsive-layout";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { WorkSessionTimer } from "./work-session-timer";
 import { DashboardCalendar } from "./dashboard-calendar";
-import { FollowUpCard, CompletedProjectsCard } from "./dashboard-projects";
+import { FollowUpCard, OverdueItemsCard } from "./dashboard-projects";
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
 import { ResponsavelFilter } from "./responsavel-filter";
@@ -92,6 +92,77 @@ export function ConsultingDashboard() {
 
     return metrics;
   }, [filteredItems, filteredByResponsavel, dashboardData]);
+
+  // Calcular itens atrasados baseado na lógica do calendário
+  const overdueItems = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const overdueItems: any[] = [];
+
+    filteredItems.forEach((item) => {
+      let itemDate = null;
+
+      // Tenta extrair a data do prazo
+      if (item.data_registro && item.data_registro.includes("-")) {
+        itemDate = new Date(item.data_registro);
+        if (isNaN(itemDate.getTime())) {
+          itemDate = null;
+        }
+      } else if (item.prazo) {
+        itemDate = parseDate(item.prazo);
+      } else if (item.data) {
+        itemDate = parseDate(item.data);
+      }
+
+      if (itemDate && itemDate < today) {
+        overdueItems.push(item);
+      }
+    });
+
+    return overdueItems;
+  }, [filteredItems]);
+
+  // Função para fazer parse de diferentes formatos de data (copiada do calendário)
+  const parseDate = (dateString: string): Date | null => {
+    if (!dateString) return null;
+
+    // Remove espaços extras
+    const cleanDate = dateString.toString().trim();
+
+    // Tenta diferentes formatos
+    const formats = [
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+      /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
+      /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
+    ];
+
+    for (const format of formats) {
+      const match = cleanDate.match(format);
+      if (match) {
+        if (format.source.includes("yyyy")) {
+          // Formato com ano completo
+          const [, day, month, year] = match;
+          return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+          // Formato com ano abreviado
+          const [, day, month, year] = match;
+          const fullYear =
+            parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
+          return new Date(fullYear, parseInt(month) - 1, parseInt(day));
+        }
+      }
+    }
+
+    // Se for um número (data do Excel)
+    if (!isNaN(Number(cleanDate)) && cleanDate.length > 4) {
+      const excelDate = Number(cleanDate);
+      return new Date((excelDate - 25569) * 86400 * 1000);
+    }
+
+    return null;
+  };
 
   useEffect(() => {
     loadSavedData();
@@ -248,7 +319,10 @@ export function ConsultingDashboard() {
               dashboardData={filteredDashboardData}
               openModal={openModal}
             />
-            <CompletedProjectsCard />
+            <OverdueItemsCard
+              overdueItems={overdueItems}
+              onOverdueClick={(items) => openModal("overdue-items", items)}
+            />
             <div className="flex-1">
               <WorkSessionTimer />
             </div>

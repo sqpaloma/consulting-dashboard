@@ -9,6 +9,7 @@ import {
   TrendingDown,
   Clock,
   AlertTriangle,
+  CheckCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
@@ -253,15 +254,38 @@ export function TotalProjectsCard() {
   );
 }
 
-export function CompletedProjectsCard() {
+export function OverdueItemsCard({
+  overdueItems = [],
+  onOverdueClick,
+}: {
+  overdueItems?: any[];
+  onOverdueClick?: (items: any[]) => void;
+}) {
+  const overdueCount = overdueItems.length;
+
+  const handleClick = () => {
+    if (onOverdueClick && overdueItems.length > 0) {
+      onOverdueClick(overdueItems);
+    }
+  };
+
   return (
-    <Card className="bg-white">
+    <Card
+      className={`bg-white ${overdueCount > 0 ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
+      onClick={handleClick}
+    >
       <CardContent className="p-4">
-        <div className="text-sm text-gray-500">Concluídos</div>
-        <div className="text-2xl font-bold text-gray-800">5</div>
-        <div className="flex items-center text-xs text-red-600">
-          <TrendingDown className="h-3 w-3 mr-1" />
-          -5% comparado ao mês passado
+        <div className="text-sm text-gray-500">Atrasados</div>
+        <div className="text-2xl font-bold text-gray-800">{overdueCount}</div>
+        <div
+          className={`flex items-center text-xs ${overdueCount > 0 ? "text-red-600" : "text-green-600"}`}
+        >
+          {overdueCount > 0 ? (
+            <AlertTriangle className="h-3 w-3 mr-1" />
+          ) : (
+            <CheckCircle className="h-3 w-3 mr-1" />
+          )}
+          {overdueCount > 0 ? "Itens em atraso" : "Todos os itens em dia!"}
         </div>
       </CardContent>
     </Card>
@@ -273,7 +297,7 @@ export function DashboardProjects() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
       <TotalProjectsCard />
-      <CompletedProjectsCard />
+      <OverdueItemsCard />
     </div>
   );
 }
