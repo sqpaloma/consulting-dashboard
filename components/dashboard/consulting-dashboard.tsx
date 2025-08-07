@@ -6,6 +6,7 @@ import { ResponsiveLayout } from "@/components/responsive-layout";
 import { DashboardMetrics } from "./dashboard-metrics";
 
 import { DashboardCalendar } from "./dashboard-calendar";
+import { DistributionPanel } from "./distribution-panel";
 
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
@@ -311,15 +312,21 @@ export function ConsultingDashboard() {
           overdueItems={overdueItems}
         />
 
-        {/* Calendário em tela cheia */}
-        <DashboardCalendar
-          processedItems={filteredItems}
-          onDateClick={handleCalendarDateClick}
-          filteredByResponsavel={filteredByResponsavel}
-        />
+        {/* Layout em duas colunas no desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          {/* Coluna esquerda: Painel de Distribuição */}
+          <DistributionPanel dashboardData={filteredDashboardData} />
+
+          {/* Coluna direita: Agendamentos */}
+          <DashboardCalendar
+            processedItems={filteredItems}
+            onDateClick={handleCalendarDateClick}
+            filteredByResponsavel={filteredByResponsavel}
+          />
+        </div>
       </div>
 
-      {/* Daily Activity Planner */}
+      {/* Atividades Diárias - Seção inferior */}
       <ActivityPlanner
         processedItems={filteredItems}
         filteredByResponsavel={filteredByResponsavel}

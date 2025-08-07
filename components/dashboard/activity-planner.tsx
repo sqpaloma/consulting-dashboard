@@ -88,7 +88,7 @@ export function ActivityPlanner({
   );
 
   return (
-    <Card className="bg-white">
+    <Card className="bg-white h-[650px] flex flex-col">
       <ActivityHeader
         isLoading={isLoading}
         todayActivities={todayActivities}
@@ -104,9 +104,9 @@ export function ActivityPlanner({
           setCompletedActivities(new Set());
         }}
       />
-      <CardContent>
-        <div className="space-y-3">
-          {todayActivities.length > 0 ? (
+      <CardContent className="flex-1 overflow-y-auto">
+        {todayActivities.length > 0 ? (
+          <div className="space-y-3">
             <ActivityCard
               activities={todayActivities}
               completedActivities={completedActivities}
@@ -116,25 +116,25 @@ export function ActivityPlanner({
               sensors={sensors}
               onDragEnd={handleDragEnd}
             />
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                  <span className="ml-2">Carregando atividades...</span>
-                </div>
-              ) : (
-                <div>
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Nenhuma atividade agendada para hoje</p>
-                  <p className="text-sm mt-1">
-                    As atividades do calendário aparecerão aqui automaticamente
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500 h-full flex items-center justify-center">
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span className="ml-2">Carregando atividades...</span>
+              </div>
+            ) : (
+              <div>
+                <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Nenhuma atividade agendada para hoje</p>
+                <p className="text-sm mt-1">
+                  As atividades do calendário aparecerão aqui automaticamente
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
