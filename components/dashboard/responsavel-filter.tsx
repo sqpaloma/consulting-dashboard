@@ -10,11 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, X } from "lucide-react";
+import { User, X, Building } from "lucide-react";
 import {
   getUniqueResponsaveis,
   loadDashboardData,
 } from "@/lib/dashboard-supabase-client";
+import { RESPONSAVEIS, getDepartamentoByResponsavel } from "./types";
 
 interface ResponsavelFilterProps {
   onFilterChange: (responsavel: string | null) => void;
@@ -42,7 +43,20 @@ export function ResponsavelFilter({
       const responsaveisFromDB = await getUniqueResponsaveis();
 
       if (responsaveisFromDB.length > 0) {
-        setResponsaveis(responsaveisFromDB);
+        // Combinar dados do banco com dados dos tipos para ter informações completas
+        const responsaveisCompletos = responsaveisFromDB
+          .filter(nome => nome && nome.trim() !== "" && nome !== "Não informado")
+          .map(nome => {
+            const info = RESPONSAVEIS.find(r => r.nome.toLowerCase() === nome.toLowerCase());
+            return info ? nome : nome;
+          })
+          .sort((a, b) => {
+            // Colocar o gerente (Giovanni) primeiro
+            if (a.toLowerCase() === 'giovanni') return -1;
+            if (b.toLowerCase() === 'giovanni') return 1;
+            return a.localeCompare(b);
+          });
+        setResponsaveis(responsaveisCompletos);
         return;
       }
 
@@ -57,7 +71,12 @@ export function ResponsavelFilter({
                 responsavel !== "Não informado"
             )
         )
-      ).sort();
+      ).sort((a, b) => {
+        // Colocar o gerente (Giovanni) primeiro
+        if (a.toLowerCase() === 'giovanni') return -1;
+        if (b.toLowerCase() === 'giovanni') return 1;
+        return a.localeCompare(b);
+      });
       setResponsaveis(localResponsaveis);
     } catch (error) {
       const localResponsaveis = Array.from(
@@ -71,7 +90,12 @@ export function ResponsavelFilter({
                 responsavel !== "Não informado"
             )
         )
-      ).sort();
+      ).sort((a, b) => {
+        // Colocar o gerente (Giovanni) primeiro
+        if (a.toLowerCase() === 'giovanni') return -1;
+        if (b.toLowerCase() === 'giovanni') return 1;
+        return a.localeCompare(b);
+      });
       setResponsaveis(localResponsaveis);
     } finally {
       setIsLoading(false);
@@ -107,11 +131,30 @@ export function ResponsavelFilter({
           <SelectValue placeholder="Filtrar por..." />
         </SelectTrigger>
         <SelectContent className="max-h-48 overflow-y-auto">
-          {responsaveis.map((responsavel) => (
-            <SelectItem key={responsavel} value={responsavel}>
-              {responsavel}
-            </SelectItem>
-          ))}
+          {responsaveis.map((responsavel) => {
+            const responsavelInfo = RESPONSAVEIS.find(r => r.nome.toLowerCase() === responsavel.toLowerCase());
+            const departamento = getDepartamentoByResponsavel(responsavel);
+            
+            return (
+              <SelectItem key={responsavel} value={responsavel}>
+                <div className="flex items-center space-x-2">
+                  {responsavelInfo?.isGerente ? (
+                    <Building className="h-4 w-4 text-amber-600" />
+                  ) : (
+                    <User className="h-4 w-4 text-blue-600" />
+                  )}
+                  <div className="flex flex-col">
+                    <span className="font-medium">{responsavel}</span>
+                    {responsavelInfo && (
+                      <span className="text-xs text-gray-500">
+                        {responsavelInfo.isGerente ? 'Gerente' : departamento?.nome || responsavelInfo.departamento}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
 

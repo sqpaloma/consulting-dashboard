@@ -14,6 +14,7 @@ import OverdueDistribution from "./overdue-distribution";
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
 import { ResponsavelFilter } from "./responsavel-filter";
+import { DepartamentoInfo } from "./departamento-info";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useAuth } from "@/hooks/use-auth";
 import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
@@ -318,8 +319,8 @@ export function ConsultingDashboard() {
           overdueItems={overdueItems}
         />
 
-        {/* Layout em duas seções no desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
+        {/* Layout em três seções no desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
           {/* Seção esquerda: Gráficos */}
           <div className="space-y-2 lg:col-span-2">
             {/* Gráficos empilhados */}
@@ -337,8 +338,16 @@ export function ConsultingDashboard() {
             </div>
           </div>
 
+          {/* Seção central: Informações do Departamento */}
+          <div className="lg:col-span-1">
+            <DepartamentoInfo 
+              processedItems={processedItems}
+              filteredByResponsavel={filteredByResponsavel}
+            />
+          </div>
+
           {/* Seção direita: Calendário */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <DashboardCalendar
               processedItems={filteredItems}
               onDateClick={handleCalendarDateClick}
