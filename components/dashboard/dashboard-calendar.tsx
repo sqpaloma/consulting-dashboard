@@ -289,8 +289,8 @@ export function DashboardCalendar({
   };
 
   return (
-    <Card className="bg-white h-[650px] flex flex-col">
-      <CardHeader className="pb-2">
+    <Card className="bg-white h-[500px] flex flex-col">
+      <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-gray-800 flex items-center">
             <Calendar className="h-3 w-3 mr-2" />
@@ -322,12 +322,12 @@ export function DashboardCalendar({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className="flex-1 p-2">
         <div className="grid grid-cols-7 gap-1 mb-2">
           {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
             <div
               key={day}
-              className="text-center text-xs font-medium text-gray-500 p-1"
+              className="text-center text-xs font-medium text-gray-500 p-0.5"
             >
               {day}
             </div>

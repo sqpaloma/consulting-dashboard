@@ -1,91 +1,61 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Legend,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
-interface DistributionPanelProps {
-  dashboardData: {
-    aguardandoAprovacao: number;
-    analises: number;
-    orcamentos: number;
-    emExecucao: number;
-    pronto: number;
-    totalItens: number;
-  };
+interface MechanicDistributionProps {
+  processedItems: any[];
+  filteredByResponsavel?: string | null;
 }
 
-export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
-  // Calcula as porcentagens
-  const calculatePercentage = (value: number, total: number): number => {
-    if (total === 0) return 0;
-    return Math.round((value / total) * 100);
-  };
+export function MechanicDistribution({
+  processedItems,
+  filteredByResponsavel,
+}: MechanicDistributionProps) {
+  // Filtra itens em execução
+  const executionItems = processedItems.filter((item) => {
+    const status = item.status?.toLowerCase() || "";
+    return (
+      status.includes("execução") ||
+      status.includes("execucao") ||
+      status.includes("andamento") ||
+      status.includes("progresso")
+    );
+  });
 
-  // Calcula o total real dos itens que serão exibidos
-  const totalDisplayedItems =
-    dashboardData.aguardandoAprovacao +
-    dashboardData.analises +
-    dashboardData.emExecucao +
-    dashboardData.orcamentos +
-    dashboardData.pronto;
+  // Agrupa por mecânico
+  const mechanicData = executionItems.reduce(
+    (acc, item) => {
+      const mechanic = item.responsavel || "Não informado";
+      if (!acc[mechanic]) {
+        acc[mechanic] = 0;
+      }
+      acc[mechanic]++;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
-  // Prepara os dados para o gráfico
-  const chartData = [
-    {
-      name: "Aguardando Aprovação",
-      value: dashboardData.aguardandoAprovacao,
-      percentage: calculatePercentage(
-        dashboardData.aguardandoAprovacao,
-        totalDisplayedItems
-      ),
-      color: "#1E40AF", // dark blue
-    },
-    {
-      name: "Análises",
-      value: dashboardData.analises,
-      percentage: calculatePercentage(
-        dashboardData.analises,
-        totalDisplayedItems
-      ),
-      color: "#1D4ED8", // dark blue
-    },
-    {
-      name: "Em Execução",
-      value: dashboardData.emExecucao,
-      percentage: calculatePercentage(
-        dashboardData.emExecucao,
-        totalDisplayedItems
-      ),
-      color: "#3B82F6", // medium blue
-    },
-    {
-      name: "Orçamentos",
-      value: dashboardData.orcamentos,
-      percentage: calculatePercentage(
-        dashboardData.orcamentos,
-        totalDisplayedItems
-      ),
-      color: "#60A5FA", // light blue
-    },
-    {
-      name: "Pronto",
-      value: dashboardData.pronto,
-      percentage: calculatePercentage(
-        dashboardData.pronto,
-        totalDisplayedItems
-      ),
-      color: "#BFDBFE", // very light blue
-    },
-  ].filter((item) => item.value > 0); // Remove itens com valor 0
+  // Converte para formato do gráfico
+  const chartData = Object.entries(mechanicData)
+    .map(([mechanic, count]) => ({
+      name: mechanic,
+      value: count as number,
+      percentage: Math.round(((count as number) / executionItems.length) * 100),
+    }))
+    .sort((a, b) => (b.value as number) - (a.value as number)); // Ordena por quantidade
 
-  const COLORS = chartData.map((item) => item.color);
+  // Cores para os mecânicos (escalas de azul mais distintas)
+  const COLORS = [
+    "#1E40AF", // dark blue (PALOMA)
+    "#3B82F6", // medium blue (MARCELO)
+    "#60A5FA", // light blue (LUCAS)
+    "#BFDBFE", // very light blue (CARLINHOS)
+    "#93C5FD", // blue-300
+    "#DBEAFE", // blue-100
+    "#EFF6FF", // blue-50
+    "#1D4ED8", // blue-600
+  ];
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -107,7 +77,7 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
       <CardHeader className="pb-1">
         <CardTitle className="text-sm text-gray-800 flex items-center">
           <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
-          Painel de Distribuição
+          Distribuição por Mecânico
           <div className="ml-auto flex space-x-1">
             <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
             <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
@@ -132,7 +102,10 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
                     dataKey="value"
                   >
                     {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
@@ -146,11 +119,11 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
                 <div key={item.name} className="flex items-center space-x-2">
                   <div
                     className="w-3 h-3 rounded-sm"
-                    style={{ backgroundColor: item.color }}
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   ></div>
                   <div className="flex-1">
                     <div className="text-xs font-medium text-gray-800">
-                      {item.name}: {item.percentage}%
+                      {item.name.toUpperCase()}: {item.percentage}%
                     </div>
                   </div>
                 </div>
@@ -163,10 +136,8 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
               <div className="w-12 h-12 bg-gray-200 rounded-full mx-auto mb-3 flex items-center justify-center">
                 <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
               </div>
-              <p className="text-sm">Nenhum dado disponível</p>
-              <p className="text-xs mt-1">
-                Adicione itens para ver a distribuição
-              </p>
+              <p className="text-sm">Nenhum item em execução</p>
+              <p className="text-xs mt-1">Não há dados para exibir</p>
             </div>
           </div>
         )}

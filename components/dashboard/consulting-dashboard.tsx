@@ -4,9 +4,13 @@ import React, { useState, useEffect } from "react";
 
 import { ResponsiveLayout } from "@/components/responsive-layout";
 import { DashboardMetrics } from "./dashboard-metrics";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { DashboardCalendar } from "./dashboard-calendar";
 import { DistributionPanel } from "./distribution-panel";
+import { MechanicDistribution } from "./mechanic-distribution";
+import OverdueDistribution from "./overdue-distribution";
+import ReadyDistribution from "./ready-distribution";
 
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
@@ -305,24 +309,41 @@ export function ConsultingDashboard() {
 
       {/* Main Content Grid */}
       <div className="space-y-2">
-        {/* Metrics Cards - Menores */}
+        {/* Metrics Cards - Originais */}
         <DashboardMetrics
           dashboardData={filteredDashboardData}
           openModal={openModal}
           overdueItems={overdueItems}
         />
 
-        {/* Layout em duas colunas no desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-          {/* Coluna esquerda: Painel de Distribuição */}
-          <DistributionPanel dashboardData={filteredDashboardData} />
+        {/* Layout em duas seções no desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+          {/* Seção esquerda: Gráficos */}
+          <div className="space-y-2 lg:col-span-2">
+            {/* Gráficos lado a lado - Primeira linha */}
+            <div className="grid grid-cols-2 gap-2">
+              <DistributionPanel dashboardData={filteredDashboardData} />
+              <MechanicDistribution
+                processedItems={filteredItems}
+                filteredByResponsavel={filteredByResponsavel}
+              />
+            </div>
 
-          {/* Coluna direita: Agendamentos */}
-          <DashboardCalendar
-            processedItems={filteredItems}
-            onDateClick={handleCalendarDateClick}
-            filteredByResponsavel={filteredByResponsavel}
-          />
+            {/* Gráficos lado a lado - Segunda linha */}
+            <div className="grid grid-cols-2 gap-2">
+              <OverdueDistribution overdueItems={overdueItems} />
+              <ReadyDistribution dashboardData={filteredDashboardData} />
+            </div>
+          </div>
+
+          {/* Seção direita: Calendário */}
+          <div className="lg:col-span-1">
+            <DashboardCalendar
+              processedItems={filteredItems}
+              onDateClick={handleCalendarDateClick}
+              filteredByResponsavel={filteredByResponsavel}
+            />
+          </div>
         </div>
       </div>
 
