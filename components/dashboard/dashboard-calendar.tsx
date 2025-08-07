@@ -289,10 +289,10 @@ export function DashboardCalendar({
   };
 
   return (
-    <Card className="bg-white h-[750px] flex flex-col">
+    <Card className="bg-white h-full flex flex-col">
       <CardHeader className="pb-1">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xs lg:text-sm text-gray-800 flex items-center">
+          <CardTitle className="text-xs lg:text-sm xl:text-base text-gray-800 flex items-center">
             <Calendar className="h-3 w-3 mr-2" />
             Agendamentos
             {isLoading && (
@@ -309,7 +309,7 @@ export function DashboardCalendar({
           >
             <ChevronLeft className="h-3 w-3" />
           </Button>
-          <span className="font-medium text-gray-700 text-xs lg:text-sm">
+          <span className="font-medium text-gray-700 text-xs lg:text-sm xl:text-base">
             {getMonthName(currentMonth)} {currentYear}
           </span>
           <Button
@@ -322,70 +322,72 @@ export function DashboardCalendar({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-2 overflow-hidden">
-        <div className="grid grid-cols-7 gap-0.5 mb-1">
-          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
-            <div
-              key={day}
-              className="text-center text-xs font-medium text-gray-500 p-0.5"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
+      <CardContent className="flex-1 p-4 overflow-hidden">
+        <div className="h-full flex flex-col">
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
+              <div
+                key={day}
+                className="text-center text-sm font-medium text-gray-500 p-2"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
 
-        {/* Calendário com Scroll Otimizado */}
-        <div className="grid grid-cols-7 gap-0.5 overflow-y-auto max-h-[600px]">
-          {calendarDays.map((day, index) => (
-            <div
-              key={index}
-              className={`
-                aspect-square p-0.5 text-center text-xs cursor-pointer rounded-lg
-                ${
-                  day === null
-                    ? "invisible"
-                    : day === today &&
-                        currentMonth === new Date().getMonth() &&
-                        currentYear === new Date().getFullYear()
-                      ? "bg-blue-100 text-blue-600 font-bold"
-                      : hasItemsOnDate(day) && isDatePastToday(day)
-                        ? "bg-red-100 text-red-800 font-medium hover:bg-red-200"
-                        : hasItemsOnDate(day) && isDateFutureToday(day)
-                          ? "bg-green-100 text-green-800 font-medium hover:bg-green-200"
-                          : hasItemsOnDate(day)
-                            ? "bg-blue-100 text-blue-600 font-medium hover:bg-blue-200"
-                            : "hover:bg-gray-100 text-gray-700"
-                }
-                ${
-                  selectedDate ===
-                  `${currentYear}-${String(currentMonth + 1).padStart(
-                    2,
-                    "0"
-                  )}-${String(day).padStart(2, "0")}`
-                    ? "ring-2 ring-blue-500"
-                    : ""
-                }
-              `}
-              onClick={() => day && handleDateClick(day)}
-            >
-              {day}
-              {day && hasItemsOnDate(day) && (
-                <div
-                  className={`w-0.5 h-0.5 rounded-full mx-auto mt-0.5 ${
-                    day === today &&
-                    currentMonth === new Date().getMonth() &&
-                    currentYear === new Date().getFullYear()
-                      ? "bg-blue-500"
-                      : isDatePastToday(day)
-                        ? "bg-red-500"
-                        : isDateFutureToday(day)
-                          ? "bg-green-500"
-                          : "bg-blue-500"
-                  }`}
-                ></div>
-              )}
-            </div>
-          ))}
+          <div className="grid grid-cols-7 gap-1 flex-1">
+            {calendarDays.map((day, index) => (
+              <div
+                key={index}
+                className={`
+                  p-2 text-center text-sm cursor-pointer rounded-lg
+                  flex flex-col items-center justify-center h-full
+                  ${
+                    day === null
+                      ? "invisible"
+                      : day === today &&
+                          currentMonth === new Date().getMonth() &&
+                          currentYear === new Date().getFullYear()
+                        ? "bg-blue-100 text-blue-600 font-bold"
+                        : hasItemsOnDate(day) && isDatePastToday(day)
+                          ? "bg-red-100 text-red-800 font-medium hover:bg-red-200"
+                          : hasItemsOnDate(day) && isDateFutureToday(day)
+                            ? "bg-green-100 text-green-800 font-medium hover:bg-green-200"
+                            : hasItemsOnDate(day)
+                              ? "bg-blue-100 text-blue-600 font-medium hover:bg-blue-200"
+                              : "hover:bg-gray-100 text-gray-700"
+                  }
+                  ${
+                    selectedDate ===
+                    `${currentYear}-${String(currentMonth + 1).padStart(
+                      2,
+                      "0"
+                    )}-${String(day).padStart(2, "0")}`
+                      ? "ring-2 ring-blue-500"
+                      : ""
+                  }
+                `}
+                onClick={() => day && handleDateClick(day)}
+              >
+                {day}
+                {day && hasItemsOnDate(day) && (
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full mt-1 ${
+                      day === today &&
+                      currentMonth === new Date().getMonth() &&
+                      currentYear === new Date().getFullYear()
+                        ? "bg-blue-500"
+                        : isDatePastToday(day)
+                          ? "bg-red-500"
+                          : isDateFutureToday(day)
+                            ? "bg-green-500"
+                            : "bg-blue-500"
+                    }`}
+                  ></div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
