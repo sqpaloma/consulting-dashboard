@@ -451,8 +451,8 @@ export function AnalyticsMonthlyChart({
             <div className="h-full flex flex-col">
               <div className="flex-1 overflow-x-auto pb-8">
                 <div
-                  className="flex items-end justify-start space-x-6 min-w-max px-4"
-                  style={{ minWidth: `${chartData.length * 100}px` }}
+                  className="flex items-end justify-start space-x-12 min-w-max px-4"
+                  style={{ minWidth: `${chartData.length * 120}px` }}
                 >
                   {chartData.map((month, index) => {
                     const height =
