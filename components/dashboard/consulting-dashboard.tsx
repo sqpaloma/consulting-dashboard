@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 
 import { ResponsiveLayout } from "@/components/responsive-layout";
 import { DashboardMetrics } from "./dashboard-metrics";
-import { WorkSessionTimer } from "./work-session-timer";
+
 import { DashboardCalendar } from "./dashboard-calendar";
-import { FollowUpCard, OverdueItemsCard } from "./dashboard-projects";
+
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
 import { ResponsavelFilter } from "./responsavel-filter";
@@ -311,26 +311,12 @@ export function ConsultingDashboard() {
           overdueItems={overdueItems}
         />
 
-        {/* Layout em duas colunas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-          {/* Coluna esquerda: Follow-up e WorkSessionTimer */}
-          <div className="flex flex-col space-y-2">
-            <FollowUpCard
-              filteredItems={filteredItems}
-              filteredByResponsavel={filteredByResponsavel}
-              dashboardData={filteredDashboardData}
-              openModal={openModal}
-            />
-            <WorkSessionTimer />
-          </div>
-
-          {/* Coluna direita: Calendário */}
-          <DashboardCalendar
-            processedItems={filteredItems}
-            onDateClick={handleCalendarDateClick}
-            filteredByResponsavel={filteredByResponsavel}
-          />
-        </div>
+        {/* Calendário em tela cheia */}
+        <DashboardCalendar
+          processedItems={filteredItems}
+          onDateClick={handleCalendarDateClick}
+          filteredByResponsavel={filteredByResponsavel}
+        />
       </div>
 
       {/* Daily Activity Planner */}
