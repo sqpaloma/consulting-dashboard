@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import { DashboardCalendar } from "./dashboard-calendar";
 import { DistributionPanel } from "./distribution-panel";
-import { MechanicDistribution } from "./mechanic-distribution";
 import OverdueDistribution from "./overdue-distribution";
 
 import { ActivityPlanner } from "./activity-planner";
@@ -46,7 +45,9 @@ export function ConsultingDashboard() {
   // Recalcular métricas baseadas nos dados filtrados
   const filteredDashboardData = React.useMemo(() => {
     // Sempre calcular a partir dos itens para garantir consistência
-    const itemsToCalculate = filteredByResponsavel ? filteredItems : processedItems;
+    const itemsToCalculate = filteredByResponsavel
+      ? filteredItems
+      : processedItems;
 
     const metrics = {
       totalItens: itemsToCalculate.length,
@@ -298,19 +299,22 @@ export function ConsultingDashboard() {
   return (
     <ResponsiveLayout>
       {/* Título com nome do usuário */}
-      <div className="flex items-center justify-between">
+      <div className="mt-6 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-4xl font-bold text-white">
-            Seja bem-vindo(a), {user?.name || "Usuário"}!
+            Seja bem-vindo(a),
+            <br className="sm:hidden" /> {user?.name || "Usuário"}!
           </h1>
         </div>
-        <ResponsavelFilter
-          onFilterChange={handleResponsavelFilterChange}
-          processedItems={processedItems}
-        />
+        <div className="sm:mt-0 mt-2">
+          <ResponsavelFilter
+            onFilterChange={handleResponsavelFilterChange}
+            processedItems={processedItems}
+          />
+        </div>
       </div>
 
-      {/* Main Content Grid */}
+      {/* Main Content */}
       <div className="space-y-2">
         {/* Metrics Cards - Originais */}
         <DashboardMetrics
@@ -319,35 +323,72 @@ export function ConsultingDashboard() {
           overdueItems={overdueItems}
         />
 
-        {/* Layout em três seções no desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
-          {/* Seção esquerda: Gráficos */}
-          <div className="space-y-2 lg:col-span-2">
+        {/* Mobile layout: order -> Departamento -> Calendário -> Distribuições (sem execução) */}
+        <div className="block lg:hidden md:hidden space-y-2">
+          <DepartamentoInfo
+            processedItems={processedItems}
+            filteredByResponsavel={filteredByResponsavel}
+          />
+
+          <DashboardCalendar
+            processedItems={filteredItems}
+            onDateClick={handleCalendarDateClick}
+            filteredByResponsavel={filteredByResponsavel}
+          />
+
+          <div className="space-y-2">
+            <DistributionPanel dashboardData={filteredDashboardData} />
+            <OverdueDistribution overdueItems={overdueItems} />
+          </div>
+        </div>
+
+        {/* Medium screens (md to <lg): Departamento + Calendário lado a lado; gráficos embaixo lado a lado */}
+        <div className="hidden md:grid lg:hidden grid-cols-2 gap-2">
+          <div className="col-span-1">
+            <DepartamentoInfo
+              processedItems={processedItems}
+              filteredByResponsavel={filteredByResponsavel}
+            />
+          </div>
+          <div className="col-span-1">
+            <DashboardCalendar
+              processedItems={filteredItems}
+              onDateClick={handleCalendarDateClick}
+              filteredByResponsavel={filteredByResponsavel}
+            />
+          </div>
+          <div className="col-span-2 grid grid-cols-2 gap-2">
+            <DistributionPanel dashboardData={filteredDashboardData} />
+            <OverdueDistribution overdueItems={overdueItems} />
+          </div>
+        </div>
+
+        {/* Desktop layout (lg+) */}
+        <div className="hidden lg:grid grid-cols-6 xl:grid-cols-8 gap-2">
+          {/* Seção esquerda: Informações do Departamento */}
+          <div className="col-span-1 xl:col-span-2">
+            <DepartamentoInfo
+              processedItems={processedItems}
+              filteredByResponsavel={filteredByResponsavel}
+              className="h-[520px]"
+            />
+          </div>
+
+          {/* Seção central: Gráficos */}
+          <div className="space-y-2 col-span-2 xl:col-span-3">
             {/* Gráficos empilhados */}
             <div className="block">
-              <DistributionPanel dashboardData={filteredDashboardData} />
-              <div className="mt-2">
-                <MechanicDistribution
-                  processedItems={filteredItems}
-                  filteredByResponsavel={filteredByResponsavel}
-                />
+              <div className="h-[250px]">
+                <DistributionPanel dashboardData={filteredDashboardData} />
               </div>
-              <div className="mt-2">
+              <div className="mt-2 h-[250px]">
                 <OverdueDistribution overdueItems={overdueItems} />
               </div>
             </div>
           </div>
 
-          {/* Seção central: Informações do Departamento */}
-          <div className="lg:col-span-1">
-            <DepartamentoInfo 
-              processedItems={processedItems}
-              filteredByResponsavel={filteredByResponsavel}
-            />
-          </div>
-
           {/* Seção direita: Calendário */}
-          <div className="lg:col-span-3">
+          <div className="col-span-3 xl:col-span-3 xl:col-start-6">
             <DashboardCalendar
               processedItems={filteredItems}
               onDateClick={handleCalendarDateClick}

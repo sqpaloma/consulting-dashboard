@@ -21,13 +21,22 @@ export function ActivityPlanner({
 }: ActivityPlannerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [databaseItems, setDatabaseItems] = useState<CalendarItem[]>([]);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  const {
-    completedActivities,
-    setCompletedActivities,
-  } = useActivityStorage();
-  const { todayActivities, getStatusColor } =
-    useActivityData(processedItems, databaseItems, completedActivities);
+  const { completedActivities, setCompletedActivities } = useActivityStorage();
+  const { todayActivities, getStatusColor } = useActivityData(
+    processedItems,
+    databaseItems,
+    completedActivities
+  );
+
+  useEffect(() => {
+    const onResize = () =>
+      setIsDesktop(window.matchMedia("(min-width: 1024px)").matches);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Função para fazer parse de diferentes formatos de data
   const parseDate = (dateString: string): Date | null => {
@@ -98,23 +107,32 @@ export function ActivityPlanner({
 
   // Função para obter o responsável real quando em execução
   const getDisplayResponsavel = (activity: CalendarItem) => {
-    const statusLower = activity.status?.toLowerCase() || '';
-    const isEmExecucao = statusLower.includes("execução") || 
-                        statusLower.includes("execucao") || 
-                        statusLower.includes("andamento");
-    
+    const statusLower = activity.status?.toLowerCase() || "";
+    const isEmExecucao =
+      statusLower.includes("execução") ||
+      statusLower.includes("execucao") ||
+      statusLower.includes("andamento");
+
     if (isEmExecucao && activity.rawData && activity.rawData.length > 0) {
       // Busca nos dados brutos se existe um executante/mecânico
       for (const rawItem of activity.rawData) {
-        if (rawItem && typeof rawItem === 'object') {
+        if (rawItem && typeof rawItem === "object") {
           // Procura por campos que podem conter o nome do mecânico
-          const possibleFields = ['executante', 'mecanico', 'responsavel_execucao', 'executor'];
-          
+          const possibleFields = [
+            "executante",
+            "mecanico",
+            "responsavel_execucao",
+            "executor",
+          ];
+
           for (const field of possibleFields) {
-            const mechanic = rawItem[field];
-            if (mechanic && typeof mechanic === 'string' && mechanic.trim()) {
+            const mechanic = (rawItem as any)[field];
+            if (mechanic && typeof mechanic === "string" && mechanic.trim()) {
               // Mapeia consultores para mecânicos baseado no engineer-mapping.ts
-              const mechanicName = getMechanicName(activity.responsavel || '', mechanic.trim());
+              const mechanicName = getMechanicName(
+                activity.responsavel || "",
+                mechanic.trim()
+              );
               if (mechanicName !== activity.responsavel) {
                 return mechanicName;
               }
@@ -123,41 +141,70 @@ export function ActivityPlanner({
         }
       }
     }
-    
+
     return activity.responsavel;
   };
 
   // Função para obter o nome do mecânico baseado no consultor e dados
   const getMechanicName = (consultant: string, mechanicFromData: string) => {
-    const consultantLower = consultant?.toLowerCase() || '';
+    const consultantLower = consultant?.toLowerCase() || "";
     const mechanicUpper = mechanicFromData.toUpperCase().trim();
-    
+
     // Times dos consultores (baseado em engineer-mapping.ts)
     const teams = {
-      paloma: ['GUSTAVOBEL', 'GUILHERME', 'EDUARDO', 'YURI', 'VAGNER', 'FABIO F', 'NIVALDO'],
-      lucas: ['ALEXANDRE', 'ALEXSANDRO', 'ROBERTO P', 'KAUAN', 'KAUA', 'MARCELINO', 'LEANDRO', 'RODRIGO N'],
-      marcelo: ['ALZIRO', 'G SIMAO', 'HENRIQUE', 'NICOLAS C', 'DANIEL', 'RONALD', 'VINICIUS', 'DANIEL G'],
-      carlinhos: ['SHEINE']
-    };
-    
+      paloma: [
+        "GUSTAVOBEL",
+        "GUILHERME",
+        "EDUARDO",
+        "YURI",
+        "VAGNER",
+        "FABIO F",
+        "NIVALDO",
+      ],
+      lucas: [
+        "ALEXANDRE",
+        "ALEXSANDRO",
+        "ROBERTO P",
+        "KAUAN",
+        "KAUA",
+        "MARCELINO",
+        "LEANDRO",
+        "RODRIGO N",
+      ],
+      marcelo: [
+        "ALZIRO",
+        "G SIMAO",
+        "HENRIQUE",
+        "NICOLAS C",
+        "DANIEL",
+        "RONALD",
+        "VINICIUS",
+        "DANIEL G",
+      ],
+      carlinhos: ["SHEINE"],
+    } as Record<string, string[]>;
+
     let relevantTeam: string[] = [];
-    
-    if (consultantLower.includes('paloma')) {
+
+    if (consultantLower.includes("paloma")) {
       relevantTeam = teams.paloma;
-    } else if (consultantLower.includes('lucas')) {
-      relevantTeam = teams.lucas;  
-    } else if (consultantLower.includes('marcelo')) {
+    } else if (consultantLower.includes("lucas")) {
+      relevantTeam = teams.lucas;
+    } else if (consultantLower.includes("marcelo")) {
       relevantTeam = teams.marcelo;
-    } else if (consultantLower.includes('carlinhos')) {
+    } else if (consultantLower.includes("carlinhos")) {
       relevantTeam = teams.carlinhos;
     }
-    
+
     // Se o mecânico nos dados está no time do consultor, retorna o nome formatado
     if (relevantTeam.includes(mechanicUpper)) {
       // Formata o nome (primeira letra maiúscula, resto minúscula)
-      return mechanicFromData.charAt(0).toUpperCase() + mechanicFromData.slice(1).toLowerCase();
+      return (
+        mechanicFromData.charAt(0).toUpperCase() +
+        mechanicFromData.slice(1).toLowerCase()
+      );
     }
-    
+
     return consultant; // Retorna o consultor se não encontrar mecânico válido
   };
 
@@ -210,6 +257,8 @@ export function ActivityPlanner({
     today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
   );
 
+  const weekActivities = getWeekActivities();
+
   return (
     <Card className="bg-white h-[650px] flex flex-col">
       <ActivityHeader
@@ -228,92 +277,91 @@ export function ActivityPlanner({
         }}
       />
       <CardContent className="flex-1 overflow-hidden p-4 pb-4">
-        <div className="grid grid-cols-5 gap-2 h-full">
-          {['SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA'].map((dayName, index) => {
-            const currentDate = new Date(todayBrasilia);
-            const dayOfWeek = currentDate.getDay();
-            const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) + index);
-            const dayDateKey = dayDate.toISOString().split('T')[0];
-            const isToday = dayDate.toDateString() === todayBrasilia.toDateString();
-            const todayDateOnly = new Date(todayBrasilia);
-            todayDateOnly.setHours(0, 0, 0, 0);
-            const dayDateOnly = new Date(dayDate);
-            dayDateOnly.setHours(0, 0, 0, 0);
-            const isPastDay = dayDateOnly < todayDateOnly;
-            
-            const weekActivities = getWeekActivities();
-            const dayActivities = weekActivities[dayDateKey] || [];
+        {/* Mobile: stack days vertically; Desktop: 5 columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 h-full">
+          {["SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA"].map(
+            (dayName: string, index: number) => {
+              const currentDate = new Date(todayBrasilia);
+              const dayOfWeek = currentDate.getDay();
+              const dayDate = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                currentDate.getDate() -
+                  dayOfWeek +
+                  (dayOfWeek === 0 ? -6 : 1) +
+                  index
+              );
+              const dayDateKey = dayDate.toISOString().split("T")[0];
+              const isToday =
+                dayDate.toDateString() === todayBrasilia.toDateString();
+              const todayDateOnly = new Date(todayBrasilia);
+              todayDateOnly.setHours(0, 0, 0, 0);
+              const dayDateOnly = new Date(dayDate);
+              dayDateOnly.setHours(0, 0, 0, 0);
 
-            return (
-              <div key={dayName} className="border border-blue-200 rounded-lg flex flex-col h-full bg-blue-50/30 mb-0">
-                <div className="bg-blue-100/50 px-3 py-2 text-center border-b border-blue-200 rounded-t-lg">
-                  <h3 className="text-sm font-medium text-blue-700">
-                    {dayName} - {dayDate.toLocaleDateString("pt-BR", { 
-                      day: "2-digit", 
-                      month: "2-digit",
-                      timeZone: "America/Sao_Paulo" 
-                    })}
-                  </h3>
-                </div>
-                <div className="flex-1 p-2 overflow-hidden">
-                  {dayActivities.length > 0 ? (
-                    <List
-                      height={400}
-                      width="100%"
-                      itemCount={dayActivities.length}
-                      itemSize={85}
-                      itemData={{ 
-                        activities: dayActivities, 
-                        dayDateKey, 
-                        completedActivities, 
-                        isPastDay, 
-                        getStatusColor, 
-                        getDisplayResponsavel 
-                      }}
-                    >
-                      {({ index, style, data }) => {
-                        const activity = data.activities[index];
-                        return (
-                          <div style={style}>
-                            <div
-                              key={`${data.dayDateKey}-${activity.id}-${index}`}
-                              className={`p-2 rounded-md text-xs border mx-1 mb-2 ${
-                                data.completedActivities.has(activity.id)
-                                  ? 'bg-gray-100 opacity-60 line-through border-gray-300'
-                                  : data.isPastDay
-                                    ? 'bg-red-100 border-red-200 shadow-sm'
-                                    : `shadow-sm ${data.getStatusColor(activity.status)}`
-                              }`}
-                            >
-                              <div className="font-medium text-gray-800 truncate">
-                                OS: {activity.os}
-                              </div>
-                              <div className="text-gray-600 truncate mt-1">
-                                {activity.cliente}
-                              </div>
-                              <div className="text-gray-500 text-xs mt-1">
-                                {data.getDisplayResponsavel(activity)}
+              const activitiesForDay = weekActivities[dayDateKey] || [];
+
+              return (
+                <div
+                  key={dayName}
+                  className="flex flex-col bg-gray-50 rounded-md p-2"
+                >
+                  <div
+                    className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-700"}`}
+                  >
+                    {dayName}
+                  </div>
+                  <div className="flex-1 overflow-auto space-y-2">
+                    {activitiesForDay.length > 0 ? (
+                      <List
+                        height={isDesktop ? 400 : 260}
+                        width={"100%"}
+                        itemCount={activitiesForDay.length}
+                        itemSize={90}
+                        itemData={{
+                          activities: activitiesForDay,
+                          completed: completedActivities,
+                        }}
+                      >
+                        {({ index, style, data }) => {
+                          const activity: CalendarItem = data.activities[index];
+                          const isCompleted = (
+                            data.completed as Set<string>
+                          ).has(activity.id);
+                          return (
+                            <div style={style}>
+                              <div
+                                className={`p-2 rounded-md text-xs border mx-1 mb-2 ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : getStatusColor(activity.status)}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium text-gray-800 truncate">
+                                    {activity.titulo || activity.os}
+                                  </span>
+                                  <span className="ml-2 text-[10px] text-gray-500">
+                                    {activity.cliente}
+                                  </span>
+                                </div>
+                                <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
+                                  <span>
+                                    {getDisplayResponsavel(activity) || "—"}
+                                  </span>
+                                  <span>{activity.status}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      }}
-                    </List>
-                  ) : (
-                    <div className="text-center text-gray-400 text-xs mt-4">
-                      {isToday && isLoading ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                        </div>
-                      ) : (
-                        'Sem atividades'
-                      )}
-                    </div>
-                  )}
+                          );
+                        }}
+                      </List>
+                    ) : (
+                      <div className="text-xs text-gray-400 text-center py-6">
+                        Sem atividades
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            }
+          )}
         </div>
       </CardContent>
     </Card>
