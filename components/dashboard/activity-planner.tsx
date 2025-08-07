@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { FixedSizeList as List } from "react-window";
 import { loadDashboardData } from "@/lib/dashboard-supabase-client";
 import { useActivityStorage } from "./hooks/use-activity-storage";
 import { useActivityData } from "./hooks/use-activity-data";
@@ -226,7 +227,7 @@ export function ActivityPlanner({
           setCompletedActivities(new Set());
         }}
       />
-      <CardContent className="flex-1 overflow-hidden p-4">
+      <CardContent className="flex-1 overflow-hidden p-4 pb-4">
         <div className="grid grid-cols-5 gap-2 h-full">
           {['SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA'].map((dayName, index) => {
             const currentDate = new Date(todayBrasilia);
@@ -244,7 +245,7 @@ export function ActivityPlanner({
             const dayActivities = weekActivities[dayDateKey] || [];
 
             return (
-              <div key={dayName} className="border border-blue-200 rounded-lg flex flex-col h-full bg-blue-50/30">
+              <div key={dayName} className="border border-blue-200 rounded-lg flex flex-col h-full bg-blue-50/30 mb-0">
                 <div className="bg-blue-100/50 px-3 py-2 text-center border-b border-blue-200 rounded-t-lg">
                   <h3 className="text-sm font-medium text-blue-700">
                     {dayName} - {dayDate.toLocaleDateString("pt-BR", { 
@@ -254,32 +255,50 @@ export function ActivityPlanner({
                     })}
                   </h3>
                 </div>
-                <div className="flex-1 p-2 overflow-y-auto">
+                <div className="flex-1 p-2 overflow-hidden">
                   {dayActivities.length > 0 ? (
-                    <div className="space-y-2">
-                      {dayActivities.map((activity, activityIndex) => (
-                        <div
-                          key={`${dayDateKey}-${activity.id}-${activityIndex}`}
-                          className={`p-2 rounded-md text-xs border ${
-                            completedActivities.has(activity.id)
-                              ? 'bg-gray-100 opacity-60 line-through border-gray-300'
-                              : isPastDay
-                                ? 'bg-red-100 border-red-200 shadow-sm'
-                                : `shadow-sm ${getStatusColor(activity.status)}`
-                          }`}
-                        >
-                          <div className="font-medium text-gray-800 truncate">
-                            OS: {activity.os}
+                    <List
+                      height={400}
+                      width="100%"
+                      itemCount={dayActivities.length}
+                      itemSize={85}
+                      itemData={{ 
+                        activities: dayActivities, 
+                        dayDateKey, 
+                        completedActivities, 
+                        isPastDay, 
+                        getStatusColor, 
+                        getDisplayResponsavel 
+                      }}
+                    >
+                      {({ index, style, data }) => {
+                        const activity = data.activities[index];
+                        return (
+                          <div style={style}>
+                            <div
+                              key={`${data.dayDateKey}-${activity.id}-${index}`}
+                              className={`p-2 rounded-md text-xs border mx-1 mb-2 ${
+                                data.completedActivities.has(activity.id)
+                                  ? 'bg-gray-100 opacity-60 line-through border-gray-300'
+                                  : data.isPastDay
+                                    ? 'bg-red-100 border-red-200 shadow-sm'
+                                    : `shadow-sm ${data.getStatusColor(activity.status)}`
+                              }`}
+                            >
+                              <div className="font-medium text-gray-800 truncate">
+                                OS: {activity.os}
+                              </div>
+                              <div className="text-gray-600 truncate mt-1">
+                                {activity.cliente}
+                              </div>
+                              <div className="text-gray-500 text-xs mt-1">
+                                {data.getDisplayResponsavel(activity)}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-gray-600 truncate mt-1">
-                            {activity.cliente}
-                          </div>
-                          <div className="text-gray-500 text-xs mt-1">
-                            {getDisplayResponsavel(activity)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        );
+                      }}
+                    </List>
                   ) : (
                     <div className="text-center text-gray-400 text-xs mt-4">
                       {isToday && isLoading ? (
