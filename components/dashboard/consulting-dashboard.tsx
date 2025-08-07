@@ -10,7 +10,6 @@ import { DashboardCalendar } from "./dashboard-calendar";
 import { DistributionPanel } from "./distribution-panel";
 import { MechanicDistribution } from "./mechanic-distribution";
 import OverdueDistribution from "./overdue-distribution";
-import ReadyDistribution from "./ready-distribution";
 
 import { ActivityPlanner } from "./activity-planner";
 import { DashboardModal } from "./dashboard-modal";
@@ -329,10 +328,9 @@ export function ConsultingDashboard() {
               />
             </div>
 
-            {/* Gráficos lado a lado - Segunda linha */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Gráfico de Atrasos - Segunda linha */}
+            <div className="grid grid-cols-1 gap-2">
               <OverdueDistribution overdueItems={overdueItems} />
-              <ReadyDistribution dashboardData={filteredDashboardData} />
             </div>
           </div>
 
