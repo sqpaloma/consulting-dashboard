@@ -44,10 +44,11 @@ export function ConsultingDashboard() {
 
   // Recalcular métricas baseadas nos dados filtrados
   const filteredDashboardData = React.useMemo(() => {
-    if (!filteredByResponsavel) return dashboardData;
+    // Sempre calcular a partir dos itens para garantir consistência
+    const itemsToCalculate = filteredByResponsavel ? filteredItems : processedItems;
 
     const metrics = {
-      totalItens: filteredItems.length,
+      totalItens: itemsToCalculate.length,
       aguardandoAprovacao: 0,
       analises: 0,
       orcamentos: 0,
@@ -55,7 +56,7 @@ export function ConsultingDashboard() {
       pronto: 0,
     };
 
-    filteredItems.forEach((item) => {
+    itemsToCalculate.forEach((item) => {
       const status = item.status.toLowerCase();
       if (
         status.includes("aguardando") ||
@@ -89,6 +90,7 @@ export function ConsultingDashboard() {
         status.includes("concluído") ||
         status.includes("concluido") ||
         status.includes("finalizado") ||
+        status.includes("entregue") ||
         status.includes("completo")
       ) {
         metrics.pronto++;
@@ -96,7 +98,7 @@ export function ConsultingDashboard() {
     });
 
     return metrics;
-  }, [filteredItems, filteredByResponsavel, dashboardData]);
+  }, [filteredItems, filteredByResponsavel, processedItems]);
 
   // Calcular itens atrasados baseado na lógica do calendário
   const overdueItems = React.useMemo(() => {
@@ -251,6 +253,7 @@ export function ConsultingDashboard() {
                   status.includes("concluído") ||
                   status.includes("concluido") ||
                   status.includes("finalizado") ||
+                  status.includes("entregue") ||
                   status.includes("completo")
                 );
               });
