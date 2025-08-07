@@ -286,6 +286,7 @@ export function useDashboardData() {
             analises: 0,
             orcamentos: 0,
             emExecucao: 0,
+            pronto: 0,
             items: [] as DashboardItemRow[],
           };
 
@@ -356,6 +357,14 @@ export function useDashboardData() {
               status.includes("progresso")
             ) {
               processedData.emExecucao++;
+            } else if (
+              status.includes("pronto") ||
+              status.includes("concluído") ||
+              status.includes("concluido") ||
+              status.includes("finalizado") ||
+              status.includes("entregue")
+            ) {
+              processedData.pronto++;
             }
           }
 
@@ -396,6 +405,7 @@ export function useDashboardData() {
         analises: dashboardData.analises,
         orcamentos: dashboardData.orcamentos,
         em_execucao: dashboardData.emExecucao,
+        pronto: dashboardData.pronto,
         devolucoes: 0,
         movimentacoes: 0,
       };
@@ -456,6 +466,7 @@ export function useDashboardData() {
           analises: 0,
           orcamentos: 0,
           emExecucao: 0,
+          pronto: 0,
         });
         setProcessedItems([]);
         setFileName("");
