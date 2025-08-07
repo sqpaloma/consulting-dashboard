@@ -256,14 +256,14 @@ export function AnalyticsMonthlyChart({
             <div className="flex items-center space-x-2">
               <label className="text-sm text-gray-600 font-medium">Departamento:</label>
               <Select
-                value={selectedDepartamento || ""}
-                onValueChange={(value) => setSelectedDepartamento(value || null)}
+                value={selectedDepartamento || "todos"}
+                onValueChange={(value) => setSelectedDepartamento(value === "todos" ? null : value)}
               >
                 <SelectTrigger className="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                   <SelectValue placeholder="Todos os departamentos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">
+                  <SelectItem value="todos">
                     <div className="flex items-center space-x-2">
                       <Building className="h-4 w-4 text-gray-500" />
                       <span>Todos os departamentos</span>
