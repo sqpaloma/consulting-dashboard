@@ -23,7 +23,8 @@ interface DashboardData {
 
 interface DashboardMetricsProps {
   dashboardData: DashboardData;
-  openModal: (type: string) => void;
+  openModal: (type: string, data?: any[]) => void;
+  overdueItems?: any[];
 }
 
 interface ItemMetrics {
@@ -35,6 +36,7 @@ interface ItemMetrics {
 export function DashboardMetrics({
   dashboardData,
   openModal,
+  overdueItems = [],
 }: DashboardMetricsProps) {
   const [devolucaoData, setDevolucaoData] = useState({
     total: 0,
@@ -238,7 +240,7 @@ export function DashboardMetrics({
   };
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2">
+    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-9 gap-2">
       {/* Total Itens */}
       <Card
         onClick={() => openModal("total")}
@@ -567,6 +569,40 @@ export function DashboardMetrics({
               )}
               %
             </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Atrasados */}
+      <Card
+        className="bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+        onClick={() => openModal("overdue-items", overdueItems)}
+      >
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-red-600">Atrasados</span>
+            <svg
+              className="h-3 w-3 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+          <div className="text-xl font-bold text-red-600 mb-1">
+            {overdueItems?.length || 0}
+          </div>
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="text-red-500">
+              {overdueItems?.length || 0} itens
+            </span>
+            <span className="text-red-500">em atraso</span>
           </div>
         </CardContent>
       </Card>

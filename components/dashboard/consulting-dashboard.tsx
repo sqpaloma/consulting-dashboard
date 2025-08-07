@@ -308,21 +308,18 @@ export function ConsultingDashboard() {
         <DashboardMetrics
           dashboardData={filteredDashboardData}
           openModal={openModal}
+          overdueItems={overdueItems}
         />
 
         {/* Layout em duas colunas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-          {/* Coluna esquerda: Follow-up, Overdue e WorkSessionTimer */}
+          {/* Coluna esquerda: Follow-up e WorkSessionTimer */}
           <div className="flex flex-col space-y-2">
             <FollowUpCard
               filteredItems={filteredItems}
               filteredByResponsavel={filteredByResponsavel}
               dashboardData={filteredDashboardData}
               openModal={openModal}
-            />
-            <OverdueItemsCard
-              overdueItems={overdueItems}
-              onOverdueClick={(items) => openModal("overdue-items", items)}
             />
             <WorkSessionTimer />
           </div>
