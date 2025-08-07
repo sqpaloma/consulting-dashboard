@@ -19,21 +19,38 @@ export function ActivityHeader({
   completedActivities,
   onClearCompleted,
 }: ActivityHeaderProps) {
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("pt-BR", {
+  const getCurrentWeek = (date: Date) => {
+    const current = new Date(date);
+    const day = current.getDay();
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(current.setDate(diff));
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+    return { start: monday, end: friday };
+  };
+
+  const formatWeekRange = (start: Date, end: Date) => {
+    const startStr = start.toLocaleDateString("pt-BR", {
+      day: "numeric",
+      month: "short",
+      timeZone: "America/Sao_Paulo",
+    });
+    const endStr = end.toLocaleDateString("pt-BR", {
       day: "numeric",
       month: "long",
       year: "numeric",
       timeZone: "America/Sao_Paulo",
     });
+    return `${startStr} - ${endStr}`;
   };
+
 
   return (
     <CardHeader>
       <div className="flex items-center justify-between">
         <CardTitle className="text-xl text-gray-800 flex items-center">
           <Calendar className="h-5 w-5 mr-2" />
-          Atividades Diárias
+          Agenda Semanal
           {isLoading && (
             <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
           )}
@@ -53,8 +70,10 @@ export function ActivityHeader({
         </div>
       </div>
       <p className="text-sm text-gray-600 mt-2">
-        {formatDate(todayBrasilia)} - {todayActivities.length} atividade(s)
-        agendada(s)
+        {(() => {
+          const currentWeek = getCurrentWeek(todayBrasilia);
+          return formatWeekRange(currentWeek.start, currentWeek.end);
+        })()} - {todayActivities.length} atividade(s) agendada(s)
       </p>
     </CardHeader>
   );

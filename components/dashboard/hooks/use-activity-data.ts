@@ -54,30 +54,35 @@ export function useActivityData(
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
     if (
-      statusLower.includes("concluído") ||
-      statusLower.includes("concluido")
-    ) {
-      return "bg-green-50 border-green-200";
-    } else if (
-      statusLower.includes("andamento") ||
-      statusLower.includes("execução") ||
-      statusLower.includes("execucao")
-    ) {
-      return "bg-blue-50 border-blue-200";
-    } else if (
-      statusLower.includes("pendente") ||
-      statusLower.includes("aguardando")
-    ) {
-      return "bg-blue-50 border-blue-200";
-    } else if (
-      statusLower.includes("revisão") ||
-      statusLower.includes("revisao") ||
       statusLower.includes("análise") ||
       statusLower.includes("analise")
     ) {
-      return "bg-orange-50 border-orange-200";
+      return "bg-yellow-50 border-yellow-200"; // amarelo
+    } else if (
+      statusLower.includes("orçamento") ||
+      statusLower.includes("orcamento")
+    ) {
+      return "bg-red-50 border-red-200"; // laranja avermelhado
+    } else if (
+      statusLower.includes("aguardando") ||
+      statusLower.includes("aprovação") ||
+      statusLower.includes("aprovacao")
+    ) {
+      return "bg-blue-50 border-blue-200"; // azul
+    } else if (
+      statusLower.includes("execução") ||
+      statusLower.includes("execucao") ||
+      statusLower.includes("andamento")
+    ) {
+      return "bg-purple-50 border-purple-200"; // lilas/roxo
+    } else if (
+      statusLower.includes("pronto") ||
+      statusLower.includes("concluído") ||
+      statusLower.includes("concluido")
+    ) {
+      return "bg-pink-50 border-pink-200"; // rosa
     } else {
-      return "bg-gray-50 border-gray-200";
+      return "bg-gray-50 border-gray-200"; // cinza padrão
     }
   };
 
