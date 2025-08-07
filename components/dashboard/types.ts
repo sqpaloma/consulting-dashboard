@@ -53,7 +53,7 @@ export const DEPARTAMENTOS: Departamento[] = [
 export const RESPONSAVEIS: ResponsavelInfo[] = [
   {
     nome: 'Giovanni',
-    departamento: 'Gerência',
+    departamento: 'Gerencia',
     isGerente: true
   },
   {

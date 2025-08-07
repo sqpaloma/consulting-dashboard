@@ -31,7 +31,7 @@ export function AnalyticsMonthlyChart({
     return `${value.toFixed(1)}%`;
   };
 
-  // Função para filtrar dados por departamento
+  // Funcao para filtrar dados por departamento
   const filterDataByDepartamento = (data: any[]) => {
     if (!selectedDepartamento) return data;
     
@@ -44,12 +44,12 @@ export function AnalyticsMonthlyChart({
     });
   };
 
-  // Função para agregar dados por mês e ano
+  // Funcao para agregar dados por mes e ano
   const aggregateMonthlyData = (data: any[]) => {
     const filteredData = filterDataByDepartamento(data);
     const monthlyYearMap = new Map();
 
-    // Agregar dados dos meses que têm informações
+    // Agregar dados dos meses que tem informacoes
     filteredData.forEach((row) => {
       const month = parseInt(row.mes?.toString() || "1");
       const year = parseInt(row.ano?.toString() || "2025");
@@ -83,12 +83,12 @@ export function AnalyticsMonthlyChart({
       }
     });
 
-    // Converter para array e ordenar por ano e mês
+    // Converter para array e ordenar por ano e mes
     return Array.from(monthlyYearMap.values()).sort((a, b) => {
       if (a.ano !== b.ano) {
         return a.ano - b.ano; // Ordenar por ano primeiro
       }
-      return a.mes - b.mes; // Depois por mês
+      return a.mes - b.mes; // Depois por mes
     });
   };
 
@@ -97,7 +97,7 @@ export function AnalyticsMonthlyChart({
       "",
       "Janeiro",
       "Fevereiro",
-      "Março",
+      "Marco",
       "Abril",
       "Maio",
       "Junho",
@@ -111,7 +111,7 @@ export function AnalyticsMonthlyChart({
     return monthNames[month];
   };
 
-  // Calcular porcentagem de conversão
+  // Calcular porcentagem de conversao
   const calculateConversionRate = (monthlyData: any[]) => {
     return monthlyData.map((month) => ({
       ...month,
@@ -163,7 +163,7 @@ export function AnalyticsMonthlyChart({
       .filter(month => Object.keys(month.years).length > 0);
   };
 
-  // Filtrar apenas meses que têm dados relevantes para a métrica selecionada
+  // Filtrar apenas meses que tem dados relevantes para a metrica selecionada
   const filterMonthsWithData = (data: any[], metric: string) => {
     return data.filter((month) => {
       if (metric === "orcamento") {
@@ -205,27 +205,27 @@ export function AnalyticsMonthlyChart({
   const getMetricLabel = () => {
     switch (selectedMetric) {
       case "orcamento":
-        return "Valor de Orçamentos";
+        return "Valor de Orcamentos";
       case "faturamento":
         return "Valor de Faturamento";
       case "conversao":
-        return "Taxa de Conversão";
+        return "Taxa de Conversao";
       case "comparison":
-        return `Comparação de ${comparisonMetric === "orcamento" ? "Orçamentos" : comparisonMetric === "faturamento" ? "Faturamento" : "Conversão"} por Ano`;
+        return `Comparacao de ${comparisonMetric === "orcamento" ? "Orcamentos" : comparisonMetric === "faturamento" ? "Faturamento" : "Conversao"} por Ano`;
       default:
         return "";
     }
   };
 
-  // Função para formatar o label do mês com ano quando necessário
+  // Funcao para formatar o label do mes com ano quando necessario
   const formatMonthLabel = (monthData: any, allData: any[]) => {
     const years = [...new Set(allData.map((item) => item.ano))];
 
     if (years.length > 1) {
-      // Se há múltiplos anos, mostrar mês/ano
+      // Se ha multiplos anos, mostrar mes/ano
       return `${monthData.mesNome}/${monthData.ano}`;
     } else {
-      // Se há apenas um ano, mostrar apenas o mês
+      // Se ha apenas um ano, mostrar apenas o mes
       return monthData.mesNome;
     }
   };
@@ -242,7 +242,7 @@ export function AnalyticsMonthlyChart({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl text-gray-800">
-            {getMetricLabel()} por Mês
+            {getMetricLabel()} por Mes
             {selectedDepartamento && (
               <span className="text-sm font-normal text-gray-600 ml-2">
                 - {DEPARTAMENTOS.find(d => d.id === selectedDepartamento)?.nome}
@@ -315,7 +315,7 @@ export function AnalyticsMonthlyChart({
                     : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                Orçamento
+                Orcamento
               </button>
               <button
                 onClick={() => {
@@ -341,7 +341,7 @@ export function AnalyticsMonthlyChart({
                     : "text-gray-600 hover:text-gray-800"
                 }`}
               >
-                Conversão
+                Conversao
               </button>
               {/* Comparison button - only show if multiple years exist */}
               {availableYears.length > 1 && (
@@ -353,7 +353,7 @@ export function AnalyticsMonthlyChart({
                       : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
-                  Comparação
+                  Comparacao
                 </button>
               )}
             </div>
@@ -519,13 +519,13 @@ export function AnalyticsMonthlyChart({
                 <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">
                   {chartData.length === 0
-                    ? "Nenhum dado disponível para esta métrica"
-                    : "Nenhum valor encontrado para esta métrica"}
+                    ? "Nenhum dado disponivel para esta metrica"
+                    : "Nenhum valor encontrado para esta metrica"}
                 </p>
                 <p className="text-sm text-gray-400 mt-2">
                   {chartData.length === 0
-                    ? "Faça upload de uma planilha para visualizar os dados"
-                    : "Tente selecionar outra métrica ou período"}
+                    ? "Faca upload de uma planilha para visualizar os dados"
+                    : "Tente selecionar outra metrica ou periodo"}
                 </p>
               </div>
             </div>
