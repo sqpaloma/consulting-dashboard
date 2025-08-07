@@ -1,6 +1,6 @@
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, RefreshCw } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 import { CalendarItem } from "./types";
 
@@ -9,7 +9,6 @@ interface ActivityHeaderProps {
   todayActivities: CalendarItem[];
   todayBrasilia: Date;
   completedActivities: Set<string>;
-  onRefresh: () => void;
   onClearCompleted: () => void;
 }
 
@@ -18,7 +17,6 @@ export function ActivityHeader({
   todayActivities,
   todayBrasilia,
   completedActivities,
-  onRefresh,
   onClearCompleted,
 }: ActivityHeaderProps) {
   const formatDate = (date: Date) => {
@@ -35,22 +33,12 @@ export function ActivityHeader({
       <div className="flex items-center justify-between">
         <CardTitle className="text-xl text-gray-800 flex items-center">
           <Calendar className="h-5 w-5 mr-2" />
-          Planejador de Atividades Diárias
+          Atividades Diárias
           {isLoading && (
             <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
           )}
         </CardTitle>
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="text-xs"
-          >
-            <RefreshCw className="h-3 w-3 mr-1" />
-            {isLoading ? "Carregando..." : "Atualizar"}
-          </Button>
           {completedActivities.size > 0 && (
             <Button
               variant="outline"

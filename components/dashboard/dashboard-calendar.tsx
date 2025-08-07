@@ -294,7 +294,7 @@ export function DashboardCalendar({
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-gray-800 flex items-center">
             <Calendar className="h-3 w-3 mr-2" />
-            Próximos Agendamentos
+            Agendamentos
             {isLoading && (
               <div className="ml-2 animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
             )}

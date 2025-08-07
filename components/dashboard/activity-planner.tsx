@@ -94,7 +94,6 @@ export function ActivityPlanner({
         todayActivities={todayActivities}
         todayBrasilia={todayBrasilia}
         completedActivities={completedActivities}
-        onRefresh={loadDatabaseItems}
         onClearCompleted={() => {
           const today = new Date();
           const todayBrasilia = new Date(
