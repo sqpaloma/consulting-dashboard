@@ -159,12 +159,14 @@ export function DashboardMetrics({
           analisesItems,
           orcamentosItems,
           execucaoItems,
+          prontoItems,
         ] = await Promise.all([
           Promise.resolve(allItems), // Todos os itens
           getDashboardItemsByCategory("aprovacao"),
           getDashboardItemsByCategory("analises"),
           getDashboardItemsByCategory("orcamentos"),
           getDashboardItemsByCategory("execucao"),
+          getDashboardItemsByCategory("pronto"),
         ]);
 
         // Calcula métricas para cada categoria
@@ -174,7 +176,7 @@ export function DashboardMetrics({
           analises: calculateMetrics(analisesItems),
           orcamentos: calculateMetrics(orcamentosItems),
           execucao: calculateMetrics(execucaoItems),
-          pronto: calculateMetrics([]), // Inicialmente vazio, será calculado baseado nos dados
+          pronto: calculateMetrics(prontoItems),
         });
       } catch (error) {}
     };
