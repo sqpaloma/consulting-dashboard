@@ -254,8 +254,8 @@ export function ResponsiveLayout({
 
   // Desktop layout
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 px-12 py-6">
+      <div className="max-w-none mx-auto space-y-4">
         <Header
           title={title}
           subtitle={subtitle}
