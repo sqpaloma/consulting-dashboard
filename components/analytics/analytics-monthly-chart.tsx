@@ -451,8 +451,8 @@ export function AnalyticsMonthlyChart({
             <div className="h-full flex flex-col">
               <div className="flex-1 overflow-x-auto pb-8">
                 <div
-                  className="flex items-end justify-start space-x-3 min-w-max px-4"
-                  style={{ minWidth: `${chartData.length * 72}px` }}
+                  className="flex items-end justify-start space-x-6 min-w-max px-4"
+                  style={{ minWidth: `${chartData.length * 100}px` }}
                 >
                   {chartData.map((month, index) => {
                     const height =
@@ -462,12 +462,12 @@ export function AnalyticsMonthlyChart({
                         key={index}
                         className="flex flex-col items-center space-y-2 flex-shrink-0"
                       >
-                        <div className="text-xs text-gray-600 font-medium text-center w-14">
+                        <div className="text-xs text-gray-600 font-medium text-center w-18">
                           {formatValue(month.value)}
                         </div>
                         <div
                           className={
-                            "w-10 rounded-t transition-all duration-500 hover:opacity-80 border border-blue-700"
+                            "w-12 rounded-t transition-all duration-500 hover:opacity-80 border border-blue-700"
                           }
                           style={{
                             height: `${Math.max(height, 16)}px`,
@@ -475,7 +475,7 @@ export function AnalyticsMonthlyChart({
                           }}
                           title={`${formatMonthLabel(month, chartData)}: ${formatValue(month.value)}`}
                         ></div>
-                        <div className="text-xs text-gray-700 font-medium text-center w-14 leading-tight">
+                        <div className="text-xs text-gray-700 font-medium text-center w-18 leading-tight">
                           {formatMonthLabel(month, chartData)}
                         </div>
                       </div>
