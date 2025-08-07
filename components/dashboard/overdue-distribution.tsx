@@ -64,7 +64,7 @@ export default function OverdueDistribution({
 
   if (chartData.length === 0) {
     return (
-      <Card className="bg-white h-[250px] flex flex-col">
+      <Card className="bg-white h-[250px] md:h-[500px] lg:h-[250px] flex flex-col">
         <CardHeader className="pb-1">
           <CardTitle className="text-sm font-medium">
             Distribuição de Atrasos
@@ -81,7 +81,7 @@ export default function OverdueDistribution({
   }
 
   return (
-    <Card className="bg-white h-[250px] flex flex-col">
+    <Card className="bg-white h-[250px] md:h-[500px] lg:h-[250px] flex flex-col">
       <CardHeader className="pb-1">
         <CardTitle className="text-sm font-medium">
           Distribuição de Atrasos

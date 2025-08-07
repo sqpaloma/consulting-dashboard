@@ -316,26 +316,28 @@ export function ConsultingDashboard() {
         />
 
         {/* Layout em duas seções no desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
           {/* Seção esquerda: Gráficos */}
           <div className="space-y-2 lg:col-span-2">
-            {/* Gráficos lado a lado - Primeira linha */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Gráficos empilhados */}
+            <div className="block">
               <DistributionPanel dashboardData={filteredDashboardData} />
-              <MechanicDistribution
-                processedItems={filteredItems}
-                filteredByResponsavel={filteredByResponsavel}
-              />
+              <div className="mt-2">
+                <MechanicDistribution
+                  processedItems={filteredItems}
+                  filteredByResponsavel={filteredByResponsavel}
+                />
+              </div>
             </div>
-
-            {/* Gráfico de Atrasos - Segunda linha */}
-            <div className="grid grid-cols-1 gap-2">
-              <OverdueDistribution overdueItems={overdueItems} />
+            <div className="flex justify-center">
+              <div className="w-full max-w-2xl">
+                <OverdueDistribution overdueItems={overdueItems} />
+              </div>
             </div>
           </div>
 
           {/* Seção direita: Calendário */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-2">
             <DashboardCalendar
               processedItems={filteredItems}
               onDateClick={handleCalendarDateClick}

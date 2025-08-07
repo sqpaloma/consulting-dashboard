@@ -240,9 +240,9 @@ export function DashboardMetrics({
   };
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2">
+    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2">
       {/* Cards em grid normal */}
-      <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2 col-span-4 md:col-span-2 lg:col-span-4 xl:col-span-7">
+      <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2 col-span-4 md:col-span-2 lg:col-span-4 xl:col-span-8">
         {/* Total Itens */}
         <Card
           onClick={() => openModal("total")}
@@ -440,6 +440,50 @@ export function DashboardMetrics({
                 {calculatePercentage(
                   itemMetrics.execucao.onTime,
                   itemMetrics.execucao.total
+                )}
+                %
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pronto */}
+        <Card
+          onClick={() => openModal("pronto")}
+          className="bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+        >
+          <CardContent className="p-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-gray-600">Pronto</span>
+              <svg
+                className="h-3 w-3 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div className="text-xl font-bold text-gray-800 mb-1 text-center">
+              {dashboardData.pronto}
+            </div>
+            <div className="flex items-center justify-center space-x-2 text-xs">
+              <span className="text-red-500">
+                {calculatePercentage(
+                  itemMetrics.pronto.overdue,
+                  itemMetrics.pronto.total
+                )}
+                %
+              </span>
+              <span className="text-green-500">
+                {calculatePercentage(
+                  itemMetrics.pronto.onTime,
+                  itemMetrics.pronto.total
                 )}
                 %
               </span>
