@@ -315,13 +315,13 @@ export function DashboardCalendar({
 
   return (
     <Card className="bg-white">
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg text-gray-800 flex items-center">
-            <Calendar className="h-5 w-5 mr-2" />
+          <CardTitle className="text-sm text-gray-800 flex items-center">
+            <Calendar className="h-3 w-3 mr-2" />
             Próximos Agendamentos
             {isLoading && (
-              <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              <div className="ml-2 animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
             )}
           </CardTitle>
           <div className="flex items-center space-x-2">
@@ -335,8 +335,8 @@ export function DashboardCalendar({
                   : "text-gray-600 border-gray-200 hover:bg-gray-50"
               }`}
             >
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              Atrasados ({overdueItemsList.length})
+              <AlertTriangle className="h-3 w-3 mr-1" />▲ Atrasados (
+              {overdueItemsList.length})
             </Button>
             <Button
               variant="outline"
@@ -346,20 +346,20 @@ export function DashboardCalendar({
               className="text-xs"
             >
               <RefreshCw className="h-3 w-3 mr-1" />
-              {isLoading ? "Carregando..." : "Atualizar"}
+              Atualizar
             </Button>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center justify-between mt-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={goToPreviousMonth}
             className="hover:bg-gray-100"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3" />
           </Button>
-          <span className="font-medium text-gray-700">
+          <span className="font-medium text-gray-700 text-xs">
             {getMonthName(currentMonth)} {currentYear}
           </span>
           <Button
@@ -368,16 +368,16 @@ export function DashboardCalendar({
             onClick={goToNextMonth}
             className="hover:bg-gray-100"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3 w-3" />
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-7 gap-1 mb-4">
+        <div className="grid grid-cols-7 gap-1 mb-2">
           {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
             <div
               key={day}
-              className="text-center text-sm font-medium text-gray-500 p-2"
+              className="text-center text-xs font-medium text-gray-500 p-1"
             >
               {day}
             </div>
@@ -388,7 +388,7 @@ export function DashboardCalendar({
             <div
               key={index}
               className={`
-                aspect-square p-2 text-center text-sm cursor-pointer rounded-lg
+                aspect-square p-1 text-center text-xs cursor-pointer rounded-lg
                 ${
                   day === null
                     ? "invisible"

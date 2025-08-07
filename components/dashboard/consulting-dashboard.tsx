@@ -13,6 +13,7 @@ import { ResponsavelFilter } from "./responsavel-filter";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useAuth } from "@/hooks/use-auth";
 import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
+import Image from "next/image";
 
 export function ConsultingDashboard() {
   const { dashboardData, processedItems, loadSavedData } = useDashboardData();
@@ -302,17 +303,17 @@ export function ConsultingDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="space-y-6">
-        {/* Metrics Cards */}
+      <div className="space-y-2">
+        {/* Metrics Cards - Menores */}
         <DashboardMetrics
           dashboardData={filteredDashboardData}
           openModal={openModal}
         />
 
-        {/* Layout reorganizado: Coluna esquerda com componentes menores e coluna direita com calendário */}
-        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[650px]">
-          {/* Coluna esquerda: Follow-up, Concluídos e WorkSessionTimer */}
-          <div className="flex flex-col space-y-4 h-full">
+        {/* Layout em duas colunas */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          {/* Coluna esquerda: Follow-up, Overdue e WorkSessionTimer */}
+          <div className="flex flex-col space-y-2">
             <FollowUpCard
               filteredItems={filteredItems}
               filteredByResponsavel={filteredByResponsavel}
@@ -323,9 +324,7 @@ export function ConsultingDashboard() {
               overdueItems={overdueItems}
               onOverdueClick={(items) => openModal("overdue-items", items)}
             />
-            <div className="flex-1">
-              <WorkSessionTimer />
-            </div>
+            <WorkSessionTimer />
           </div>
 
           {/* Coluna direita: Calendário */}

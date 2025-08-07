@@ -77,17 +77,17 @@ export function WorkSessionTimer() {
 
   return (
     <Card className="bg-white h-full flex flex-col">
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl text-gray-800">
-            {isWorkSession ? "Sessão de Trabalho" : "Tempo de Descanso"}
+          <CardTitle className="text-sm text-gray-800">
+            Sessão de Trabalho
           </CardTitle>
-          <div className="text-sm text-gray-500">Sessões: {sessions}</div>
+          <div className="text-xs text-gray-500">Sessões: {sessions}</div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative w-36 h-36">
+        <div className="flex flex-col items-center space-y-2">
+          <div className="relative w-20 h-20">
             <svg
               className="w-full h-full transform -rotate-90"
               viewBox="0 0 100 100"
@@ -115,32 +115,33 @@ export function WorkSessionTimer() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-3xl font-bold text-gray-800">
+              <div className="text-xl font-bold text-gray-800">
                 {formatTime(timeLeft)}
               </div>
-              <div className="text-sm text-gray-500 text-center">
-                {isWorkSession ? "Foco no trabalho" : "Hora do descanso"}
+              <div className="text-xs text-gray-500 text-center">
+                Foco no trabalho
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Button
               onClick={toggleTimer}
+              size="sm"
               className={`${
                 isWorkSession
                   ? "bg-green-500 hover:bg-green-600"
                   : "bg-blue-500 hover:bg-blue-600"
-              } text-white`}
+              } text-white text-xs`}
             >
               {isRunning ? (
                 <>
-                  <Pause className="h-4 w-4 mr-2" />
+                  <Pause className="h-3 w-3 mr-1" />
                   Pausar
                 </>
               ) : (
                 <>
-                  <Play className="h-4 w-4 mr-2" />
+                  <Play className="h-3 w-3 mr-1" />
                   Iniciar
                 </>
               )}
@@ -148,17 +149,18 @@ export function WorkSessionTimer() {
 
             <Button
               onClick={resetTimer}
+              size="sm"
               variant="outline"
-              className="border-gray-300 text-gray-600 hover:bg-gray-50 bg-transparent"
+              className="border-gray-300 text-gray-600 hover:bg-gray-50 bg-transparent text-xs"
             >
-              <RotateCcw className="h-4 w-4 mr-2" />
+              <RotateCcw className="h-3 w-3 mr-1" />
               Reiniciar
             </Button>
           </div>
 
           <div className="text-center">
-            <div className="text-sm text-gray-500 mb-1">Próximo:</div>
-            <div className="text-sm font-medium text-gray-700">
+            <div className="text-xs text-gray-500 mb-1">Próximo:</div>
+            <div className="text-xs font-medium text-gray-700">
               {isWorkSession ? "5 min de descanso" : "25 min de trabalho"}
             </div>
           </div>

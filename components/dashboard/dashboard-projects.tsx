@@ -144,11 +144,11 @@ export function FollowUpCard({
 
   return (
     <Card className="bg-white shadow-sm">
-      <CardContent className="p-6">
-        <div className="space-y-4">
+      <CardContent className="p-3">
+        <div className="space-y-2">
           {/* Header */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">
               Follow-up
             </h3>
           </div>
@@ -160,34 +160,34 @@ export function FollowUpCard({
           ) : (
             <>
               {/* Métricas Principais */}
-              <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
                 <div
-                  className="group cursor-pointer p-3 rounded-lg hover:bg-green-50 transition-all duration-200"
+                  className="group cursor-pointer p-2 rounded-lg hover:bg-green-50 transition-all duration-200"
                   onClick={handleNoPrazoClick}
                 >
                   <div className="flex items-center space-x-2 mb-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-xs font-medium text-gray-600">
                       No prazo
                     </span>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 group-hover:text-green-700">
+                  <div className="text-lg font-bold text-gray-900 group-hover:text-green-700">
                     {withinDeadline}
                   </div>
                 </div>
 
                 {soonToExpire > 0 && (
                   <div
-                    className="group cursor-pointer p-3 rounded-lg hover:bg-orange-50 transition-all duration-200"
+                    className="group cursor-pointer p-2 rounded-lg hover:bg-orange-50 transition-all duration-200"
                     onClick={handleVencendoEmBreveClick}
                   >
                     <div className="flex items-center space-x-2 mb-1">
                       <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm font-medium text-gray-600">
+                      <span className="text-xs font-medium text-gray-600">
                         Vencendo
                       </span>
                     </div>
-                    <div className="text-2xl font-bold text-gray-900 group-hover:text-orange-700">
+                    <div className="text-lg font-bold text-gray-900 group-hover:text-orange-700">
                       {soonToExpire}
                     </div>
                   </div>
@@ -195,12 +195,12 @@ export function FollowUpCard({
               </div>
 
               {/* Resumo */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                 <div
                   className="cursor-pointer hover:bg-gray-50 px-2 py-1 rounded transition-colors"
                   onClick={handleTotalClick}
                 >
-                  <span className="text-sm text-gray-600">Total</span>
+                  <span className="text-xs text-gray-600">Total</span>
                   <span className="ml-2 font-semibold text-gray-900">
                     {total}
                   </span>
@@ -211,7 +211,7 @@ export function FollowUpCard({
                     className="cursor-pointer hover:bg-red-50 px-2 py-1 rounded transition-colors"
                     onClick={handleAtrasadosClick}
                   >
-                    <span className="text-sm text-red-600">Atrasados</span>
+                    <span className="text-xs text-red-600">Atrasados</span>
                     <span className="ml-2 font-semibold text-red-700">
                       {overdue}
                     </span>
@@ -274,9 +274,9 @@ export function OverdueItemsCard({
       className={`bg-white ${overdueCount > 0 ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
       onClick={handleClick}
     >
-      <CardContent className="p-4">
-        <div className="text-sm text-gray-500">Atrasados</div>
-        <div className="text-2xl font-bold text-gray-800">{overdueCount}</div>
+      <CardContent className="p-2">
+        <div className="text-xs text-gray-500">Atrasados</div>
+        <div className="text-lg font-bold text-gray-800">{overdueCount}</div>
         <div
           className={`flex items-center text-xs ${overdueCount > 0 ? "text-red-600" : "text-green-600"}`}
         >

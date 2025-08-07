@@ -238,23 +238,23 @@ export function DashboardMetrics({
   };
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2">
       {/* Total Itens */}
       <Card
         onClick={() => openModal("total")}
         className="bg-white border-2 border-blue-300 cursor-pointer hover:shadow-lg transition-shadow"
       >
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">
               Total Itens
             </span>
-            <BarChart3 className="h-4 w-4 text-blue-500" />
+            <BarChart3 className="h-3 w-3 text-blue-500" />
           </div>
-          <div className="text-3xl font-bold text-gray-800">
+          <div className="text-xl font-bold text-gray-800">
             {dashboardData.totalItens}
           </div>
-          <div className="flex items-center space-x-2 text-xs mt-2">
+          <div className="flex items-center space-x-2 text-xs mt-1">
             <span className="text-red-500">
               {calculateAveragePercentages().overdue}%
             </span>
@@ -270,13 +270,13 @@ export function DashboardMetrics({
         onClick={() => openModal("aprovacao")}
         className="bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
       >
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">
               Aguardando Aprovação
             </span>
             <svg
-              className="h-4 w-4 text-gray-500"
+              className="h-3 w-3 text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -289,7 +289,7 @@ export function DashboardMetrics({
               />
             </svg>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-xl font-bold text-gray-800 mb-1">
             {dashboardData.aguardandoAprovacao}
           </div>
           <div className="flex items-center space-x-2 text-xs">
@@ -316,11 +316,11 @@ export function DashboardMetrics({
         onClick={() => openModal("analises")}
         className="bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
       >
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Análises</span>
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">Análises</span>
             <svg
-              className="h-4 w-4 text-blue-500"
+              className="h-3 w-3 text-blue-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -333,7 +333,7 @@ export function DashboardMetrics({
               />
             </svg>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-xl font-bold text-gray-800 mb-1">
             {dashboardData.analises}
           </div>
           <div className="flex items-center space-x-2 text-xs">
@@ -360,14 +360,14 @@ export function DashboardMetrics({
         onClick={() => openModal("orcamentos")}
         className="bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
       >
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">
               Orçamentos
             </span>
-            <DollarSign className="h-4 w-4 text-green-500" />
+            <DollarSign className="h-3 w-3 text-green-500" />
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-xl font-bold text-gray-800 mb-1">
             {dashboardData.orcamentos}
           </div>
           <div className="flex items-center space-x-2 text-xs">
@@ -394,13 +394,13 @@ export function DashboardMetrics({
         onClick={() => openModal("execucao")}
         className="bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
       >
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">
               Em Execução
             </span>
             <svg
-              className="h-4 w-4 text-orange-500"
+              className="h-3 w-3 text-orange-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -419,7 +419,7 @@ export function DashboardMetrics({
               />
             </svg>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-xl font-bold text-gray-800 mb-1">
             {dashboardData.emExecucao}
           </div>
           <div className="flex items-center space-x-2 text-xs">
@@ -446,11 +446,11 @@ export function DashboardMetrics({
         onClick={() => openModal("pronto")}
         className="bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
       >
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Pronto</span>
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">Pronto</span>
             <svg
-              className="h-4 w-4 text-green-500"
+              className="h-3 w-3 text-green-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -463,7 +463,7 @@ export function DashboardMetrics({
               />
             </svg>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-xl font-bold text-gray-800 mb-1">
             {dashboardData.pronto}
           </div>
           <div className="flex items-center space-x-2 text-xs">
@@ -487,13 +487,13 @@ export function DashboardMetrics({
 
       {/* Devoluções */}
       <Card className="bg-white border border-gray-200">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">
               Devoluções
             </span>
             <svg
-              className="h-4 w-4 text-red-500"
+              className="h-3 w-3 text-red-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -506,7 +506,7 @@ export function DashboardMetrics({
               />
             </svg>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-xl font-bold text-gray-800 mb-1">
             {devolucaoData.total}
           </div>
           <div className="flex items-center space-x-2 text-xs">
@@ -530,13 +530,13 @@ export function DashboardMetrics({
 
       {/* Movimentações */}
       <Card className="bg-white border border-gray-200">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
+        <CardContent className="p-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">
               Movimentações
             </span>
             <svg
-              className="h-4 w-4 text-purple-500"
+              className="h-3 w-3 text-purple-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -549,7 +549,7 @@ export function DashboardMetrics({
               />
             </svg>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-xl font-bold text-gray-800 mb-1">
             {movimentacaoData.total}
           </div>
           <div className="flex items-center space-x-2 text-xs">

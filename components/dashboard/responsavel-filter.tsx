@@ -102,9 +102,9 @@ export function ResponsavelFilter({
         onValueChange={handleFilterByResponsavel}
         disabled={isLoading}
       >
-        <SelectTrigger className="w-48 h-8 text-sm bg-white/10 border-white/20 text-white placeholder:text-white/70 hover:bg-white/20 transition-colors">
+        <SelectTrigger className="w-64 h-10 text-sm bg-white/10 border-white/20 text-white placeholder:text-white/70 hover:bg-white/20 transition-colors">
           <User className="h-4 w-4 mr-2" />
-          <SelectValue placeholder="Filtrar por responsável" />
+          <SelectValue placeholder="Filtrar por..." />
         </SelectTrigger>
         <SelectContent className="max-h-48 overflow-y-auto">
           {responsaveis.map((responsavel) => (

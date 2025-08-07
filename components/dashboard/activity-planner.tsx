@@ -88,7 +88,7 @@ export function ActivityPlanner({
   );
 
   return (
-    <Card className="bg-white">
+    <Card className="bg-white mt-3">
       <ActivityHeader
         isLoading={isLoading}
         todayActivities={todayActivities}
