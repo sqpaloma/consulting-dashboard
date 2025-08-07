@@ -3,6 +3,7 @@ import "./globals.css";
 import { ConvexClientProvider } from "@/lib/convex-provider";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "Novak & Gouveia",
@@ -20,12 +21,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body>
-        <ConvexClientProvider>
-          <AuthLayout>{children}</AuthLayout>
-          <Toaster richColors position="bottom-right" />
-        </ConvexClientProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <ConvexClientProvider>
+            <AuthLayout>{children}</AuthLayout>
+            <Toaster richColors position="bottom-right" />
+          </ConvexClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

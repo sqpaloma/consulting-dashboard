@@ -24,14 +24,14 @@ export function MessageItem({
           <>
             <button
               onClick={onDelete}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-700"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-200"
               title="Deletar mensagem"
             >
               <Trash2 className="h-3 w-3 text-red-500" />
             </button>
             <button
               onClick={onCreateTodo}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-blue-200"
               title="Criar todo desta mensagem"
             >
               <ListTodo className="h-3 w-3 text-blue-500" />
@@ -58,14 +58,14 @@ export function MessageItem({
           <>
             <button
               onClick={onDelete}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-700"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-200"
               title="Deletar mensagem"
             >
               <Trash2 className="h-3 w-3 text-red-500" />
             </button>
             <button
               onClick={onCreateTodo}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-blue-200"
               title="Criar todo desta mensagem"
             >
               <ListTodo className="h-3 w-3 text-blue-500" />

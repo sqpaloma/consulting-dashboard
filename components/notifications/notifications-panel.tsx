@@ -155,7 +155,7 @@ export function NotificationsPanel({ children }: NotificationsPanelProps) {
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 text-xs min-w-0"
+              className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 text-xs min-w-0 !bg-red-500 !text-white"
             >
               {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
@@ -163,21 +163,23 @@ export function NotificationsPanel({ children }: NotificationsPanelProps) {
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="w-80 sm:w-96 max-w-[calc(100vw-2rem)] p-0 animate-in fade-in-0 zoom-in-95"
+        className="w-80 sm:w-96 max-w-[calc(100vw-2rem)] p-0 animate-in fade-in-0 zoom-in-95 !bg-white !text-gray-900"
         align="end"
         side="bottom"
         sideOffset={5}
       >
-        <Card className="border-0 shadow-lg">
+        <Card className="border-0 shadow-lg !bg-white">
           <CardHeader className="pb-3 px-3 sm:px-6">
             <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-lg">Notificações</CardTitle>
+              <CardTitle className="text-lg !text-gray-900">
+                Notificações
+              </CardTitle>
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={markAllAsRead}
-                  className="h-8 text-xs whitespace-nowrap touch-manipulation"
+                  className="h-8 text-xs whitespace-nowrap touch-manipulation !text-gray-700 !hover:bg-gray-100"
                 >
                   <span className="hidden sm:inline">
                     Marcar todas como lidas
@@ -188,7 +190,7 @@ export function NotificationsPanel({ children }: NotificationsPanelProps) {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-60 sm:h-80 max-h-[60vh]">
+            <ScrollArea className="h-60 sm:h-80 max-h-[60vh] [&_.bg-border]:!bg-gray-300">
               {notifications.length === 0 ? (
                 <div className="p-4 sm:p-6 text-center text-gray-500">
                   <Bell className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
@@ -222,7 +224,7 @@ export function NotificationsPanel({ children }: NotificationsPanelProps) {
                                 {notification.urgent && (
                                   <Badge
                                     variant="destructive"
-                                    className="text-xs shrink-0"
+                                    className="text-xs shrink-0 !bg-red-500 !text-white"
                                   >
                                     Urgente
                                   </Badge>
@@ -242,7 +244,7 @@ export function NotificationsPanel({ children }: NotificationsPanelProps) {
                                 e.stopPropagation();
                                 removeNotification(notification.id);
                               }}
-                              className="h-6 w-6 p-0 hover:bg-red-100 active:bg-red-200 shrink-0 touch-manipulation"
+                              className="h-6 w-6 p-0 hover:bg-red-100 active:bg-red-200 shrink-0 touch-manipulation !text-gray-600"
                             >
                               <X className="h-3 w-3" />
                             </Button>

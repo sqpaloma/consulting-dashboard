@@ -159,7 +159,7 @@ export function FollowUpCard({
           ) : (
             <>
               {/* Métricas Principais */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
                 <div
                   className="group cursor-pointer p-3 rounded-lg hover:bg-green-50 transition-all duration-200"
                   onClick={handleNoPrazoClick}
@@ -271,7 +271,7 @@ export function CompletedProjectsCard() {
 // Mantendo o componente original para compatibilidade
 export function DashboardProjects() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
       <TotalProjectsCard />
       <CompletedProjectsCard />
     </div>

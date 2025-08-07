@@ -18,6 +18,7 @@ interface DashboardData {
   analises: number;
   orcamentos: number;
   emExecucao: number;
+  pronto: number;
 }
 
 interface DashboardMetricsProps {
@@ -53,12 +54,14 @@ export function DashboardMetrics({
     analises: ItemMetrics;
     orcamentos: ItemMetrics;
     execucao: ItemMetrics;
+    pronto: ItemMetrics;
   }>({
     total: { total: 0, overdue: 0, onTime: 0 },
     aprovacao: { total: 0, overdue: 0, onTime: 0 },
     analises: { total: 0, overdue: 0, onTime: 0 },
     orcamentos: { total: 0, overdue: 0, onTime: 0 },
     execucao: { total: 0, overdue: 0, onTime: 0 },
+    pronto: { total: 0, overdue: 0, onTime: 0 },
   });
 
   // Função para fazer parse de diferentes formatos de data
@@ -169,9 +172,9 @@ export function DashboardMetrics({
           analises: calculateMetrics(analisesItems),
           orcamentos: calculateMetrics(orcamentosItems),
           execucao: calculateMetrics(execucaoItems),
+          pronto: calculateMetrics([]), // Inicialmente vazio, será calculado baseado nos dados
         });
-      } catch (error) {
-        }
+      } catch (error) {}
     };
 
     loadItemMetrics();
@@ -192,8 +195,7 @@ export function DashboardMetrics({
         if (movimentacaoResult.movimentacaoData) {
           setMovimentacaoData(movimentacaoResult.movimentacaoData);
         }
-      } catch (error) {
-        }
+      } catch (error) {}
     };
 
     loadData();
@@ -236,7 +238,7 @@ export function DashboardMetrics({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
       {/* Total Itens */}
       <Card
         onClick={() => openModal("total")}
@@ -432,6 +434,50 @@ export function DashboardMetrics({
               {calculatePercentage(
                 itemMetrics.execucao.onTime,
                 itemMetrics.execucao.total
+              )}
+              %
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pronto */}
+      <Card
+        onClick={() => openModal("pronto")}
+        className="bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">Pronto</span>
+            <svg
+              className="h-4 w-4 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="text-3xl font-bold text-gray-800 mb-2">
+            {dashboardData.pronto}
+          </div>
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="text-red-500">
+              {calculatePercentage(
+                itemMetrics.pronto.overdue,
+                itemMetrics.pronto.total
+              )}
+              %
+            </span>
+            <span className="text-green-500">
+              {calculatePercentage(
+                itemMetrics.pronto.onTime,
+                itemMetrics.pronto.total
               )}
               %
             </span>

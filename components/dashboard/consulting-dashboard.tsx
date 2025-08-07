@@ -47,6 +47,7 @@ export function ConsultingDashboard() {
       analises: 0,
       orcamentos: 0,
       emExecucao: 0,
+      pronto: 0,
     };
 
     filteredItems.forEach((item) => {
@@ -78,6 +79,14 @@ export function ConsultingDashboard() {
         status.includes("progresso")
       ) {
         metrics.emExecucao++;
+      } else if (
+        status.includes("pronto") ||
+        status.includes("concluído") ||
+        status.includes("concluido") ||
+        status.includes("finalizado") ||
+        status.includes("completo")
+      ) {
+        metrics.pronto++;
       }
     });
 
@@ -158,6 +167,18 @@ export function ConsultingDashboard() {
                 );
               });
               break;
+            case "pronto":
+              items = filteredItems.filter((item) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("pronto") ||
+                  status.includes("concluído") ||
+                  status.includes("concluido") ||
+                  status.includes("finalizado") ||
+                  status.includes("completo")
+                );
+              });
+              break;
             default:
               items = [];
           }
@@ -178,6 +199,9 @@ export function ConsultingDashboard() {
               break;
             case "execucao":
               items = await getDashboardItemsByCategory("execucao");
+              break;
+            case "pronto":
+              items = await getDashboardItemsByCategory("pronto");
               break;
             default:
               items = [];
@@ -215,7 +239,7 @@ export function ConsultingDashboard() {
         />
 
         {/* Layout reorganizado: Coluna esquerda com componentes menores e coluna direita com calendário */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[650px]">
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6 items-stretch min-h-[650px]">
           {/* Coluna esquerda: Follow-up, Concluídos e WorkSessionTimer */}
           <div className="flex flex-col space-y-4 h-full">
             <FollowUpCard

@@ -20,6 +20,7 @@ interface DashboardDataRow {
   analises: number;
   orcamentos: number;
   emExecucao: number;
+  pronto: number;
 }
 
 interface DashboardItemRow {
@@ -106,6 +107,7 @@ export function useDashboardData() {
     analises: 0,
     orcamentos: 0,
     emExecucao: 0,
+    pronto: 0,
   });
   const [processedItems, setProcessedItems] = useState<DashboardItemRow[]>([]);
   const [fileName, setFileName] = useState<string>("");
@@ -127,6 +129,7 @@ export function useDashboardData() {
           analises: savedDashboardData.analises,
           orcamentos: savedDashboardData.orcamentos,
           emExecucao: savedDashboardData.em_execucao,
+          pronto: savedDashboardData.pronto || 0,
         });
         setProcessedItems(
           items.map((item) => ({

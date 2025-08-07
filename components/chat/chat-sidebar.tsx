@@ -147,7 +147,7 @@ export function ChatSidebar({
                       e.stopPropagation();
                       onDeleteConversation(conversation.id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/20"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-100"
                     title="Deletar conversa"
                   >
                     <Trash2 className="h-3 w-3 text-red-500" />
