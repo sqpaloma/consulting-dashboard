@@ -13,13 +13,14 @@ export function CalendarCombined() {
   const deleteNote = useMutation(api.notes.deleteNote);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-2 items-start">
-        {/* Chat com mais altura para caber completo */}
-        <div className="min-h-[75vh] 2xl:min-h-[80vh] xl:col-span-2">
+        {/* Chat com mais altura para caber completo (apenas em telas xl+) */}
+        <div className="xl:min-h-[75vh] 2xl:min-h-[80vh] xl:col-span-2">
           <ChatEmbedded />
         </div>
-        <div className="min-h-[75vh] 2xl:min-h-[80vh] xl:col-span-1">
+        {/* Notas sem min-height em telas menores para evitar espaço vazio */}
+        <div className="xl:col-span-1">
           <NotesSection
             notes={notes || []}
             onCreateNote={(data) => createNote(data)}

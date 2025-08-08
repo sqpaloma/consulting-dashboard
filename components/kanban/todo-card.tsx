@@ -39,44 +39,48 @@ export function TodoCard({
   const { responsible, scheduledDate, cleanDescription } =
     extractInfoFromDescription(todo.description || "");
 
+  const isCompleted = !!todo.completed;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white rounded-lg border border-gray-200 p-3 mb-2 cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow"
+      className="rounded-lg border border-white/30 bg-white/25 p-3 mb-2 text-white cursor-grab active:cursor-grabbing hover:bg-white/30 transition-colors"
     >
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-2 flex-1">
           <Checkbox
-            checked={todo.completed}
+            checked={isCompleted}
             onCheckedChange={() =>
-              onStatusChange(todo._id, todo.completed ? "todo" : "completed")
+              onStatusChange(todo._id, isCompleted ? "todo" : "completed")
             }
-            className="mt-1"
+            className="mt-1 border-white/40 data-[state=checked]:bg-green-500"
           />
           <div className="flex-1">
             <h3
-              className={`font-medium text-sm ${todo.completed ? "line-through text-gray-500" : "text-gray-900"}`}
+              className={`font-medium text-sm break-words ${
+                isCompleted ? "line-through text-white/50" : "text-white"
+              }`}
             >
               {todo.title}
             </h3>
             {cleanDescription && (
-              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+              <p className="text-xs text-white/70 mt-1 break-words line-clamp-2">
                 {cleanDescription.replace("[EM_PROCESSO]", "").trim()}
               </p>
             )}
-            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+            <div className="flex items-center gap-4 mt-2 text-xs text-white/60">
               {responsible && (
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
                   {responsible}
                 </span>
               )}
               {scheduledDate && (
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span className="w-2 h-2 bg-green-400 rounded-full"></span>
                   {new Date(scheduledDate).toLocaleDateString("pt-BR")}
                 </span>
               )}
@@ -88,7 +92,7 @@ export function TodoCard({
             variant="ghost"
             size="sm"
             onClick={() => onEdit(todo)}
-            className="h-6 w-6 p-0 text-gray-400 hover:text-blue-500"
+            className="h-6 w-6 p-0 text-white/70 hover:text-white"
           >
             <Edit3 className="h-3 w-3" />
           </Button>
@@ -96,7 +100,7 @@ export function TodoCard({
             variant="ghost"
             size="sm"
             onClick={() => onDelete(todo._id)}
-            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+            className="h-6 w-6 p-0 text-red-300 hover:text-red-400"
           >
             <Trash2 className="h-3 w-3" />
           </Button>

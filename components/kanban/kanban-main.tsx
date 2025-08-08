@@ -26,6 +26,7 @@ import {
   extractInfoFromDescription,
 } from "./todo-utils";
 import { useAuth } from "@/hooks/use-auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface KanbanMainProps {
   showNotes?: boolean;
@@ -243,60 +244,66 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header com botões */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Tarefas</h2>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="bg-white"
-            onClick={() => setIsAddingTodo(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Tarefa
-          </Button>
+    <div className="space-y-4 md:space-y-5">
+      <Card className="bg-white/10 border-white/20 text-white">
+        <CardHeader className="pb-3 border-b border-white/10">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold text-white">
+              Tarefas
+            </CardTitle>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                className="bg-accent text-accent-foreground hover:bg-accent"
+                onClick={() => setIsAddingTodo(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Tarefa
+              </Button>
 
-          {completedTodos.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearCompleted}
-              className="bg-white"
-              title="Limpar Concluídas"
+              {completedTodos.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearCompleted}
+                  className="bg-white"
+                  title="Limpar Concluídas"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={rectIntersection}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
             >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
+              {columns.map((column) => (
+                <KanbanColumn
+                  key={column.id}
+                  column={column}
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleDeleteTodo}
+                  onEdit={handleEditTodo}
+                />
+              ))}
 
-      {/* Seção Kanban */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={rectIntersection}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
-          {columns.map((column) => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDeleteTodo}
-              onEdit={handleEditTodo}
-            />
-          ))}
-
-          <DndDragOverlay>
-            {activeId && activeTodo ? (
-              <DragOverlay activeTodo={activeTodo} />
-            ) : null}
-          </DndDragOverlay>
-        </DndContext>
-      </div>
+              <DndDragOverlay>
+                {activeId && activeTodo ? (
+                  <DragOverlay activeTodo={activeTodo} />
+                ) : null}
+              </DndDragOverlay>
+            </DndContext>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Seção de Notas */}
       {showNotes && (

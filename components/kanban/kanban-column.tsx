@@ -63,13 +63,13 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-lg p-4 bg-gray-50 border border-gray-200 transition-colors ${
-        isOver ? "bg-gray-100 border-gray-300" : ""
+      className={`rounded-lg p-4 bg-transparent border border-white/30 text-white transition-colors ${
+        isOver ? "border-white/50" : ""
       }`}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900">{column.title}</h3>
-        <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded-full">
+        <h3 className="font-semibold text-white">{column.title}</h3>
+        <span className="text-xs text-white/80 bg-white/10 px-2 py-1 rounded-full border border-white/20">
           {column.todos.length}
         </span>
       </div>
@@ -85,7 +85,7 @@ export function KanbanColumn({
           <List
             height={400}
             itemCount={column.todos.length}
-            itemSize={80}
+            itemSize={86}
             width="100%"
             itemData={{
               todos: column.todos,
