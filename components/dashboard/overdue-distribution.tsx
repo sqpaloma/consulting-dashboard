@@ -87,7 +87,7 @@ export default function OverdueDistribution({
           Distribuição de Atrasos
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col lg:flex-row">
+      <CardContent className="flex-1 flex flex-row">
         <div className="flex-1 flex items-center justify-center">
           <ResponsiveContainer width="100%" height={200} minWidth={240}>
             <PieChart>
@@ -111,7 +111,7 @@ export default function OverdueDistribution({
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="w-full lg:w-1/3 flex flex-col justify-center space-y-2 lg:pl-4 pt-4 lg:pt-0">
+        <div className="w-1/3 flex flex-col justify-center space-y-1 pl-2">
           {chartData.map((item, index) => (
             <div key={item.name} className="flex items-center space-x-2">
               <div

@@ -456,7 +456,7 @@ export function ConsultingDashboard() {
             filteredByResponsavel={filteredByResponsavel}
           />
 
-          <div className="space-y-2">
+          <div className="space-y-4 mt-4">
             <div className="h-[250px]">
               <DistributionPanel dashboardData={filteredDashboardData} />
             </div>
@@ -527,10 +527,12 @@ export function ConsultingDashboard() {
       </div>
 
       {/* Atividades Diárias - Seção inferior */}
-      <ActivityPlanner
-        processedItems={filteredItems}
-        filteredByResponsavel={filteredByResponsavel}
-      />
+      <div className="mt-8">
+        <ActivityPlanner
+          processedItems={filteredItems}
+          filteredByResponsavel={filteredByResponsavel}
+        />
+      </div>
 
       {/* Modals */}
       {activeModal && (

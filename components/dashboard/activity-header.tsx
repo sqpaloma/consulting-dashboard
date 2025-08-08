@@ -2,47 +2,18 @@ import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 
-import { CalendarItem } from "./types";
 
 interface ActivityHeaderProps {
   isLoading: boolean;
-  todayActivities: CalendarItem[];
-  todayBrasilia: Date;
   completedActivities: Set<string>;
   onClearCompleted: () => void;
 }
 
 export function ActivityHeader({
   isLoading,
-  todayActivities,
-  todayBrasilia,
   completedActivities,
   onClearCompleted,
 }: ActivityHeaderProps) {
-  const getCurrentWeek = (date: Date) => {
-    const current = new Date(date);
-    const day = current.getDay();
-    const diff = current.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(current.setDate(diff));
-    const friday = new Date(monday);
-    friday.setDate(monday.getDate() + 4);
-    return { start: monday, end: friday };
-  };
-
-  const formatWeekRange = (start: Date, end: Date) => {
-    const startStr = start.toLocaleDateString("pt-BR", {
-      day: "numeric",
-      month: "short",
-      timeZone: "America/Sao_Paulo",
-    });
-    const endStr = end.toLocaleDateString("pt-BR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      timeZone: "America/Sao_Paulo",
-    });
-    return `${startStr} - ${endStr}`;
-  };
 
 
   return (
@@ -69,12 +40,6 @@ export function ActivityHeader({
           )}
         </div>
       </div>
-      <p className="text-sm text-gray-600 mt-2">
-        {(() => {
-          const currentWeek = getCurrentWeek(todayBrasilia);
-          return formatWeekRange(currentWeek.start, currentWeek.end);
-        })()} - {todayActivities.length} atividade(s) agendada(s)
-      </p>
     </CardHeader>
   );
 }

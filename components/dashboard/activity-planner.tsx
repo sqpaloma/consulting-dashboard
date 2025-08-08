@@ -440,151 +440,302 @@ export function ActivityPlanner({
         }}
       />
       <CardContent className="flex-1 overflow-hidden p-4 pb-4">
-        {/* Mobile: stack days vertically; Desktop: 5 columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 h-full">
-          {["SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA"].map(
-            (dayName: string, index: number) => {
-              const currentDate = new Date(todayBrasilia);
-              const dayOfWeek = currentDate.getDay();
-              const dayDate = new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                currentDate.getDate() -
-                  dayOfWeek +
-                  (dayOfWeek === 0 ? -6 : 1) +
-                  index
-              );
-              const dayDateKey = dayDate.toISOString().split("T")[0];
-              const isToday =
-                dayDate.toDateString() === todayBrasilia.toDateString();
-              const todayDateOnly = new Date(todayBrasilia);
-              todayDateOnly.setHours(0, 0, 0, 0);
-              const dayDateOnly = new Date(dayDate);
-              dayDateOnly.setHours(0, 0, 0, 0);
+        {/* Mobile/Tablet: vertical scroll; Desktop: 5 columns */}
+        <div className="h-full lg:grid lg:grid-cols-5 lg:gap-2">
+          <div className="lg:hidden h-full">
+            <List
+              height={500}
+              width="100%"
+              itemCount={5}
+              itemSize={250}
+              itemData={{
+                days: ["SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA"],
+                weekActivities,
+                completedActivities,
+                todayBrasilia,
+                isDesktop,
+                getStatusColor,
+                getDisplayResponsavel,
+                setShareActivity,
+                setShareDialogOpen,
+                openTaskModal
+              }}
+            >
+              {({ index, style, data }) => {
+                const dayName = data.days[index];
+                const currentDate = new Date(todayBrasilia);
+                const dayOfWeek = currentDate.getDay();
+                const dayDate = new Date(
+                  currentDate.getFullYear(),
+                  currentDate.getMonth(),
+                  currentDate.getDate() -
+                    dayOfWeek +
+                    (dayOfWeek === 0 ? -6 : 1) +
+                    index
+                );
+                const dayDateKey = dayDate.toISOString().split("T")[0];
+                const isToday = dayDate.toDateString() === data.todayBrasilia.toDateString();
+                const activitiesForDay = data.weekActivities[dayDateKey] || [];
 
-              const activitiesForDay = weekActivities[dayDateKey] || [];
-
-              return (
-                <div
-                  key={dayName}
-                  className="flex flex-col bg-gray-50 rounded-md p-2"
-                >
-                  <div
-                    className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-700"}`}
-                  >
-                    {dayName}
-                  </div>
-                  <div className="flex-1 overflow-auto space-y-2">
-                    {activitiesForDay.length > 0 ? (
-                      <List
-                        height={isDesktop ? 400 : 260}
-                        width={"100%"}
-                        itemCount={activitiesForDay.length}
-                        itemSize={108}
-                        itemData={{
-                          activities: activitiesForDay,
-                          completed: completedActivities,
-                        }}
-                      >
-                        {({ index, style, data }) => {
-                          const activity: CalendarItem = data.activities[index];
-                          const isCompleted = (
-                            data.completed as Set<string>
-                          ).has(activity.id);
-                          const consultant = activity.responsavel || "—";
-                          const maybeMechanic =
-                            getDisplayResponsavel(activity) || "—";
-                          const statusLower =
-                            activity.status?.toLowerCase() || "";
-                          const showMechanic =
-                            (statusLower.includes("exec") ||
-                              statusLower.includes("análise") ||
-                              statusLower.includes("analise") ||
-                              statusLower.includes("revis")) &&
-                            maybeMechanic &&
-                            maybeMechanic !== consultant;
-                          return (
-                            <div style={style}>
-                              <div
-                                className={`p-2 rounded-md text-xs border mx-1 mb-2 ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : getStatusColor(activity.status)}`}
-                              >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-medium text-gray-800 truncate">
-                                        {activity.titulo || activity.os}
-                                      </span>
+                return (
+                  <div style={style} className="pb-2">
+                    <div className="flex flex-col bg-gray-50 rounded-md p-2 h-full">
+                      <div className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-700"}`}>
+                        {dayName}
+                      </div>
+                      <div className="flex-1 min-h-0">
+                        {activitiesForDay.length > 0 ? (
+                          <List
+                            height={200}
+                            width={"100%"}
+                            itemCount={activitiesForDay.length}
+                            itemSize={110}
+                            itemData={{
+                              activities: activitiesForDay,
+                              completed: data.completedActivities,
+                            }}
+                          >
+                            {({ index: actIndex, style: actStyle, data: actData }) => {
+                              const activity: CalendarItem = actData.activities[actIndex];
+                              const isCompleted = (actData.completed as Set<string>).has(activity.id);
+                              const consultant = activity.responsavel || "—";
+                              const maybeMechanic = data.getDisplayResponsavel(activity) || "—";
+                              const statusLower = activity.status?.toLowerCase() || "";
+                              const showMechanic =
+                                (statusLower.includes("exec") ||
+                                  statusLower.includes("análise") ||
+                                  statusLower.includes("analise") ||
+                                  statusLower.includes("revis")) &&
+                                maybeMechanic &&
+                                maybeMechanic !== consultant;
+                              
+                              return (
+                                <div style={actStyle} className="px-1">
+                                  <div
+                                    className={`p-2 rounded-md text-xs border mb-1 ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : data.getStatusColor(activity.status)}`}
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-medium text-gray-800 truncate">
+                                            {activity.titulo || activity.os}
+                                          </span>
+                                        </div>
+                                        <div className="mt-1 text-[11px] text-gray-600 truncate">
+                                          {activity.cliente}
+                                        </div>
+                                        <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-600">
+                                          <span className="truncate">
+                                            {consultant}
+                                          </span>
+                                          {showMechanic && (
+                                            <span className="text-gray-400">•</span>
+                                          )}
+                                          {showMechanic && (
+                                            <span className="truncate">
+                                              {maybeMechanic}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 shrink-0"
+                                          >
+                                            <EllipsisVertical className="h-4 w-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                          align="end"
+                                          className="w-56"
+                                        >
+                                          <DropdownMenuItem
+                                            onClick={() => {
+                                              data.setShareActivity(activity);
+                                              data.setShareDialogOpen(true);
+                                            }}
+                                          >
+                                            <Share2 className="h-4 w-4 mr-2" />{" "}
+                                            Compartilhar via chat
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() => data.openTaskModal(activity)}
+                                          >
+                                            <ListTodo className="h-4 w-4 mr-2" />{" "}
+                                            Adicionar tarefa (Agenda)
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
                                     </div>
-                                    <div className="mt-1 text-[11px] text-gray-600 truncate">
-                                      {activity.cliente}
-                                    </div>
-                                    <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-600">
-                                      <span className="truncate">
-                                        {consultant}
+                                    <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
+                                      <span>{activity.status}</span>
+                                      <span>
+                                        {activity.data || activity.prazo || ""}
                                       </span>
-                                      {showMechanic && (
-                                        <span className="text-gray-400">•</span>
-                                      )}
-                                      {showMechanic && (
-                                        <span className="truncate">
-                                          {maybeMechanic}
-                                        </span>
-                                      )}
                                     </div>
                                   </div>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0"
-                                      >
-                                        <EllipsisVertical className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                      align="end"
-                                      className="w-56"
-                                    >
-                                      <DropdownMenuItem
-                                        onClick={() => {
-                                          setShareActivity(activity);
-                                          setShareDialogOpen(true);
-                                        }}
-                                      >
-                                        <Share2 className="h-4 w-4 mr-2" />{" "}
-                                        Compartilhar via chat
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => openTaskModal(activity)}
-                                      >
-                                        <ListTodo className="h-4 w-4 mr-2" />{" "}
-                                        Adicionar tarefa (Agenda)
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
                                 </div>
-                                <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
-                                  <span>{activity.status}</span>
-                                  <span>
-                                    {activity.data || activity.prazo || ""}
-                                  </span>
+                              );
+                            }}
+                          </List>
+                        ) : (
+                          <div className="text-xs text-gray-400 text-center py-6">
+                            Sem atividades
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+            </List>
+          </div>
+          
+          {/* Desktop layout - original grid */}
+          <div className="hidden lg:contents">
+            {["SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA"].map(
+              (dayName: string, index: number) => {
+                const currentDate = new Date(todayBrasilia);
+                const dayOfWeek = currentDate.getDay();
+                const dayDate = new Date(
+                  currentDate.getFullYear(),
+                  currentDate.getMonth(),
+                  currentDate.getDate() -
+                    dayOfWeek +
+                    (dayOfWeek === 0 ? -6 : 1) +
+                    index
+                );
+                const dayDateKey = dayDate.toISOString().split("T")[0];
+                const isToday =
+                  dayDate.toDateString() === todayBrasilia.toDateString();
+                const activitiesForDay = weekActivities[dayDateKey] || [];
+
+                return (
+                  <div
+                    key={dayName}
+                    className="flex flex-col bg-gray-50 rounded-md p-2"
+                  >
+                    <div
+                      className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-700"}`}
+                    >
+                      {dayName}
+                    </div>
+                    <div className="flex-1 min-h-0">
+                      {activitiesForDay.length > 0 ? (
+                        <List
+                          height={450}
+                          width={"100%"}
+                          itemCount={activitiesForDay.length}
+                          itemSize={110}
+                          itemData={{
+                            activities: activitiesForDay,
+                            completed: completedActivities,
+                          }}
+                        >
+                          {({ index, style, data }) => {
+                            const activity: CalendarItem = data.activities[index];
+                            const isCompleted = (
+                              data.completed as Set<string>
+                            ).has(activity.id);
+                            const consultant = activity.responsavel || "—";
+                            const maybeMechanic =
+                              getDisplayResponsavel(activity) || "—";
+                            const statusLower =
+                              activity.status?.toLowerCase() || "";
+                            const showMechanic =
+                              (statusLower.includes("exec") ||
+                                statusLower.includes("análise") ||
+                                statusLower.includes("analise") ||
+                                statusLower.includes("revis")) &&
+                              maybeMechanic &&
+                              maybeMechanic !== consultant;
+                            
+                            return (
+                              <div style={style} className="px-1">
+                                <div
+                                  className={`p-2 rounded-md text-xs border mb-1 ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : getStatusColor(activity.status)}`}
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-medium text-gray-800 truncate">
+                                          {activity.titulo || activity.os}
+                                        </span>
+                                      </div>
+                                      <div className="mt-1 text-[11px] text-gray-600 truncate">
+                                        {activity.cliente}
+                                      </div>
+                                      <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-600">
+                                        <span className="truncate">
+                                          {consultant}
+                                        </span>
+                                        {showMechanic && (
+                                          <span className="text-gray-400">•</span>
+                                        )}
+                                        {showMechanic && (
+                                          <span className="truncate">
+                                            {maybeMechanic}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 shrink-0"
+                                        >
+                                          <EllipsisVertical className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent
+                                        align="end"
+                                        className="w-56"
+                                      >
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            setShareActivity(activity);
+                                            setShareDialogOpen(true);
+                                          }}
+                                        >
+                                          <Share2 className="h-4 w-4 mr-2" />{" "}
+                                          Compartilhar via chat
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => openTaskModal(activity)}
+                                        >
+                                          <ListTodo className="h-4 w-4 mr-2" />{" "}
+                                          Adicionar tarefa (Agenda)
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                  <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
+                                    <span>{activity.status}</span>
+                                    <span>
+                                      {activity.data || activity.prazo || ""}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        }}
-                      </List>
-                    ) : (
-                      <div className="text-xs text-gray-400 text-center py-6">
-                        Sem atividades
-                      </div>
-                    )}
+                            );
+                          }}
+                        </List>
+                      ) : (
+                        <div className="text-xs text-gray-400 text-center py-6">
+                          Sem atividades
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            }
-          )}
+                );
+              }
+            )}
+          </div>
         </div>
       </CardContent>
 
