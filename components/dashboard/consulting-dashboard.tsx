@@ -39,10 +39,12 @@ export function ConsultingDashboard() {
     user?.email?.toLowerCase() === "lucas@novakgouveia.com.br" ||
     user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
 
+  // Flag global: consultores (e exceções por email) veem apenas seus próprios itens
+  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
+  const shouldForceOwn = isConsultor || forceOwnByEmail;
+
   // Dados filtrados baseados no responsável selecionado e no papel do usuário
   const filteredItems = React.useMemo(() => {
-    const isConsultor = user?.role === "consultor" && !user?.isAdmin;
-    const shouldForceOwn = isConsultor || forceOwnByEmail;
     let base = processedItems;
 
     if (shouldForceOwn && user?.name) {
@@ -59,16 +61,63 @@ export function ConsultingDashboard() {
       );
     }
 
+    // Filtro padrão: quando sem filtro manual, mostrar itens do próprio usuário por primeiro nome
+    if (!shouldForceOwn && !filteredByResponsavel && user?.name) {
+      const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
+      return base.filter((item) =>
+        (item.responsavel || "").toString().toLowerCase().includes(ownFirstName)
+      );
+    }
+
     return base;
   }, [
     processedItems,
     filteredByResponsavel,
-    user?.role,
-    user?.isAdmin,
+    shouldForceOwn,
     user?.name,
     user?.email,
-    forceOwnByEmail,
   ]);
+
+  // Função para fazer parse de diferentes formatos de data (copiada do calendário)
+  const parseDate = (dateString: string): Date | null => {
+    if (!dateString) return null;
+
+    // Remove espaços extras
+    const cleanDate = dateString.toString().trim();
+
+    // Tenta diferentes formatos
+    const formats = [
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+      /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
+      /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
+    ];
+
+    for (const format of formats) {
+      const match = cleanDate.match(format);
+      if (match) {
+        if (format.source.includes("yyyy")) {
+          // Formato com ano completo
+          const [, day, month, year] = match;
+          return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+          // Formato com ano abreviado
+          const [, day, month, year] = match;
+          const fullYear =
+            parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
+          return new Date(fullYear, parseInt(month) - 1, parseInt(day));
+        }
+      }
+    }
+
+    // Se for um número (data do Excel)
+    if (!isNaN(Number(cleanDate)) && cleanDate.length > 4) {
+      const excelDate = Number(cleanDate);
+      return new Date((excelDate - 25569) * 86400 * 1000);
+    }
+
+    return null;
+  };
 
   // Recalcular métricas baseadas nos dados filtrados
   const filteredDashboardData = React.useMemo(() => {
@@ -158,47 +207,6 @@ export function ConsultingDashboard() {
     return overdueItems;
   }, [filteredItems]);
 
-  // Função para fazer parse de diferentes formatos de data (copiada do calendário)
-  const parseDate = (dateString: string): Date | null => {
-    if (!dateString) return null;
-
-    // Remove espaços extras
-    const cleanDate = dateString.toString().trim();
-
-    // Tenta diferentes formatos
-    const formats = [
-      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
-      /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
-      /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
-      /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
-    ];
-
-    for (const format of formats) {
-      const match = cleanDate.match(format);
-      if (match) {
-        if (format.source.includes("yyyy")) {
-          // Formato com ano completo
-          const [, day, month, year] = match;
-          return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-        } else {
-          // Formato com ano abreviado
-          const [, day, month, year] = match;
-          const fullYear =
-            parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
-          return new Date(fullYear, parseInt(month) - 1, parseInt(day));
-        }
-      }
-    }
-
-    // Se for um número (data do Excel)
-    if (!isNaN(Number(cleanDate)) && cleanDate.length > 4) {
-      const excelDate = Number(cleanDate);
-      return new Date((excelDate - 25569) * 86400 * 1000);
-    }
-
-    return null;
-  };
-
   useEffect(() => {
     loadSavedData();
   }, [loadSavedData]);
@@ -223,8 +231,8 @@ export function ConsultingDashboard() {
       items = data;
     } else {
       try {
-        // Se há filtro por responsável, usar os dados já filtrados
-        if (filteredByResponsavel) {
+        // Consultores (ou quando há filtro manual) usam os dados já filtrados
+        if (shouldForceOwn || filteredByResponsavel) {
           switch (modalType) {
             case "total":
               items = filteredItems;
@@ -290,7 +298,7 @@ export function ConsultingDashboard() {
               items = [];
           }
         } else {
-          // Se não há filtro, usar dados do banco
+          // Sem filtro: usar dados do banco
           switch (modalType) {
             case "total":
               items = await getDashboardItemsByCategory("total");
@@ -361,7 +369,7 @@ export function ConsultingDashboard() {
         {/* Mobile layout: order -> Departamento -> Calendário -> Distribuições (sem execução) */}
         <div className="block lg:hidden md:hidden space-y-2">
           <DepartamentoInfo
-            processedItems={processedItems}
+            processedItems={filteredItems}
             filteredByResponsavel={filteredByResponsavel}
           />
 
@@ -381,7 +389,7 @@ export function ConsultingDashboard() {
         <div className="hidden md:grid xl:hidden grid-cols-2 gap-2">
           <div className="col-span-1">
             <DepartamentoInfo
-              processedItems={processedItems}
+              processedItems={filteredItems}
               filteredByResponsavel={filteredByResponsavel}
             />
           </div>
@@ -403,7 +411,7 @@ export function ConsultingDashboard() {
           {/* Seção esquerda: Informações do Departamento */}
           <div className="col-span-1 xl:col-span-2">
             <DepartamentoInfo
-              processedItems={processedItems}
+              processedItems={filteredItems}
               filteredByResponsavel={filteredByResponsavel}
               className="h-[520px]"
             />

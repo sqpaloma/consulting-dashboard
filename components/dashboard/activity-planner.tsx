@@ -89,6 +89,13 @@ export function ActivityPlanner({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Flag global: consultores (e exceções por email) veem apenas seus próprios itens
+  const forceOwnByEmail =
+    user?.email?.toLowerCase() === "lucas@novakgouveia.com.br" ||
+    user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
+  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
+  const shouldForceOwn = isConsultor || forceOwnByEmail;
+
   // Função para fazer parse de diferentes formatos de data
   const parseDate = (dateString: string): Date | null => {
     if (!dateString) return null;
@@ -169,10 +176,8 @@ export function ActivityPlanner({
       statusLower.includes("revisao");
 
     if (isRelevant && activity.rawData && activity.rawData.length > 0) {
-      // Busca nos dados brutos se existe um executante/mecânico
       for (const rawItem of activity.rawData) {
         if (rawItem && typeof rawItem === "object") {
-          // Procura por campos que podem conter o nome do mecânico
           const possibleFields = [
             "executante",
             "mecanico",
@@ -183,7 +188,6 @@ export function ActivityPlanner({
           for (const field of possibleFields) {
             const mechanic = (rawItem as any)[field];
             if (mechanic && typeof mechanic === "string" && mechanic.trim()) {
-              // Mapeia consultores para mecânicos baseado no engineer-mapping.ts
               const mechanicName = getMechanicName(
                 activity.responsavel || "",
                 mechanic.trim()
@@ -205,7 +209,6 @@ export function ActivityPlanner({
     const consultantLower = consultant?.toLowerCase() || "";
     const mechanicUpper = mechanicFromData.toUpperCase().trim();
 
-    // Times dos consultores (baseado em engineer-mapping.ts)
     const teams = {
       paloma: [
         "GUSTAVOBEL",
@@ -251,16 +254,14 @@ export function ActivityPlanner({
       relevantTeam = teams.carlinhos;
     }
 
-    // Se o mecânico nos dados está no time do consultor, retorna o nome formatado
     if (relevantTeam.includes(mechanicUpper)) {
-      // Formata o nome (primeira letra maiúscula, resto minúscula)
       return (
         mechanicFromData.charAt(0).toUpperCase() +
         mechanicFromData.slice(1).toLowerCase()
       );
     }
 
-    return consultant; // Retorna o consultor se não encontrar mecânico válido
+    return consultant;
   };
 
   // Carrega dados do banco de dados
@@ -271,7 +272,7 @@ export function ActivityPlanner({
 
       // Converte os dados do banco para o formato do calendário
       let dbItems: CalendarItem[] = items
-        .filter((item) => item.data_registro) // Só inclui itens com data_registro
+        .filter((item) => item.data_registro)
         .map((item) => ({
           id: item.os,
           os: item.os,
@@ -279,17 +280,39 @@ export function ActivityPlanner({
           cliente: item.cliente || "Cliente não informado",
           responsavel: item.responsavel || "Não informado",
           status: item.status,
-          prazo: item.data_registro || "", // Usa data_registro como prazo
+          prazo: item.data_registro || "",
           data: item.data_registro || "",
           rawData: item.raw_data || [],
         }));
 
-      // Aplica filtro por responsável se ativo
-      if (filteredByResponsavel) {
+      // Aplica filtro por consultor logado (quando aplicável)
+      if (shouldForceOwn && user?.name) {
+        const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
+        dbItems = dbItems.filter((item) =>
+          (item.responsavel || "")
+            .toString()
+            .toLowerCase()
+            .includes(ownFirstName)
+        );
+      }
+
+      // Aplica filtro por responsável manual, se ativo e não estiver forçando próprio
+      if (!shouldForceOwn && filteredByResponsavel) {
         dbItems = dbItems.filter(
           (item) =>
             item.responsavel &&
             item.responsavel.trim() === filteredByResponsavel
+        );
+      }
+
+      // Filtro padrão: sem filtro manual, exibir itens do próprio usuário
+      if (!shouldForceOwn && !filteredByResponsavel && user?.name) {
+        const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
+        dbItems = dbItems.filter((item) =>
+          (item.responsavel || "")
+            .toString()
+            .toLowerCase()
+            .includes(ownFirstName)
         );
       }
 
@@ -304,10 +327,10 @@ export function ActivityPlanner({
   // Carrega dados do banco quando o componente monta ou quando o filtro muda
   useEffect(() => {
     loadDatabaseItems();
-  }, [filteredByResponsavel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredByResponsavel, shouldForceOwn, user?.name, user?.email]);
 
   const today = new Date();
-  // Converte para horário de Brasília (UTC-3)
   const todayBrasilia = new Date(
     today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
   );

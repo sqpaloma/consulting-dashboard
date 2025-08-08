@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { loadDashboardData } from "@/lib/dashboard-supabase-client";
+import { useAuth } from "@/hooks/use-auth";
 
 interface CalendarItem {
   id: string;
@@ -29,6 +30,7 @@ export function DashboardCalendar({
   onDateClick,
   filteredByResponsavel,
 }: DashboardCalendarProps) {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [calendarItems, setCalendarItems] = useState<{
@@ -36,6 +38,13 @@ export function DashboardCalendar({
   }>({});
   const [databaseItems, setDatabaseItems] = useState<CalendarItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Flag global: consultores (e exceções por email) veem apenas seus próprios itens
+  const forceOwnByEmail =
+    user?.email?.toLowerCase() === "lucas@novakgouveia.com.br" ||
+    user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
+  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
+  const shouldForceOwn = isConsultor || forceOwnByEmail;
 
   // Carrega dados do banco de dados
   const loadDatabaseItems = async () => {
@@ -58,12 +67,34 @@ export function DashboardCalendar({
           rawData: item.raw_data || [],
         }));
 
-      // Aplica filtro por responsável se ativo
-      if (filteredByResponsavel) {
+      // Aplica filtro por consultor logado (quando aplicável)
+      if (shouldForceOwn && user?.name) {
+        const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
+        dbItems = dbItems.filter((item) =>
+          (item.responsavel || "")
+            .toString()
+            .toLowerCase()
+            .includes(ownFirstName)
+        );
+      }
+
+      // Aplica filtro por responsável manual, se ativo e não estiver forçando próprio
+      if (!shouldForceOwn && filteredByResponsavel) {
         dbItems = dbItems.filter(
           (item) =>
             item.responsavel &&
             item.responsavel.trim() === filteredByResponsavel
+        );
+      }
+
+      // Filtro padrão: sem filtro manual, exibir itens do próprio usuário
+      if (!shouldForceOwn && !filteredByResponsavel && user?.name) {
+        const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
+        dbItems = dbItems.filter((item) =>
+          (item.responsavel || "")
+            .toString()
+            .toLowerCase()
+            .includes(ownFirstName)
         );
       }
 
@@ -77,7 +108,8 @@ export function DashboardCalendar({
   // Carrega dados do banco quando o componente monta ou quando o filtro muda
   useEffect(() => {
     loadDatabaseItems();
-  }, [filteredByResponsavel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredByResponsavel, shouldForceOwn, user?.name, user?.email]);
 
   // Processa os itens para extrair datas de prazo
   useEffect(() => {
