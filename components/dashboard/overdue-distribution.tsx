@@ -64,7 +64,7 @@ export default function OverdueDistribution({
 
   if (chartData.length === 0) {
     return (
-      <Card className="bg-white h-[250px] md:h-[500px] lg:h-[250px] flex flex-col">
+      <Card className="bg-white h-full flex flex-col overflow-hidden">
         <CardHeader className="pb-1">
           <CardTitle className="text-sm font-medium">
             Distribuição de Atrasos
@@ -81,15 +81,15 @@ export default function OverdueDistribution({
   }
 
   return (
-    <Card className="bg-white h-[250px] md:h-[500px] lg:h-[250px] flex flex-col">
+    <Card className="bg-white h-full flex flex-col overflow-hidden">
       <CardHeader className="pb-1">
         <CardTitle className="text-sm font-medium">
           Distribuição de Atrasos
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex">
+      <CardContent className="flex-1 flex flex-col lg:flex-row">
         <div className="flex-1 flex items-center justify-center">
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={200} minWidth={240}>
             <PieChart>
               <Pie
                 data={chartData}
@@ -111,7 +111,7 @@ export default function OverdueDistribution({
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="w-1/3 flex flex-col justify-center space-y-2 pl-4">
+        <div className="w-full lg:w-1/3 flex flex-col justify-center space-y-2 lg:pl-4 pt-4 lg:pt-0">
           {chartData.map((item, index) => (
             <div key={item.name} className="flex items-center space-x-2">
               <div

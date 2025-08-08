@@ -90,6 +90,25 @@ export function ResponsiveLayout({
   const { signOut } = useAuth();
   const { isAdmin, user } = useAdmin();
 
+  // Treat everything below Tailwind's xl (1280px) as mobile/tablet layout
+  const [isNarrowScreen, setIsNarrowScreen] = React.useState(false);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 1279px)");
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      // Support initial set via MediaQueryList as well
+      // @ts-expect-error - Event vs List typing
+      const matches = "matches" in e ? e.matches : e.currentTarget?.matches;
+      setIsNarrowScreen(Boolean(matches));
+    };
+    // Initial value
+    setIsNarrowScreen(mql.matches);
+    // Subscribe to changes
+    const listener = (ev: MediaQueryListEvent) => handleChange(ev);
+    mql.addEventListener("change", listener);
+    return () => mql.removeEventListener("change", listener);
+  }, []);
+
   const handleLogout = () => {
     signOut();
     window.location.href = "/";
@@ -129,7 +148,8 @@ export function ResponsiveLayout({
       : []),
   ];
 
-  if (isMobile) {
+  // Use the mobile-friendly sidebar layout on mobile and tablets
+  if (isMobile || isNarrowScreen) {
     return (
       <SidebarProvider>
         <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 flex w-full">
@@ -210,7 +230,7 @@ export function ResponsiveLayout({
           <SidebarInset className="flex-1 bg-transparent">
             <div className="p-4">
               <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header simplificado para mobile - apenas logo e hamburger */}
+                {/* Header simplificado para mobile/tablet - hamburger + logo */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     {showBack && (
@@ -218,7 +238,7 @@ export function ResponsiveLayout({
                         <ArrowLeft className="h-5 w-5 text-white" />
                       </Link>
                     )}
-                    {/* Botão hamburger para mobile */}
+                    {/* Botão hamburger para mobile/tablet */}
                     <HamburgerMenuButton />
                     {/* Logo */}
                     <div className="w-12 h-12 flex items-center justify-center relative">

@@ -103,7 +103,7 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
   };
 
   return (
-    <Card className="bg-white h-[250px] flex flex-col">
+    <Card className="bg-white h-[250px] flex flex-col overflow-hidden">
       <CardHeader className="pb-1">
         <CardTitle className="text-sm text-gray-800 flex items-center">
           <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
@@ -115,7 +115,7 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex">
+      <CardContent className="flex-1 flex flex-col lg:flex-row">
         {chartData.length > 0 ? (
           <>
             {/* Gráfico de Pizza */}
@@ -141,7 +141,7 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
             </div>
 
             {/* Legenda */}
-            <div className="w-1/3 flex flex-col justify-center space-y-2 pl-4">
+            <div className="w-full lg:w-1/3 flex flex-col justify-center space-y-2 lg:pl-4 pt-4 lg:pt-0">
               {chartData.map((item, index) => (
                 <div key={item.name} className="flex items-center space-x-2">
                   <div

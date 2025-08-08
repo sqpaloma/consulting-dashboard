@@ -447,8 +447,12 @@ export function ConsultingDashboard() {
           />
 
           <div className="space-y-2">
-            <DistributionPanel dashboardData={filteredDashboardData} />
-            <OverdueDistribution overdueItems={overdueItems} />
+            <div className="h-[250px]">
+              <DistributionPanel dashboardData={filteredDashboardData} />
+            </div>
+            <div className="h-[250px]">
+              <OverdueDistribution overdueItems={overdueItems} />
+            </div>
           </div>
         </div>
 
@@ -468,8 +472,12 @@ export function ConsultingDashboard() {
             />
           </div>
           <div className="col-span-2 grid grid-cols-2 gap-2">
-            <DistributionPanel dashboardData={filteredDashboardData} />
-            <OverdueDistribution overdueItems={overdueItems} />
+            <div className="h-[250px]">
+              <DistributionPanel dashboardData={filteredDashboardData} />
+            </div>
+            <div className="h-[250px]">
+              <OverdueDistribution overdueItems={overdueItems} />
+            </div>
           </div>
         </div>
 
