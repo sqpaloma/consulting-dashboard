@@ -7,6 +7,30 @@ import { loadDashboardData } from "@/lib/dashboard-supabase-client";
 import { useActivityStorage } from "./hooks/use-activity-storage";
 import { useActivityData } from "./hooks/use-activity-data";
 import { ActivityHeader } from "./activity-header";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { EllipsisVertical, Share2, ListTodo } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useChat, useSearchUsers } from "@/hooks/use-chat";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { TodoForm } from "@/components/kanban/todo-form";
 
 import { CalendarItem } from "./types";
 
@@ -22,6 +46,22 @@ export function ActivityPlanner({
   const [isLoading, setIsLoading] = useState(false);
   const [databaseItems, setDatabaseItems] = useState<CalendarItem[]>([]);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareActivity, setShareActivity] = useState<CalendarItem | null>(null);
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [shareMessage, setShareMessage] = useState("");
+  const [redirectToChat, setRedirectToChat] = useState(true);
+  const [todoModalOpen, setTodoModalOpen] = useState(false);
+  const [todoInitialData, setTodoInitialData] = useState<
+    | {
+        title: string;
+        description: string;
+        responsible: string;
+        scheduledDate: string;
+      }
+    | undefined
+  >(undefined);
 
   const { completedActivities, setCompletedActivities } = useActivityStorage();
   const { todayActivities, getStatusColor } = useActivityData(
@@ -29,6 +69,17 @@ export function ActivityPlanner({
     databaseItems,
     completedActivities
   );
+
+  const { user } = useAuth();
+  const { sendMessage, createDirectConversation } = useChat(
+    user?.userId as any
+  );
+  const searchResults = useSearchUsers(
+    userSearch,
+    user?.userId as any,
+    8
+  ) as any;
+  const createTodo = useMutation(api.todos.createTodo);
 
   useEffect(() => {
     const onResize = () =>
@@ -105,15 +156,19 @@ export function ActivityPlanner({
     return weekActivities;
   };
 
-  // Função para obter o responsável real quando em execução
+  // Função para obter o responsável real quando em execução/analise
   const getDisplayResponsavel = (activity: CalendarItem) => {
     const statusLower = activity.status?.toLowerCase() || "";
-    const isEmExecucao =
+    const isRelevant =
       statusLower.includes("execução") ||
       statusLower.includes("execucao") ||
-      statusLower.includes("andamento");
+      statusLower.includes("andamento") ||
+      statusLower.includes("análise") ||
+      statusLower.includes("analise") ||
+      statusLower.includes("revisão") ||
+      statusLower.includes("revisao");
 
-    if (isEmExecucao && activity.rawData && activity.rawData.length > 0) {
+    if (isRelevant && activity.rawData && activity.rawData.length > 0) {
       // Busca nos dados brutos se existe um executante/mecânico
       for (const rawItem of activity.rawData) {
         if (rawItem && typeof rawItem === "object") {
@@ -259,6 +314,83 @@ export function ActivityPlanner({
 
   const weekActivities = getWeekActivities();
 
+  const getCurrentWeek = (date: Date) => {
+    const current = new Date(date);
+    const day = current.getDay();
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(current.setDate(diff));
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+    return { start: monday, end: friday };
+  };
+
+  const formatWeekRange = (start: Date, end: Date) => {
+    const startStr = start.toLocaleDateString("pt-BR", {
+      day: "numeric",
+      month: "short",
+      timeZone: "America/Sao_Paulo",
+    });
+    const endStr = end.toLocaleDateString("pt-BR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "America/Sao_Paulo",
+    });
+    return `${startStr} - ${endStr}`;
+  };
+
+  const handleShare = async () => {
+    if (!shareActivity || !selectedUserId) return;
+    try {
+      const conversationId = await createDirectConversation(
+        selectedUserId as any
+      );
+      if (!conversationId) return;
+      const { start, end } = getCurrentWeek(todayBrasilia);
+      const weekStr = formatWeekRange(start, end);
+      const details = `OS ${shareActivity.os} - ${shareActivity.titulo}\nCliente: ${shareActivity.cliente}\nResponsável: ${shareActivity.responsavel}\nStatus: ${shareActivity.status}\nSemana: ${weekStr}`;
+      const content = `${shareMessage.trim() ? shareMessage.trim() + "\n\n" : ""}${details}`;
+      await sendMessage(conversationId as any, content);
+      setShareDialogOpen(false);
+      setShareActivity(null);
+      setUserSearch("");
+      setSelectedUserId(null);
+      setShareMessage("");
+      if (redirectToChat) {
+        window.location.href = "/chat";
+      }
+    } catch (e) {
+      // noop
+    }
+  };
+
+  const openTaskModal = (activity: CalendarItem) => {
+    const scheduled = (activity.data || activity.prazo || "").slice(0, 10);
+    setTodoInitialData({
+      title: `Agenda: OS ${activity.os} - ${activity.titulo}`,
+      description: `Cliente: ${activity.cliente}`,
+      responsible: activity.responsavel || "",
+      scheduledDate: scheduled,
+    });
+    setTodoModalOpen(true);
+  };
+
+  const handleSubmitTodo = async (formData: {
+    title: string;
+    description: string;
+    responsible: string;
+    scheduledDate: string;
+  }) => {
+    await createTodo({
+      title: formData.title,
+      description:
+        `${formData.description || ""}\nResponsável: ${formData.responsible}\nData Agendada: ${formData.scheduledDate}`.trim(),
+      priority: "medium",
+      category: "Agenda",
+      dueDate: formData.scheduledDate,
+    } as any);
+  };
+
   return (
     <Card className="bg-white h-[650px] flex flex-col">
       <ActivityHeader
@@ -317,7 +449,7 @@ export function ActivityPlanner({
                         height={isDesktop ? 400 : 260}
                         width={"100%"}
                         itemCount={activitiesForDay.length}
-                        itemSize={90}
+                        itemSize={100}
                         itemData={{
                           activities: activitiesForDay,
                           completed: completedActivities,
@@ -328,24 +460,84 @@ export function ActivityPlanner({
                           const isCompleted = (
                             data.completed as Set<string>
                           ).has(activity.id);
+                          const consultant = activity.responsavel || "—";
+                          const maybeMechanic =
+                            getDisplayResponsavel(activity) || "—";
+                          const statusLower =
+                            activity.status?.toLowerCase() || "";
+                          const showMechanic =
+                            (statusLower.includes("exec") ||
+                              statusLower.includes("análise") ||
+                              statusLower.includes("analise") ||
+                              statusLower.includes("revis")) &&
+                            maybeMechanic &&
+                            maybeMechanic !== consultant;
                           return (
                             <div style={style}>
                               <div
                                 className={`p-2 rounded-md text-xs border mx-1 mb-2 ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : getStatusColor(activity.status)}`}
                               >
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium text-gray-800 truncate">
-                                    {activity.titulo || activity.os}
-                                  </span>
-                                  <span className="ml-2 text-[10px] text-gray-500">
-                                    {activity.cliente}
-                                  </span>
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium text-gray-800 truncate">
+                                        {activity.titulo || activity.os}
+                                      </span>
+                                    </div>
+                                    <div className="mt-1 text-[11px] text-gray-600 truncate">
+                                      {activity.cliente}
+                                    </div>
+                                    <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-600">
+                                      <span className="truncate">
+                                        {consultant}
+                                      </span>
+                                      {showMechanic && (
+                                        <span className="text-gray-400">•</span>
+                                      )}
+                                      {showMechanic && (
+                                        <span className="truncate">
+                                          {maybeMechanic}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 shrink-0"
+                                      >
+                                        <EllipsisVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                      align="end"
+                                      className="w-56"
+                                    >
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setShareActivity(activity);
+                                          setShareDialogOpen(true);
+                                        }}
+                                      >
+                                        <Share2 className="h-4 w-4 mr-2" />{" "}
+                                        Compartilhar via chat
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => openTaskModal(activity)}
+                                      >
+                                        <ListTodo className="h-4 w-4 mr-2" />{" "}
+                                        Adicionar tarefa (Agenda)
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
                                 <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
-                                  <span>
-                                    {getDisplayResponsavel(activity) || "—"}
-                                  </span>
                                   <span>{activity.status}</span>
+                                  <span>
+                                    {activity.data || activity.prazo || ""}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -364,6 +556,72 @@ export function ActivityPlanner({
           )}
         </div>
       </CardContent>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Compartilhar via chat</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              placeholder="Escreva uma mensagem (opcional)"
+              value={shareMessage}
+              onChange={(e) => setShareMessage(e.target.value)}
+              className="min-h-24"
+            />
+            <Input
+              placeholder="Buscar usuário..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
+            <div className="max-h-56 overflow-auto border rounded">
+              {(Array.isArray(searchResults) ? searchResults : []).map(
+                (u: any) => (
+                  <button
+                    key={u.id || u._id}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${selectedUserId === u._id ? "bg-gray-100" : ""}`}
+                    onClick={() => setSelectedUserId(u.id || u._id)}
+                  >
+                    {u.name}{" "}
+                    <span className="text-xs text-gray-500">{u.email}</span>
+                  </button>
+                )
+              )}
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <Switch
+                id="redirect-chat"
+                checked={redirectToChat}
+                onCheckedChange={setRedirectToChat}
+              />
+              <Label htmlFor="redirect-chat" className="text-sm text-gray-600">
+                Abrir página de chat após enviar
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleShare}
+              disabled={!selectedUserId || !shareActivity}
+            >
+              Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de tarefa */}
+      <TodoForm
+        isOpen={todoModalOpen}
+        onClose={() => setTodoModalOpen(false)}
+        onSubmit={handleSubmitTodo}
+        initialData={todoInitialData}
+        title="Nova Tarefa da Agenda"
+      />
     </Card>
   );
 }
