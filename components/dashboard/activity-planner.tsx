@@ -449,7 +449,7 @@ export function ActivityPlanner({
                         height={isDesktop ? 400 : 260}
                         width={"100%"}
                         itemCount={activitiesForDay.length}
-                        itemSize={100}
+                        itemSize={108}
                         itemData={{
                           activities: activitiesForDay,
                           completed: completedActivities,
