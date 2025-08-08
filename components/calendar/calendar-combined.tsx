@@ -14,7 +14,7 @@ export function CalendarCombined() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-2 items-start">
         {/* Chat com mais altura para caber completo */}
         <div className="min-h-[75vh] 2xl:min-h-[80vh] xl:col-span-2">
           <ChatEmbedded />
