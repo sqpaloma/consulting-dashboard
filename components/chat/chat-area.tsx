@@ -50,6 +50,16 @@ export function ChatArea({
     return () => ro.disconnect();
   }, []);
 
+  // Rolar para a última mensagem sempre que a lista mudar
+  useEffect(() => {
+    try {
+      const itemCount = messages?.length || 0;
+      if (itemCount > 0 && listRef.current?.scrollToItem) {
+        listRef.current.scrollToItem(itemCount - 1, "end");
+      }
+    } catch {}
+  }, [messages]);
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -132,7 +142,6 @@ export function ChatArea({
           onCreateTodoFromMessage={onCreateTodoFromMessage}
           listRef={listRef}
           height={listHeight}
-          itemSize={96}
         />
       </div>
 

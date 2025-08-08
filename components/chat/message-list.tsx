@@ -1,6 +1,7 @@
 "use client";
 
-import { FixedSizeList as VirtualList, ListOnScrollProps } from "react-window";
+import { useRef } from "react";
+import { VariableSizeList as VirtualList } from "react-window";
 import { MessageItem } from "./message-item";
 
 interface MessageListProps {
@@ -9,9 +10,8 @@ interface MessageListProps {
   onCreateTodoFromMessage: (messageId: string, content: string) => void;
   // Optional ref to control scroll (scrollToItem)
   listRef?: React.Ref<any>;
-  // Optional container height and item size
+  // Container height
   height?: number;
-  itemSize?: number;
 }
 
 export function MessageList({
@@ -20,29 +20,48 @@ export function MessageList({
   onCreateTodoFromMessage,
   listRef,
   height = 450,
-  itemSize = 96,
 }: MessageListProps) {
-  const itemCount = messages?.length || 0;
+  const itemHeightsRef = useRef<number[]>([]);
+  const GAP_PX = 12; // espaçamento fixo entre mensagens
+
+  const getItemSize = (index: number) => itemHeightsRef.current[index] ?? 100;
 
   return (
     <VirtualList
       ref={listRef as any}
       height={height}
       width={"100%"}
-      itemCount={itemCount}
-      itemSize={itemSize}
+      itemCount={messages?.length || 0}
+      itemSize={getItemSize}
+      overscanCount={8}
     >
       {({ index, style }) => {
         const message = messages[index];
+
+        const setRowRef = (el: HTMLDivElement | null) => {
+          if (!el) return;
+          const measured = Math.ceil(el.getBoundingClientRect().height);
+          const size = measured + GAP_PX; // adiciona gap fixo
+          if (itemHeightsRef.current[index] !== size) {
+            itemHeightsRef.current[index] = size;
+            const refObj = listRef as any;
+            if (refObj?.current?.resetAfterIndex) {
+              refObj.current.resetAfterIndex(index);
+            }
+          }
+        };
+
         return (
           <div style={style} key={message?.id || index} className="px-4">
-            <MessageItem
-              message={message}
-              onDelete={() => onDeleteMessage(message.id)}
-              onCreateTodo={() =>
-                onCreateTodoFromMessage(message.id, message.content)
-              }
-            />
+            <div ref={setRowRef}>
+              <MessageItem
+                message={message}
+                onDelete={() => onDeleteMessage(message.id)}
+                onCreateTodo={() =>
+                  onCreateTodoFromMessage(message.id, message.content)
+                }
+              />
+            </div>
           </div>
         );
       }}

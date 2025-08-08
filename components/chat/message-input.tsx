@@ -62,10 +62,15 @@ export function MessageInput({
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={onKeyPress}
+            className="text-gray-800 placeholder:text-gray-400 bg-white"
           />
         </div>
-        <Button onClick={onSendMessage} size="icon">
-          <Send className="h-4 w-4" />
+        <Button
+          onClick={onSendMessage}
+          size="icon"
+          className="bg-white text-white hover:bg-white/90"
+        >
+          <Send className="h-4 w-4 text-blue-600" />
         </Button>
       </div>
     </div>
