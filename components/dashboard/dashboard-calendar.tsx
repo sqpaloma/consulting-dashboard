@@ -45,6 +45,8 @@ export function DashboardCalendar({
     user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
   const isConsultor = user?.role === "consultor" && !user?.isAdmin;
   const shouldForceOwn = isConsultor || forceOwnByEmail;
+  const isGiovanniManager =
+    user?.email?.toLowerCase() === "giovanni.gamero@novakgouveia.com.br";
 
   // Carrega dados do banco de dados
   const loadDatabaseItems = async () => {
@@ -88,7 +90,13 @@ export function DashboardCalendar({
       }
 
       // Filtro padrão: sem filtro manual, exibir itens do próprio usuário
-      if (!shouldForceOwn && !filteredByResponsavel && user?.name) {
+      // EXCEÇÃO: Giovanni (gerente) vê o geral por padrão
+      if (
+        !shouldForceOwn &&
+        !filteredByResponsavel &&
+        user?.name &&
+        !isGiovanniManager
+      ) {
         const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
         dbItems = dbItems.filter((item) =>
           (item.responsavel || "")

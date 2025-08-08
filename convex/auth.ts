@@ -32,7 +32,12 @@ export const login = mutation({
       lastLogin: Date.now(),
     });
 
-    const derivedRole = user.role || (user.isAdmin ? "admin" : "consultor");
+    const isGiovanni =
+      (user.email || "").toLowerCase() ===
+      "giovanni.gamero@novakgouveia.com.br";
+    const derivedRole = isGiovanni
+      ? "gerente"
+      : user.role || (user.isAdmin ? "admin" : "consultor");
 
     return {
       userId: user._id,
@@ -73,7 +78,9 @@ export const createInitialUser = mutation({
 
     // Definir papel e admin - Paloma é sempre admin
     const isPaloma = args.email === "paloma.silva@novakgouveia.com.br";
-    const role = args.role || (isPaloma ? "admin" : "consultor");
+    const isGiovanni = args.email === "giovanni.gamero@novakgouveia.com.br";
+    const role =
+      args.role || (isPaloma ? "admin" : isGiovanni ? "gerente" : "consultor");
     const isAdmin = isPaloma || role === "admin" || args.isAdmin || false;
 
     // Criar usuário
@@ -256,7 +263,10 @@ export const createUserByAdmin = mutation({
 
     // Definir papel e admin - Paloma é sempre admin
     const isPaloma = args.email === "paloma.silva@novakgouveia.com.br";
-    const role = args.role || (args.isAdmin ? "admin" : "consultor");
+    const isGiovanni = args.email === "giovanni.gamero@novakgouveia.com.br";
+    const role =
+      args.role ||
+      (args.isAdmin ? "admin" : isGiovanni ? "gerente" : "consultor");
     const isAdmin = isPaloma || role === "admin" || args.isAdmin || false;
 
     // Criar usuário

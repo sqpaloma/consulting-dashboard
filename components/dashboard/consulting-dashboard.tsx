@@ -45,6 +45,9 @@ export function ConsultingDashboard() {
   const isConsultor = user?.role === "consultor" && !user?.isAdmin;
   const shouldForceOwn = isConsultor || forceOwnByEmail;
 
+  const isGiovanniManager =
+    user?.email?.toLowerCase() === "giovanni.gamero@novakgouveia.com.br";
+
   // Dados filtrados baseados no responsável selecionado e no papel do usuário
   const filteredItems = React.useMemo(() => {
     let base = processedItems;
@@ -64,7 +67,13 @@ export function ConsultingDashboard() {
     }
 
     // Filtro padrão: quando sem filtro manual, mostrar itens do próprio usuário por primeiro nome
-    if (!shouldForceOwn && !filteredByResponsavel && user?.name) {
+    // EXCEÇÃO: Giovanni (gerente) vê o geral por padrão
+    if (
+      !shouldForceOwn &&
+      !filteredByResponsavel &&
+      user?.name &&
+      !isGiovanniManager
+    ) {
       const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
       return base.filter((item) =>
         (item.responsavel || "").toString().toLowerCase().includes(ownFirstName)
@@ -78,6 +87,7 @@ export function ConsultingDashboard() {
     shouldForceOwn,
     user?.name,
     user?.email,
+    isGiovanniManager,
   ]);
 
   // Função para fazer parse de diferentes formatos de data (copiada do calendário)
