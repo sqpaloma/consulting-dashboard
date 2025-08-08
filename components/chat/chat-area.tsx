@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Send,
   MessageSquare,
@@ -37,6 +37,19 @@ export function ChatArea({
   onCreateTodoFromMessage,
   messagesEndRef,
 }: ChatAreaProps) {
+  const listRef = useRef<any>(null);
+  const listContainerRef = useRef<HTMLDivElement | null>(null);
+  const [listHeight, setListHeight] = useState(400);
+
+  useEffect(() => {
+    if (!listContainerRef.current) return;
+    const update = () => setListHeight(listContainerRef.current!.clientHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(listContainerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -46,7 +59,7 @@ export function ChatArea({
 
   if (!selectedConversationData) {
     return (
-      <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col max-h-[700px]">
+      <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -65,7 +78,7 @@ export function ChatArea({
   }
 
   return (
-    <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col max-h-[700px]">
+    <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col">
       {/* Chat Header fixo */}
       <CardHeader className="sticky top-0 z-10 pb-3 border-b border-white/10 bg-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/10">
         <div className="flex items-center justify-between">
@@ -111,13 +124,17 @@ export function ChatArea({
         </div>
       </CardHeader>
 
-      {/* Messages Area */}
-      <MessageList
-        messages={messages}
-        onDeleteMessage={onDeleteMessage}
-        onCreateTodoFromMessage={onCreateTodoFromMessage}
-        messagesEndRef={messagesEndRef}
-      />
+      {/* Messages Area - takes remaining height */}
+      <div ref={listContainerRef} className="flex-1 overflow-hidden">
+        <MessageList
+          messages={messages}
+          onDeleteMessage={onDeleteMessage}
+          onCreateTodoFromMessage={onCreateTodoFromMessage}
+          listRef={listRef}
+          height={listHeight}
+          itemSize={96}
+        />
+      </div>
 
       {/* Message Input */}
       <MessageInput

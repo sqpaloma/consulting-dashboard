@@ -27,7 +27,11 @@ import {
 } from "./todo-utils";
 import { useAuth } from "@/hooks/use-auth";
 
-export function KanbanMain() {
+interface KanbanMainProps {
+  showNotes?: boolean;
+}
+
+export function KanbanMain({ showNotes = true }: KanbanMainProps) {
   const [isAddingTodo, setIsAddingTodo] = useState(false);
   const [editingTodo, setEditingTodo] = useState<any>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -295,12 +299,14 @@ export function KanbanMain() {
       </div>
 
       {/* Seção de Notas */}
-      <NotesSection
-        notes={notes || []}
-        onCreateNote={handleCreateNote}
-        onUpdateNote={handleUpdateNote}
-        onDeleteNote={handleDeleteNote}
-      />
+      {showNotes && (
+        <NotesSection
+          notes={notes || []}
+          onCreateNote={handleCreateNote}
+          onUpdateNote={handleUpdateNote}
+          onDeleteNote={handleDeleteNote}
+        />
+      )}
 
       {/* Formulário para criar/editar tarefa */}
       <TodoForm

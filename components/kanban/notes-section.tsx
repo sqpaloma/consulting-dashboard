@@ -37,73 +37,81 @@ export function NotesSection({
   };
 
   return (
-    <div className="mt-8">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-white">Notas</h3>
-        <Button variant="outline" onClick={() => setIsAddingNote(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Nota
-        </Button>
-      </div>
+    <Card className="bg-white/10 border-white/20 text-white">
+      <CardHeader className="pb-3 border-b border-white/10">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl text-white">Bloco de Notas</CardTitle>
+          <Button
+            variant="outline"
+            onClick={() => setIsAddingNote(true)}
+            className="bg-white text-gray-800 hover:bg-white/90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Nota
+          </Button>
+        </div>
+      </CardHeader>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {notes?.map((note) => (
-          <Card key={note._id} className="h-fit">
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-base">{note.title}</CardTitle>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditNote(note)}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Edit3 className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDeleteNote(note._id)}
-                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+      <CardContent className="pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {notes?.map((note) => (
+            <Card key={note._id} className="h-fit">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-base">{note.title}</CardTitle>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditNote(note)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteNote(note._id)}
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                {note.content}
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                {new Date(note.createdAt).toLocaleDateString("pt-BR")}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {note.content}
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  {new Date(note.createdAt).toLocaleDateString("pt-BR")}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-      {/* Formulário para criar nota */}
-      <NoteForm
-        isOpen={isAddingNote}
-        onClose={() => setIsAddingNote(false)}
-        onSubmit={onCreateNote}
-        title="Criar Nova Nota"
-      />
+        {/* Formulário para criar nota */}
+        <NoteForm
+          isOpen={isAddingNote}
+          onClose={() => setIsAddingNote(false)}
+          onSubmit={onCreateNote}
+          title="Criar Nova Nota"
+        />
 
-      {/* Formulário para editar nota */}
-      <NoteForm
-        isOpen={!!editingNote}
-        onClose={() => setEditingNote(null)}
-        onSubmit={handleUpdateNote}
-        initialData={
-          editingNote
-            ? { title: editingNote.title, content: editingNote.content }
-            : undefined
-        }
-        title="Editar Nota"
-      />
-    </div>
+        {/* Formulário para editar nota */}
+        <NoteForm
+          isOpen={!!editingNote}
+          onClose={() => setEditingNote(null)}
+          onSubmit={handleUpdateNote}
+          initialData={
+            editingNote
+              ? { title: editingNote.title, content: editingNote.content }
+              : undefined
+          }
+          title="Editar Nota"
+        />
+      </CardContent>
+    </Card>
   );
 }

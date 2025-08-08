@@ -1,39 +1,51 @@
 "use client";
 
-import { Trash2, ListTodo } from "lucide-react";
+import { FixedSizeList as VirtualList, ListOnScrollProps } from "react-window";
 import { MessageItem } from "./message-item";
 
 interface MessageListProps {
   messages: any[];
   onDeleteMessage: (id: string) => void;
   onCreateTodoFromMessage: (messageId: string, content: string) => void;
-  messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  // Optional ref to control scroll (scrollToItem)
+  listRef?: React.Ref<any>;
+  // Optional container height and item size
+  height?: number;
+  itemSize?: number;
 }
 
 export function MessageList({
   messages,
   onDeleteMessage,
   onCreateTodoFromMessage,
-  messagesEndRef,
+  listRef,
+  height = 450,
+  itemSize = 96,
 }: MessageListProps) {
+  const itemCount = messages?.length || 0;
+
   return (
-    <div
-      id="chat-messages-container"
-      className="overflow-y-auto p-4 h-[450px] bg-transparent"
+    <VirtualList
+      ref={listRef as any}
+      height={height}
+      width={"100%"}
+      itemCount={itemCount}
+      itemSize={itemSize}
     >
-      <div className="space-y-4">
-        {messages?.map((message: any) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            onDelete={() => onDeleteMessage(message.id)}
-            onCreateTodo={() =>
-              onCreateTodoFromMessage(message.id, message.content)
-            }
-          />
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-    </div>
+      {({ index, style }) => {
+        const message = messages[index];
+        return (
+          <div style={style} key={message?.id || index} className="px-4">
+            <MessageItem
+              message={message}
+              onDelete={() => onDeleteMessage(message.id)}
+              onCreateTodo={() =>
+                onCreateTodoFromMessage(message.id, message.content)
+              }
+            />
+          </div>
+        );
+      }}
+    </VirtualList>
   );
 }
