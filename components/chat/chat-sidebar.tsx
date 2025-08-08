@@ -45,10 +45,10 @@ export function ChatSidebar({
   const others = sortedConversations.filter((c) => !isPinned(c));
 
   return (
-    <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col max-h-[700px] rounded-xl">
+    <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col rounded-xl">
       <CardHeader className="sticky top-0 z-10 pb-3 flex-shrink-0 border-b border-white/10 bg-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/10">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg text-white">Conversas</CardTitle>
+          <CardTitle className="text-xl text-white">Conversas</CardTitle>
           <Button
             variant="ghost"
             size="icon"

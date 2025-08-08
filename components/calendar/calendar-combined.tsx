@@ -15,10 +15,11 @@ export function CalendarCombined() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
-        <div className="min-h-[60vh] xl:col-span-2">
+        {/* Chat com mais altura para caber completo */}
+        <div className="min-h-[75vh] 2xl:min-h-[80vh] xl:col-span-2">
           <ChatEmbedded />
         </div>
-        <div className="min-h-[60vh] xl:col-span-1">
+        <div className="min-h-[75vh] 2xl:min-h-[80vh] xl:col-span-1">
           <NotesSection
             notes={notes || []}
             onCreateNote={(data) => createNote(data)}

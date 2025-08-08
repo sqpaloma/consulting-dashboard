@@ -59,7 +59,7 @@ export function ChatArea({
 
   if (!selectedConversationData) {
     return (
-      <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col">
+      <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col rounded-xl">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -78,9 +78,9 @@ export function ChatArea({
   }
 
   return (
-    <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col">
+    <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col rounded-xl">
       {/* Chat Header fixo */}
-      <CardHeader className="sticky top-0 z-10 pb-3 border-b border-white/10 bg-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/10">
+      <CardHeader className="sticky top-0 z-10 pb-3 flex-shrink-0 border-b border-white/10 bg-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">

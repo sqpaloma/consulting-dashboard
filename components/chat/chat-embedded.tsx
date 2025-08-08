@@ -192,7 +192,7 @@ export function ChatEmbedded() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[60vh] overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full overflow-hidden">
       <div className="lg:col-span-1">
         <ChatSidebar
           conversations={(conversations as any[]) || []}
