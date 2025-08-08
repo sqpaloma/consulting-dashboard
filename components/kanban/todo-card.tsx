@@ -34,7 +34,7 @@ export function TodoCard({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-  };
+  } as React.CSSProperties;
 
   const { responsible, scheduledDate, cleanDescription } =
     extractInfoFromDescription(todo.description || "");
@@ -47,10 +47,10 @@ export function TodoCard({
       style={style}
       {...attributes}
       {...listeners}
-      className="rounded-lg border border-white/30 bg-white/25 p-3 mb-2 text-white cursor-grab active:cursor-grabbing hover:bg-white/30 transition-colors"
+      className="rounded-lg border border-white/30 bg-white/25 p-3 text-white cursor-grab active:cursor-grabbing hover:bg-white/30 transition-colors h-[96px]"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-2 flex-1">
+      <div className="flex items-start justify-between h-full">
+        <div className="flex items-start gap-2 flex-1 min-w-0">
           <Checkbox
             checked={isCompleted}
             onCheckedChange={() =>
@@ -58,11 +58,12 @@ export function TodoCard({
             }
             className="mt-1 border-white/40 data-[state=checked]:bg-green-500"
           />
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3
-              className={`font-medium text-sm break-words ${
+              className={`font-medium text-sm break-words truncate ${
                 isCompleted ? "line-through text-white/50" : "text-white"
               }`}
+              title={todo.title}
             >
               {todo.title}
             </h3>
@@ -73,9 +74,12 @@ export function TodoCard({
             )}
             <div className="flex items-center gap-4 mt-2 text-xs text-white/60">
               {responsible && (
-                <span className="flex items-center gap-1">
+                <span
+                  className="flex items-center gap-1 truncate"
+                  title={responsible}
+                >
                   <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                  {responsible}
+                  <span className="truncate">{responsible}</span>
                 </span>
               )}
               {scheduledDate && (
@@ -87,7 +91,7 @@ export function TodoCard({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 self-start">
           <Button
             variant="ghost"
             size="sm"

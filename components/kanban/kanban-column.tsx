@@ -21,6 +21,10 @@ interface KanbanColumnProps {
 }
 
 // Componente para renderizar cada item na lista virtualizada
+const ITEM_VERTICAL_GAP = 8; // px
+const CARD_HEIGHT = 96; // px (altura fixa do card)
+const VIRTUAL_ITEM_SIZE = CARD_HEIGHT + ITEM_VERTICAL_GAP; // px total
+
 const TodoItem = ({
   index,
   style,
@@ -39,7 +43,13 @@ const TodoItem = ({
   if (!todo) return null;
 
   return (
-    <div style={style}>
+    <div
+      style={{
+        ...style,
+        paddingBottom: ITEM_VERTICAL_GAP,
+        boxSizing: "border-box",
+      }}
+    >
       <TodoCard
         todo={todo}
         onStatusChange={data.onStatusChange}
@@ -74,10 +84,7 @@ export function KanbanColumn({
         </span>
       </div>
 
-      <div
-        className="space-y-2"
-        style={{ height: "400px", overflow: "hidden" }}
-      >
+      <div className="space-y-0" style={{ height: "400px" }}>
         <SortableContext
           items={column.todos.map((todo: any) => todo._id)}
           strategy={verticalListSortingStrategy}
@@ -85,8 +92,9 @@ export function KanbanColumn({
           <List
             height={400}
             itemCount={column.todos.length}
-            itemSize={86}
+            itemSize={VIRTUAL_ITEM_SIZE}
             width="100%"
+            className="touch-pan-y overscroll-contain"
             itemData={{
               todos: column.todos,
               onStatusChange,
