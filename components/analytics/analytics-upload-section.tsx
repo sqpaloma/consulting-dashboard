@@ -17,6 +17,13 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { type AnalyticsUpload } from "@/lib/supabase-client";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 interface AnalyticsUploadSectionProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -164,21 +171,26 @@ export function AnalyticsUploadSection({
     );
   }
 
+  const isMobile = useIsMobile();
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
   return (
     <div className="flex items-center space-x-4 flex-wrap gap-2">
-      <AnalyticsFilters
-        uploadedData={filteredDataForFilters}
-        selectedDepartment={selectedDepartment}
-        setSelectedDepartment={setSelectedDepartment}
-        selectedEngineer={selectedEngineer}
-        setSelectedEngineer={setSelectedEngineer}
-        selectedYear={selectedYear}
-        setSelectedYear={setSelectedYear}
-        selectedMonth={selectedMonth}
-        setSelectedMonth={setSelectedMonth}
-        topEngineersFilter={topEngineersFilter}
-        setTopEngineersFilter={setTopEngineersFilter}
-      />
+      {!isMobile && (
+        <AnalyticsFilters
+          uploadedData={filteredDataForFilters}
+          selectedDepartment={selectedDepartment}
+          setSelectedDepartment={setSelectedDepartment}
+          selectedEngineer={selectedEngineer}
+          setSelectedEngineer={setSelectedEngineer}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          topEngineersFilter={topEngineersFilter}
+          setTopEngineersFilter={setTopEngineersFilter}
+        />
+      )}
 
       <div className="flex items-center space-x-2">
         <div className="relative" ref={historyRef}>
@@ -194,6 +206,11 @@ export function AnalyticsUploadSection({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {isMobile && (
+                <DropdownMenuItem onSelect={() => setIsFiltersOpen(true)}>
+                  Filtros
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onSelect={onUploadClick}>
                 <Upload className="h-4 w-4 mr-2" /> Upload Excel
               </DropdownMenuItem>
@@ -257,6 +274,32 @@ export function AnalyticsUploadSection({
           </div>
         )}
       </div>
+
+      {/* Mobile Filters Sheet */}
+      {isMobile && (
+        <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+          <SheetContent side="right" className="bg-white">
+            <SheetHeader>
+              <SheetTitle>Filtros</SheetTitle>
+            </SheetHeader>
+            <div className="mt-4">
+              <AnalyticsFilters
+                uploadedData={filteredDataForFilters}
+                selectedDepartment={selectedDepartment}
+                setSelectedDepartment={setSelectedDepartment}
+                selectedEngineer={selectedEngineer}
+                setSelectedEngineer={setSelectedEngineer}
+                selectedYear={selectedYear}
+                setSelectedYear={setSelectedYear}
+                selectedMonth={selectedMonth}
+                setSelectedMonth={setSelectedMonth}
+                topEngineersFilter={topEngineersFilter}
+                setTopEngineersFilter={setTopEngineersFilter}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   );
 }

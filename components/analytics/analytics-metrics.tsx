@@ -45,7 +45,7 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
     totalOrcamentos > 0 ? (totalFaturados / totalOrcamentos) * 100 : 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
       {uploadedData.length === 0 ? (
         <div className="col-span-full text-center">
           <p className="text-gray-400">
@@ -55,15 +55,15 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
       ) : (
         <>
           <Card className="bg-white">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
-                <div className="flex items-center space-x-3 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
                   <BarChart3 className="h-5 w-5 text-blue-500" />
                   <span className="text-sm font-medium text-gray-600">
                     Total de Registros
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-800">
+                <div className="text-2xl md:text-3xl font-bold text-gray-800">
                   {totalRegistros}
                 </div>
               </div>
@@ -71,15 +71,15 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
           </Card>
 
           <Card className="bg-white">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
-                <div className="flex items-center space-x-3 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
                   <Wrench className="h-5 w-5 text-green-500" />
                   <span className="text-sm font-medium text-gray-600">
                     Total Serviços
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-800">
+                <div className="text-2xl md:text-3xl font-bold text-gray-800">
                   {totalServicos}
                 </div>
               </div>
@@ -87,15 +87,15 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
           </Card>
 
           <Card className="bg-white">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
-                <div className="flex items-center space-x-3 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
                   <Users className="h-5 w-5 text-purple-500" />
                   <span className="text-sm font-medium text-gray-600">
                     Total Peças
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-800">
+                <div className="text-2xl md:text-3xl font-bold text-gray-800">
                   {totalPecas}
                 </div>
               </div>
@@ -103,18 +103,18 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
           </Card>
 
           <Card className="bg-white">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
-                <div className="flex items-center space-x-3 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
                   <DollarSign className="h-5 w-5 text-green-600" />
                   <span className="text-sm font-medium text-gray-600">
                     Valor Total Faturado
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">
+                <div className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">
                   {formatCurrency(valorTotalFaturado)}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-xs md:text-sm text-gray-500">
                   De {formatCurrency(valorTotalOrcamentos)} em orçamentos
                 </div>
               </div>
@@ -122,18 +122,18 @@ export function AnalyticsMetrics({ uploadedData }: AnalyticsMetricsProps) {
           </Card>
 
           <Card className="bg-white">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-5">
               <div className="flex flex-col items-center text-center">
-                <div className="flex items-center space-x-3 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
                   <TrendingUp className="h-5 w-5 text-orange-500" />
                   <span className="text-sm font-medium text-gray-600">
                     Taxa de Conversão Geral
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">
+                <div className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">
                   {taxaConversao.toFixed(1)}%
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-xs md:text-sm text-gray-500">
                   {totalFaturados} de {totalOrcamentos} orçamentos
                 </div>
               </div>

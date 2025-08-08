@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TrendingUp, FileText, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 
 interface RawDataRow {
   responsavel: string;
@@ -69,7 +70,6 @@ export function AnalyticsClientAnalysis({
 
       if (row.isOrcamento) {
         existing.valorOrcamentos += row.valor;
-        // Contar orçamentos únicos por ID se disponível
         if (row.orcamentoId && orcamentosSet) {
           orcamentosSet.add(row.orcamentoId);
         } else {
@@ -77,12 +77,9 @@ export function AnalyticsClientAnalysis({
         }
       } else if (row.isVendaNormal || row.isVendaServicos) {
         existing.valorFaturamentos += row.valor;
-
-        // Contar conversões únicas por ID de orçamento
         if (row.orcamentoId && conversionsSet) {
           conversionsSet.add(row.orcamentoId);
         } else {
-          // Fallback: incrementar diretamente se não tiver ID
           existing.faturamentos += 1;
         }
       }
@@ -92,13 +89,9 @@ export function AnalyticsClientAnalysis({
     clientesMap.forEach((cliente, nomeCliente) => {
       const conversionsSet = uniqueConversions.get(nomeCliente);
       const orcamentosSet = uniqueOrcamentos.get(nomeCliente);
-
-      // Usar orçamentos únicos se disponível
       if (orcamentosSet && orcamentosSet.size > 0) {
         cliente.orcamentos = orcamentosSet.size;
       }
-
-      // Usar conversões únicas se disponível
       if (conversionsSet && conversionsSet.size > 0) {
         cliente.faturamentos = conversionsSet.size;
       }
@@ -107,22 +100,29 @@ export function AnalyticsClientAnalysis({
 
   const clientes = Array.from(clientesMap.values());
 
-  // Top 5 clientes por faturamento
-  const topClientesFaturamento = clientes
-    .sort((a, b) => b.faturamentos - a.faturamentos)
-    .slice(0, 5);
+  // Listas completas ordenadas
+  const faturamentoList = useMemo(
+    () =>
+      [...clientes].sort((a, b) => b.valorFaturamentos - a.valorFaturamentos),
+    [clientes]
+  );
 
-  // Top 5 clientes por orçamentos não convertidos
-  const topClientesOrcamentosNaoConvertidos = clientes
-    .map((cliente) => ({
-      ...cliente,
-      orcamentosNaoConvertidos: Math.max(
-        0,
-        cliente.orcamentos - cliente.faturamentos
-      ),
-    }))
-    .sort((a, b) => b.orcamentosNaoConvertidos - a.orcamentosNaoConvertidos)
-    .slice(0, 5);
+  const orcamentosNaoConvertidosList = useMemo(
+    () =>
+      [...clientes]
+        .map((c: any) => ({
+          ...c,
+          orcamentosNaoConvertidos: Math.max(0, c.orcamentos - c.faturamentos),
+          valorNaoConvertido: Math.max(
+            0,
+            c.valorOrcamentos - c.valorFaturamentos
+          ),
+        }))
+        .sort(
+          (a, b) => b.orcamentosNaoConvertidos - a.orcamentosNaoConvertidos
+        ),
+    [clientes]
+  );
 
   // Se não há dados de cliente disponíveis, mostrar aviso
   if (!hasClientData) {
@@ -157,6 +157,63 @@ export function AnalyticsClientAnalysis({
       </Card>
     );
   }
+
+  // Row renderers
+  const renderFaturamentoRow = ({ index, style }: ListChildComponentProps) => {
+    const cliente = faturamentoList[index] as any;
+    return (
+      <div style={style} className="flex items-center justify-between px-3">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            {index + 1}
+          </div>
+          <div className="min-w-0">
+            <div className="font-medium text-gray-800 truncate max-w-[300px]">
+              {cliente.cliente}
+            </div>
+            <div className="text-xs text-gray-600">
+              {cliente.faturamentos} faturamentos
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="font-semibold text-green-600">
+            {formatCurrency(cliente.valorFaturamentos)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderOrcamentoRow = ({ index, style }: ListChildComponentProps) => {
+    const cliente = orcamentosNaoConvertidosList[index] as any;
+    return (
+      <div style={style} className="flex items-center justify-between px-3">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            {index + 1}
+          </div>
+          <div className="min-w-0">
+            <div className="font-medium text-gray-800 truncate max-w-[300px]">
+              {cliente.cliente}
+            </div>
+            <div className="text-xs text-gray-600">
+              {cliente.orcamentos} orçamentos | {cliente.faturamentos}{" "}
+              convertidos
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="font-semibold text-orange-600">
+            {cliente.orcamentosNaoConvertidos} não convertidos
+          </div>
+          <div className="text-xs text-gray-600">
+            {formatCurrency(cliente.valorNaoConvertido)}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Card className="bg-white">
@@ -195,89 +252,45 @@ export function AnalyticsClientAnalysis({
         </div>
       </CardHeader>
       <CardContent>
-        {/* Tab Content */}
         <div className="space-y-4">
           {activeTab === "faturamento" && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 <h3 className="text-lg font-semibold text-gray-800">
                   Clientes por Faturamento
                 </h3>
               </div>
-
-              <div className="space-y-3">
-                {topClientesFaturamento.map((cliente, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-800 truncate max-w-[300px]">
-                          {cliente.cliente}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {cliente.faturamentos} faturamentos
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-green-600">
-                        {formatCurrency(cliente.valorFaturamentos)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="border rounded-lg bg-gray-50">
+                <List
+                  height={380}
+                  width={"100%"}
+                  itemCount={faturamentoList.length}
+                  itemSize={56}
+                >
+                  {renderFaturamentoRow}
+                </List>
               </div>
             </div>
           )}
 
           {activeTab === "orcamentos" && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <FileText className="h-5 w-5 text-orange-600" />
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Não Aprovados por Cliente
+                </h3>
               </div>
-
-              <div className="space-y-3">
-                {topClientesOrcamentosNaoConvertidos.map((cliente, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-800 truncate max-w-[300px]">
-                          {cliente.cliente}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {cliente.orcamentos} orçamentos |{" "}
-                          {cliente.faturamentos} convertidos
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-orange-600">
-                        {cliente.orcamentosNaoConvertidos} não convertidos
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {formatCurrency(
-                          cliente.valorOrcamentos - cliente.valorFaturamentos
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="border rounded-lg bg-gray-50">
+                <List
+                  height={380}
+                  width={"100%"}
+                  itemCount={orcamentosNaoConvertidosList.length}
+                  itemSize={56}
+                >
+                  {renderOrcamentoRow}
+                </List>
               </div>
             </div>
           )}
