@@ -12,6 +12,13 @@ interface User {
   position?: string;
   department?: string;
   isAdmin?: boolean;
+  role?:
+    | "consultor"
+    | "qualidade_pcp"
+    | "gerente"
+    | "diretor"
+    | "admin"
+    | string;
 }
 
 export function useAuth() {
@@ -32,7 +39,11 @@ export function useAuth() {
     if (savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
+        const derivedRole =
+          parsedUser.role || (parsedUser.isAdmin ? "admin" : "consultor");
+        const normalizedUser = { ...parsedUser, role: derivedRole } as User;
+        setUser(normalizedUser);
+        localStorage.setItem("user", JSON.stringify(normalizedUser));
       } catch (error) {
         localStorage.removeItem("user");
       }
@@ -43,13 +54,16 @@ export function useAuth() {
   const signIn = async (email: string, password: string) => {
     try {
       const result = await login({ email, password });
-      const userData = {
+      const derivedRole =
+        result.role || (result.isAdmin ? "admin" : "consultor");
+      const userData: User = {
         userId: result.userId,
         name: result.name,
         email: result.email,
         position: result.position,
         department: result.department,
         isAdmin: result.isAdmin || false,
+        role: derivedRole,
       };
 
       setUser(userData);
@@ -75,16 +89,20 @@ export function useAuth() {
     position?: string;
     department?: string;
     isAdmin?: boolean;
+    role?: User["role"];
   }) => {
     try {
-      const result = await createInitialUser(userData);
-      const userDataResult = {
+      const result = await createInitialUser(userData as any);
+      const derivedRole =
+        result.role || (result.isAdmin ? "admin" : "consultor");
+      const userDataResult: User = {
         userId: result.userId,
         name: result.name,
         email: result.email,
         position: result.position,
         department: result.department,
         isAdmin: result.isAdmin || false,
+        role: derivedRole,
       };
 
       setUser(userDataResult);

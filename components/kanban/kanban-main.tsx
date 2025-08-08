@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
@@ -25,6 +25,7 @@ import {
   updateDescriptionForStatus,
   extractInfoFromDescription,
 } from "./todo-utils";
+import { useAuth } from "@/hooks/use-auth";
 
 export function KanbanMain() {
   const [isAddingTodo, setIsAddingTodo] = useState(false);
@@ -40,6 +41,8 @@ export function KanbanMain() {
     })
   );
 
+  const { user } = useAuth();
+
   const todos = useQuery(api.todos.getTodos);
   const notes = useQuery(api.notes.getNotes);
 
@@ -50,9 +53,26 @@ export function KanbanMain() {
   const updateNote = useMutation(api.notes.updateNote);
   const deleteNote = useMutation(api.notes.deleteNote);
 
-  const { pendingTodos, inProgressTodos, completedTodos } = filterTodosByStatus(
-    todos || []
-  );
+  // Restrição de visualização: consultores (e Lucas) veem apenas os próprios itens
+  const forceOwnByEmail =
+    user?.email?.toLowerCase() === "lucas@novakgouveia.com.br" ||
+    user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
+  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
+  const shouldForceOwn = isConsultor || forceOwnByEmail;
+  const userFirstName = (user?.name || "").split(" ")[0]?.toLowerCase() || "";
+
+  const visibleTodos = useMemo(() => {
+    const all = todos || [];
+    if (!shouldForceOwn || !userFirstName) return all;
+    return all.filter((t: any) => {
+      const { responsible } = extractInfoFromDescription(t.description || "");
+      const target = (responsible || "").toString().toLowerCase();
+      return target.includes(userFirstName);
+    });
+  }, [todos, shouldForceOwn, userFirstName]);
+
+  const { pendingTodos, inProgressTodos, completedTodos } =
+    filterTodosByStatus(visibleTodos);
 
   const columns = [
     {

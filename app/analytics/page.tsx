@@ -3,7 +3,7 @@ import { AdminProtection } from "@/components/admin-protection";
 
 export default function Analytics() {
   return (
-    <AdminProtection>
+    <AdminProtection allowedRoles={["diretor", "admin"]}>
       <AnalyticsPage />
     </AdminProtection>
   );

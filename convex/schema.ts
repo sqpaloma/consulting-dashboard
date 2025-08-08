@@ -14,6 +14,7 @@ export default defineSchema({
     avatarUrl: v.optional(v.string()),
     hashedPassword: v.optional(v.string()),
     isAdmin: v.optional(v.boolean()),
+    role: v.optional(v.string()),
     lastLogin: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -45,6 +46,24 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
 
+  // Permissões por papel (perfil)
+  rolePermissions: defineTable({
+    role: v.string(),
+    // Páginas
+    accessDashboard: v.boolean(),
+    accessChat: v.boolean(),
+    accessManual: v.boolean(),
+    accessIndicadores: v.boolean(),
+    accessAnalise: v.boolean(),
+    accessSettings: v.boolean(),
+    // Regras de visualização
+    dashboardDataScope: v.string(), // "own" | "all"
+    dashboardFilterVisible: v.boolean(),
+    chatDataScope: v.string(), // "own" | "all"
+    // Metadados
+    updatedAt: v.number(),
+  }).index("by_role", ["role"]),
+
   events: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
@@ -62,7 +81,7 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     completed: v.boolean(),
-    status: v.string(), // "todo", "in-progress", "completed"
+    status: v.optional(v.string()), // "todo", "in-progress", "completed"
     priority: v.string(), // "low", "medium", "high"
     dueDate: v.optional(v.string()), // formato: YYYY-MM-DD
     scheduledDate: v.optional(v.string()), // formato: YYYY-MM-DD

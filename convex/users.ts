@@ -161,7 +161,7 @@ export const updateUserSettings = mutation({
     const filteredUpdates = Object.entries(updates).reduce(
       (acc, [key, value]) => {
         if (value !== undefined) {
-          acc[key] = value;
+          (acc as any)[key] = value;
         }
         return acc;
       },
@@ -209,5 +209,42 @@ export const updateUserAvatar = mutation({
 export const listUsers = query({
   handler: async (ctx) => {
     return await ctx.db.query("users").collect();
+  },
+});
+
+// Atualizar perfil do usuário (admin)
+export const updateUserProfileByAdmin = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    position: v.optional(v.string()),
+    department: v.optional(v.string()),
+    location: v.optional(v.string()),
+    company: v.optional(v.string()),
+    role: v.optional(v.string()),
+    isAdmin: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const { userId, ...updates } = args;
+
+    // Filtrar valores undefined
+    const filteredUpdates = Object.entries(updates).reduce(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          (acc as any)[key] = value;
+        }
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+
+    await ctx.db.patch(userId, {
+      ...filteredUpdates,
+      updatedAt: Date.now(),
+    });
+
+    return userId;
   },
 });

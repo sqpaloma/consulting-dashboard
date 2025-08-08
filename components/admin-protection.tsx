@@ -8,10 +8,21 @@ import { ResponsiveLayout } from "@/components/responsive-layout";
 
 interface AdminProtectionProps {
   children: ReactNode;
+  allowedRoles?: (
+    | "consultor"
+    | "qualidade_pcp"
+    | "gerente"
+    | "diretor"
+    | "admin"
+    | string
+  )[];
 }
 
-export function AdminProtection({ children }: AdminProtectionProps) {
-  const { canAccessAdminPages, isAuthenticated, user } = useAdmin();
+export function AdminProtection({
+  children,
+  allowedRoles = ["admin"],
+}: AdminProtectionProps) {
+  const { canAccessAdminPages, isAuthenticated, user, isAdmin } = useAdmin();
 
   if (!isAuthenticated) {
     return (
@@ -33,7 +44,10 @@ export function AdminProtection({ children }: AdminProtectionProps) {
     );
   }
 
-  if (!canAccessAdminPages) {
+  const roleAllowed = user?.role ? allowedRoles.includes(user.role) : false;
+  const isAllowed = roleAllowed || (allowedRoles.includes("admin") && isAdmin);
+
+  if (!isAllowed) {
     return (
       <ResponsiveLayout title="Acesso Restrito">
         <Card className="bg-white">
@@ -45,7 +59,7 @@ export function AdminProtection({ children }: AdminProtectionProps) {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600">
-              Apenas administradores podem acessar esta página.
+              Você não possui permissão para acessar esta página.
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Usuário atual: {user?.name} ({user?.email})

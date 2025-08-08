@@ -57,7 +57,9 @@ export interface UserSettings {
 
 interface SettingsTabsProps {
   userSettings: UserSettings;
-  onSettingChange: (category: string, setting: string, value: any) => void;
+  onSettingChange:
+    | ((category: string, setting: string, value: any) => void)
+    | ((key: keyof UserSettings, value: any) => void);
   defaultTab?: string;
   userId?: Id<"users">;
 }
@@ -125,7 +127,7 @@ export function SettingsTabs({
       <TabsContent value="profile" className="space-y-6">
         <SettingsProfile
           userSettings={userSettings}
-          onSettingChange={onSettingChange}
+          onSettingChange={onSettingChange as any}
           userId={userId}
         />
       </TabsContent>
@@ -133,21 +135,21 @@ export function SettingsTabs({
       <TabsContent value="notifications" className="space-y-6">
         <SettingsNotifications
           userSettings={userSettings}
-          onSettingChange={onSettingChange}
+          onSettingChange={onSettingChange as any}
         />
       </TabsContent>
 
       <TabsContent value="privacy" className="space-y-6">
         <SettingsPrivacy
           userSettings={userSettings}
-          onSettingChange={onSettingChange}
+          onSettingChange={onSettingChange as any}
         />
       </TabsContent>
 
       <TabsContent value="appearance" className="space-y-6">
         <SettingsAppearance
           userSettings={userSettings}
-          onSettingChange={onSettingChange}
+          onSettingChange={onSettingChange as any}
         />
       </TabsContent>
 
@@ -158,7 +160,7 @@ export function SettingsTabs({
       <TabsContent value="system" className="space-y-6">
         <SettingsSystem
           userSettings={userSettings}
-          onSettingChange={onSettingChange}
+          onSettingChange={onSettingChange as any}
         />
       </TabsContent>
 

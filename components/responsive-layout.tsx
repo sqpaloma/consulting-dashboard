@@ -71,19 +71,6 @@ const baseMenuItems = [
   },
 ];
 
-const adminMenuItems = [
-  {
-    icon: BarChart3,
-    label: "Análises",
-    href: "/analytics",
-  },
-  {
-    icon: Settings,
-    label: "Configurações",
-    href: "/settings",
-  },
-];
-
 // Componente para o botão hamburger customizado
 function HamburgerMenuButton() {
   const { toggleSidebar } = useSidebar();
@@ -111,14 +98,36 @@ export function ResponsiveLayout({
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const { signOut } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, user } = useAdmin();
 
   const handleLogout = () => {
     signOut();
     window.location.href = "/";
   };
 
-  const menuItems = [...baseMenuItems, ...(isAdmin ? adminMenuItems : [])];
+  const canSeeAnalytics = isAdmin || user?.role === "diretor";
+
+  const extendedMenuItems = [
+    ...baseMenuItems,
+    ...(canSeeAnalytics
+      ? [
+          {
+            icon: BarChart3,
+            label: "Análises",
+            href: "/analytics",
+          },
+        ]
+      : []),
+    ...(isAdmin
+      ? [
+          {
+            icon: Settings,
+            label: "Configurações",
+            href: "/settings",
+          },
+        ]
+      : []),
+  ];
 
   if (isMobile) {
     return (
@@ -154,7 +163,7 @@ export function ResponsiveLayout({
               </SidebarHeader>
               <SidebarContent>
                 <SidebarMenu>
-                  {menuItems.map((item) => (
+                  {extendedMenuItems.map((item) => (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         asChild

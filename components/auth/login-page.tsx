@@ -11,7 +11,7 @@ import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Image from "next/image";
 
 export function LoginPage() {
-  const { signIn, isLoading: authLoading } = useAuth();
+  const { signIn, isLoading: authLoading, user } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +35,10 @@ export function LoginPage() {
 
       if (result.success) {
         toast.success("Login realizado com sucesso!");
-        // Forçar redirecionamento para o dashboard
-        window.location.href = "/";
+        // Redirecionar conforme o papel do usuário
+        const next =
+          user?.role === "consultor" && !user?.isAdmin ? "/chat" : "/";
+        window.location.href = next;
       } else {
         toast.error(result.error || "Erro ao fazer login");
       }

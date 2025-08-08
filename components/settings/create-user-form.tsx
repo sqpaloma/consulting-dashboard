@@ -35,6 +35,12 @@ export function CreateUserForm({ onCancel, onSuccess }: CreateUserFormProps) {
     position: "",
     department: "",
     isAdmin: false,
+    role: "consultor" as
+      | "consultor"
+      | "qualidade_pcp"
+      | "gerente"
+      | "diretor"
+      | "admin",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -63,6 +69,7 @@ export function CreateUserForm({ onCancel, onSuccess }: CreateUserFormProps) {
         position: formData.position || undefined,
         department: formData.department || undefined,
         isAdmin: formData.isAdmin,
+        role: formData.role,
         createdByUserId: currentUser.userId,
       });
 
@@ -77,6 +84,7 @@ export function CreateUserForm({ onCancel, onSuccess }: CreateUserFormProps) {
         position: "",
         department: "",
         isAdmin: false,
+        role: "consultor",
       });
     } catch (error) {
       toast.error(
@@ -191,6 +199,28 @@ export function CreateUserForm({ onCancel, onSuccess }: CreateUserFormProps) {
                   <SelectItem value="consultoria">Consultoria</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Papel (Perfil)</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => handleInputChange("role", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o papel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="consultor">Consultor</SelectItem>
+                  <SelectItem value="qualidade_pcp">Qualidade e PCP</SelectItem>
+                  <SelectItem value="gerente">Gerente</SelectItem>
+                  <SelectItem value="diretor">Diretor</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Define o acesso às páginas e dados.
+              </p>
             </div>
 
             <div className="space-y-2">

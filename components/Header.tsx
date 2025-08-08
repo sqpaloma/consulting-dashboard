@@ -32,12 +32,14 @@ export function Header({
   backHref = "/",
 }: HeaderProps) {
   const { signOut } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, user } = useAdmin();
 
   const handleLogout = () => {
     signOut();
     window.location.href = "/";
   };
+
+  const canSeeAnalytics = isAdmin || user?.role === "diretor";
 
   return (
     <>
@@ -98,7 +100,7 @@ export function Header({
               <Calendar className="h-5 w-5" />
             </Button>
           </Link>
-          {isAdmin && (
+          {canSeeAnalytics && (
             <Link href="/analytics">
               <Button
                 variant="ghost"

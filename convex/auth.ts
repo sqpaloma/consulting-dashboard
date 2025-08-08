@@ -32,6 +32,8 @@ export const login = mutation({
       lastLogin: Date.now(),
     });
 
+    const derivedRole = user.role || (user.isAdmin ? "admin" : "consultor");
+
     return {
       userId: user._id,
       name: user.name,
@@ -39,6 +41,7 @@ export const login = mutation({
       position: user.position,
       department: user.department,
       isAdmin: user.isAdmin || false,
+      role: derivedRole,
     };
   },
 });
@@ -52,6 +55,7 @@ export const createInitialUser = mutation({
     position: v.optional(v.string()),
     department: v.optional(v.string()),
     isAdmin: v.optional(v.boolean()),
+    role: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Verificar se o usuário já existe
@@ -67,11 +71,10 @@ export const createInitialUser = mutation({
     // Hash da senha
     const hashedPassword = await hashPassword(args.password);
 
-    // Definir se é admin - Paloma é sempre admin
-    const isAdmin =
-      args.email === "paloma.silva@novakgouveia.com.br" ||
-      args.isAdmin ||
-      false;
+    // Definir papel e admin - Paloma é sempre admin
+    const isPaloma = args.email === "paloma.silva@novakgouveia.com.br";
+    const role = args.role || (isPaloma ? "admin" : "consultor");
+    const isAdmin = isPaloma || role === "admin" || args.isAdmin || false;
 
     // Criar usuário
     const userId = await ctx.db.insert("users", {
@@ -81,6 +84,7 @@ export const createInitialUser = mutation({
       department: args.department,
       hashedPassword,
       isAdmin,
+      role,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -114,6 +118,7 @@ export const createInitialUser = mutation({
       position: args.position,
       department: args.department,
       isAdmin,
+      role,
     };
   },
 });
@@ -222,6 +227,7 @@ export const createUserByAdmin = mutation({
     position: v.optional(v.string()),
     department: v.optional(v.string()),
     isAdmin: v.optional(v.boolean()),
+    role: v.optional(v.string()),
     createdByUserId: v.id("users"),
   },
   handler: async (ctx, args) => {
@@ -248,11 +254,10 @@ export const createUserByAdmin = mutation({
     // Hash da senha
     const hashedPassword = await hashPassword(args.password);
 
-    // Definir se é admin - Paloma é sempre admin
-    const isAdmin =
-      args.email === "paloma.silva@novakgouveia.com.br" ||
-      args.isAdmin ||
-      false;
+    // Definir papel e admin - Paloma é sempre admin
+    const isPaloma = args.email === "paloma.silva@novakgouveia.com.br";
+    const role = args.role || (args.isAdmin ? "admin" : "consultor");
+    const isAdmin = isPaloma || role === "admin" || args.isAdmin || false;
 
     // Criar usuário
     const userId = await ctx.db.insert("users", {
@@ -262,6 +267,7 @@ export const createUserByAdmin = mutation({
       department: args.department,
       hashedPassword,
       isAdmin,
+      role,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -295,7 +301,56 @@ export const createUserByAdmin = mutation({
       position: args.position,
       department: args.department,
       isAdmin,
+      role,
     };
+  },
+});
+
+// CRUD de permissões por papel
+export const getRolePermissions = query({
+  args: { role: v.string() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("rolePermissions")
+      .withIndex("by_role", (q) => q.eq("role", args.role))
+      .first();
+    return row || null;
+  },
+});
+
+export const listRolePermissions = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("rolePermissions").collect();
+  },
+});
+
+export const upsertRolePermissions = mutation({
+  args: {
+    role: v.string(),
+    accessDashboard: v.boolean(),
+    accessChat: v.boolean(),
+    accessManual: v.boolean(),
+    accessIndicadores: v.boolean(),
+    accessAnalise: v.boolean(),
+    accessSettings: v.boolean(),
+    dashboardDataScope: v.string(),
+    dashboardFilterVisible: v.boolean(),
+    chatDataScope: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("rolePermissions")
+      .withIndex("by_role", (q) => q.eq("role", args.role))
+      .first();
+
+    const payload = { ...args, updatedAt: Date.now() } as any;
+
+    if (existing) {
+      await ctx.db.patch(existing._id, payload);
+      return existing._id;
+    } else {
+      return await ctx.db.insert("rolePermissions", payload);
+    }
   },
 });
 
@@ -345,6 +400,7 @@ export const setupAdmin = mutation({
       const hashedPassword = await hashPassword(args.password);
       await ctx.db.patch(existingUser._id, {
         isAdmin: true,
+        role: "admin",
         hashedPassword,
         updatedAt: Date.now(),
       });
@@ -365,6 +421,7 @@ export const setupAdmin = mutation({
         department: "Administrativo",
         hashedPassword,
         isAdmin: true,
+        role: "admin",
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });

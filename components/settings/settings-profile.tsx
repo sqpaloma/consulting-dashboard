@@ -16,10 +16,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Upload, Save, Eye, EyeOff, LogOut } from "lucide-react";
+import { User, Upload, Save, Eye, EyeOff, LogOut, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
 
 interface UserSettings {
   name: string;
@@ -49,37 +50,75 @@ export function SettingsProfile({
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // Admin state and users list
+  const { isAdmin } = useAdmin();
+  const users = useQuery(api.users.listUsers);
+  const [selectedUserId, setSelectedUserId] = useState<Id<"users"> | null>(
+    null
+  );
+
   // Auth hook para logout
   const { signOut } = useAuth();
 
   // Convex mutations
   const createOrUpdateUser = useMutation(api.users.createOrUpdateUser);
   const changeUserPassword = useMutation(api.auth.changeUserPassword);
+  const updateUserProfileByAdmin = useMutation(
+    api.users.updateUserProfileByAdmin
+  );
+
+  const [editRole, setEditRole] = useState<string>("");
+  const [editIsAdmin, setEditIsAdmin] = useState<boolean>(false);
 
   const handleSaveProfile = async () => {
-    if (!userId) {
-      toast.error("ID do usuário não encontrado");
-      return;
-    }
-
     setIsSaving(true);
     try {
-      await createOrUpdateUser({
-        name: userSettings.name,
-        email: userSettings.email,
-        phone: userSettings.phone,
-        position: userSettings.position,
-        department: userSettings.department,
-        location: userSettings.location,
-        company: userSettings.company,
-      });
+      if (isAdmin && selectedUserId) {
+        await updateUserProfileByAdmin({
+          userId: selectedUserId,
+          name: userSettings.name || undefined,
+          email: userSettings.email || undefined,
+          phone: userSettings.phone || undefined,
+          position: userSettings.position || undefined,
+          department: userSettings.department || undefined,
+          location: userSettings.location || undefined,
+          company: userSettings.company || undefined,
+          role: editRole || undefined,
+          isAdmin: editIsAdmin,
+        });
+      } else {
+        await createOrUpdateUser({
+          name: userSettings.name,
+          email: userSettings.email,
+          phone: userSettings.phone,
+          position: userSettings.position,
+          department: userSettings.department,
+          location: userSettings.location,
+          company: userSettings.company,
+        });
+      }
 
       toast.success("Perfil atualizado com sucesso!");
+      setSelectedUserId(null);
     } catch (error) {
       toast.error("Erro ao salvar perfil");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleEditUser = (u: any) => {
+    setSelectedUserId(u._id);
+    onSettingChange("profile", "name", u.name || "");
+    onSettingChange("profile", "email", u.email || "");
+    onSettingChange("profile", "phone", u.phone || "");
+    onSettingChange("profile", "position", u.position || "");
+    onSettingChange("profile", "department", u.department || "");
+    onSettingChange("profile", "location", u.location || "");
+    onSettingChange("profile", "company", u.company || "");
+    setEditRole(u.role || "");
+    setEditIsAdmin(!!u.isAdmin);
+    toast.info(`Editando perfil de ${u.name}`);
   };
 
   const handleChangePassword = async () => {
@@ -116,7 +155,7 @@ export function SettingsProfile({
 
     setIsChangingPassword(true);
     try {
-      // Alterar senha
+      // Alterar senha (apenas para o próprio usuário através deste formulário)
       await changeUserPassword({
         userId,
         currentPassword,
@@ -155,6 +194,41 @@ export function SettingsProfile({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Admin: Lista de Usuários Cadastrados para Edição */}
+        {isAdmin && (
+          <div className="space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-semibold">Usuários Cadastrados</h3>
+            </div>
+            <div className="max-h-64 overflow-auto divide-y divide-white/10">
+              {(users || []).map((u) => (
+                <div
+                  key={u._id}
+                  className="flex items-center justify-between py-2"
+                >
+                  <div className="text-sm text-gray-100">
+                    <div className="font-medium">{u.name}</div>
+                    <div className="text-gray-300">{u.email}</div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-white border-white/30 bg-white/10 hover:bg-white/20"
+                    onClick={() => handleEditUser(u)}
+                  >
+                    <Pencil className="h-4 w-4 mr-1" /> Editar
+                  </Button>
+                </div>
+              ))}
+            </div>
+            {selectedUserId && (
+              <div className="text-xs text-gray-300">
+                Editando perfil do usuário selecionado
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Profile Picture */}
         <div className="flex items-center space-x-4">
           <Avatar className="h-20 w-20">
@@ -281,6 +355,41 @@ export function SettingsProfile({
           </div>
         </div>
 
+        {/* Admin-only role fields */}
+        {isAdmin && selectedUserId && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-white">Perfil</Label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Selecione um perfil" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="consultor">Consultor</SelectItem>
+                  <SelectItem value="qualidade_pcp">Qualidade e PCP</SelectItem>
+                  <SelectItem value="gerente">Gerente</SelectItem>
+                  <SelectItem value="diretor">Diretor</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-white">Administrador</Label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={editIsAdmin}
+                  onChange={(e) => setEditIsAdmin(e.target.checked)}
+                />
+                <span className="text-white text-sm">
+                  Conceder acesso de administrador
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Save Profile Button */}
         <Button
           className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -288,7 +397,11 @@ export function SettingsProfile({
           disabled={isSaving}
         >
           <Save className="h-4 w-4 mr-2" />
-          {isSaving ? "Salvando..." : "Salvar Perfil"}
+          {isSaving
+            ? "Salvando..."
+            : selectedUserId
+              ? "Salvar Perfil do Usuário"
+              : "Salvar Perfil"}
         </Button>
 
         <Separator className="bg-white/20" />

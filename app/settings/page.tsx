@@ -63,64 +63,65 @@ function SettingsPageContent() {
   const updateUserSettings = useMutation(api.users.updateUserSettings);
 
   useEffect(() => {
-    if (
-      tabParam &&
-      [
-        "profile",
-        "notifications",
-        "privacy",
-        "appearance",
-        "data",
-        "system",
-      ].includes(tabParam)
-    ) {
-      setDefaultTab(tabParam);
-    }
+    if (tabParam) setDefaultTab(tabParam);
   }, [tabParam]);
 
-  // Carregar configurações do usuário quando disponíveis
   useEffect(() => {
-    if (user) {
+    if (user && settings) {
       setUserSettings((prev) => ({
         ...prev,
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        position: user.position || "",
-        department: user.department || "",
-        location: user.location || "",
-        company: user.company || "",
-        ...settings,
+        // Profile
+        name: user.name || prev.name,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+        position: user.position || prev.position,
+        department: user.department || prev.department,
+        location: user.location || prev.location,
+        company: user.company || prev.company,
+        // Notifications
+        emailNotifications: settings.emailNotifications,
+        pushNotifications: settings.pushNotifications,
+        calendarReminders: settings.calendarReminders,
+        projectUpdates: settings.projectUpdates,
+        weeklyReports: settings.weeklyReports,
+        // Privacy
+        profileVisibility: settings.profileVisibility,
+        dataSharing: settings.dataSharing,
+        analyticsTracking: settings.analyticsTracking,
+        // Appearance
+        theme: settings.theme,
+        language: settings.language,
+        timezone: settings.timezone,
+        dateFormat: settings.dateFormat,
+        timeFormat: settings.timeFormat,
+        // System
+        autoSave: settings.autoSave,
+        backupFrequency: settings.backupFrequency,
+        sessionTimeout: settings.sessionTimeout,
       }));
     }
   }, [user, settings]);
 
-  const handleSettingChange = (
-    category: string,
-    setting: string,
-    value: any
-  ) => {
-    setUserSettings((prev) => ({
-      ...prev,
-      [setting]: value,
-    }));
+  const handleSettingChange = (key: keyof UserSettings, value: any) => {
+    setUserSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSaveSettings = async () => {
+  const handleSave = async () => {
+    if (!user) return;
     try {
-      // Separar dados do usuário das configurações
-      const userData = {
+      await createOrUpdateUser({
         name: userSettings.name,
         email: userSettings.email,
-        phone: userSettings.phone,
-        position: userSettings.position,
-        department: userSettings.department,
-        location: userSettings.location,
-        company: userSettings.company,
-      };
+        phone: userSettings.phone || undefined,
+        position: userSettings.position || undefined,
+        department: userSettings.department || undefined,
+        location: userSettings.location || undefined,
+        company: userSettings.company || undefined,
+        avatarUrl: undefined,
+      });
 
-      const settingsData = {
-        userId: user!._id,
+      await updateUserSettings({
+        userId: user._id,
         emailNotifications: userSettings.emailNotifications,
         pushNotifications: userSettings.pushNotifications,
         calendarReminders: userSettings.calendarReminders,
@@ -137,51 +138,26 @@ function SettingsPageContent() {
         autoSave: userSettings.autoSave,
         backupFrequency: userSettings.backupFrequency,
         sessionTimeout: userSettings.sessionTimeout,
-      };
+      });
 
-      // Criar ou atualizar usuário
-      await createOrUpdateUser(userData);
-
-      // Atualizar configurações
-      await updateUserSettings(settingsData);
-
-      toast.success("Configurações salvas com sucesso!");
+      toast.success("Configurações atualizadas com sucesso");
     } catch (error) {
-      toast.error("Erro ao salvar configurações. Tente novamente.");
+      toast.error("Erro ao salvar configurações");
     }
   };
 
-  if (isLoading) {
-    return (
-      <ResponsiveLayout title="Configurações">
-        <div className="flex items-center justify-center py-20">
-          <div className="text-white">Carregando...</div>
-        </div>
-      </ResponsiveLayout>
-    );
-  }
-
   return (
     <ResponsiveLayout title="Configurações">
-      {/* Main Content */}
-      <div className="space-y-6">
-        <SettingsTabs
-          userSettings={userSettings}
-          onSettingChange={handleSettingChange}
-          defaultTab={defaultTab}
-          userId={user?._id}
-        />
-
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8"
-            onClick={handleSaveSettings}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Salvar Configurações
-          </Button>
-        </div>
+      <SettingsTabs
+        userSettings={userSettings}
+        onSettingChange={handleSettingChange}
+        defaultTab={defaultTab}
+        userId={user?._id}
+      />
+      <div className="flex justify-end mt-4">
+        <Button onClick={handleSave}>
+          <Save className="h-4 w-4 mr-2" /> Salvar Alterações
+        </Button>
       </div>
     </ResponsiveLayout>
   );
@@ -189,7 +165,7 @@ function SettingsPageContent() {
 
 export default function SettingsPage() {
   return (
-    <AdminProtection>
+    <AdminProtection allowedRoles={["admin"]}>
       <Suspense
         fallback={
           <ResponsiveLayout title="Configurações">

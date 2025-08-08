@@ -34,20 +34,46 @@ export function ConsultingDashboard() {
     string | null
   >(null);
 
-  // Dados filtrados baseados no responsável selecionado
-  const filteredItems = filteredByResponsavel
-    ? processedItems.filter(
+  // Forçar escopo somente do próprio usuário para Lucas, independente do papel
+  const forceOwnByEmail =
+    user?.email?.toLowerCase() === "lucas@novakgouveia.com.br" ||
+    user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
+
+  // Dados filtrados baseados no responsável selecionado e no papel do usuário
+  const filteredItems = React.useMemo(() => {
+    const isConsultor = user?.role === "consultor" && !user?.isAdmin;
+    const shouldForceOwn = isConsultor || forceOwnByEmail;
+    let base = processedItems;
+
+    if (shouldForceOwn && user?.name) {
+      const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
+      base = processedItems.filter((item) =>
+        (item.responsavel || "").toString().toLowerCase().includes(ownFirstName)
+      );
+    }
+
+    if (!shouldForceOwn && filteredByResponsavel) {
+      return base.filter(
         (item) =>
           item.responsavel && item.responsavel.trim() === filteredByResponsavel
-      )
-    : processedItems;
+      );
+    }
+
+    return base;
+  }, [
+    processedItems,
+    filteredByResponsavel,
+    user?.role,
+    user?.isAdmin,
+    user?.name,
+    user?.email,
+    forceOwnByEmail,
+  ]);
 
   // Recalcular métricas baseadas nos dados filtrados
   const filteredDashboardData = React.useMemo(() => {
     // Sempre calcular a partir dos itens para garantir consistência
-    const itemsToCalculate = filteredByResponsavel
-      ? filteredItems
-      : processedItems;
+    const itemsToCalculate = filteredItems;
 
     const metrics = {
       totalItens: itemsToCalculate.length,
@@ -100,7 +126,7 @@ export function ConsultingDashboard() {
     });
 
     return metrics;
-  }, [filteredItems, filteredByResponsavel, processedItems]);
+  }, [filteredItems]);
 
   // Calcular itens atrasados baseado na lógica do calendário
   const overdueItems = React.useMemo(() => {
@@ -296,6 +322,13 @@ export function ConsultingDashboard() {
     setModalData(items);
   };
 
+  const canSeeResponsavelFilter =
+    (user?.role === "gerente" ||
+      user?.role === "diretor" ||
+      user?.role === "admin" ||
+      user?.isAdmin) &&
+    !forceOwnByEmail;
+
   return (
     <ResponsiveLayout>
       {/* Título com nome do usuário */}
@@ -307,10 +340,12 @@ export function ConsultingDashboard() {
           </h1>
         </div>
         <div className="sm:mt-0 mt-2">
-          <ResponsavelFilter
-            onFilterChange={handleResponsavelFilterChange}
-            processedItems={processedItems}
-          />
+          {canSeeResponsavelFilter && (
+            <ResponsavelFilter
+              onFilterChange={handleResponsavelFilterChange}
+              processedItems={processedItems}
+            />
+          )}
         </div>
       </div>
 
@@ -342,8 +377,8 @@ export function ConsultingDashboard() {
           </div>
         </div>
 
-        {/* Medium screens (md to <lg): Departamento + Calendário lado a lado; gráficos embaixo lado a lado */}
-        <div className="hidden md:grid lg:hidden grid-cols-2 gap-2">
+        {/* Medium screens (md to <xl): Departamento + Calendário lado a lado; gráficos embaixo lado a lado */}
+        <div className="hidden md:grid xl:hidden grid-cols-2 gap-2">
           <div className="col-span-1">
             <DepartamentoInfo
               processedItems={processedItems}
@@ -363,8 +398,8 @@ export function ConsultingDashboard() {
           </div>
         </div>
 
-        {/* Desktop layout (lg+) */}
-        <div className="hidden lg:grid grid-cols-6 xl:grid-cols-8 gap-2">
+        {/* Desktop layout (xl+): layout amplo */}
+        <div className="hidden xl:grid grid-cols-6 xl:grid-cols-8 gap-2">
           {/* Seção esquerda: Informações do Departamento */}
           <div className="col-span-1 xl:col-span-2">
             <DepartamentoInfo
