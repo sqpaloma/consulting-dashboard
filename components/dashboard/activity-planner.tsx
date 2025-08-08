@@ -426,8 +426,6 @@ export function ActivityPlanner({
     <Card className="bg-white h-[650px] flex flex-col">
       <ActivityHeader
         isLoading={isLoading}
-        todayActivities={todayActivities}
-        todayBrasilia={todayBrasilia}
         completedActivities={completedActivities}
         onClearCompleted={() => {
           const today = new Date();
@@ -458,7 +456,7 @@ export function ActivityPlanner({
                 getDisplayResponsavel,
                 setShareActivity,
                 setShareDialogOpen,
-                openTaskModal
+                openTaskModal,
               }}
             >
               {({ index, style, data }) => {
@@ -474,13 +472,16 @@ export function ActivityPlanner({
                     index
                 );
                 const dayDateKey = dayDate.toISOString().split("T")[0];
-                const isToday = dayDate.toDateString() === data.todayBrasilia.toDateString();
+                const isToday =
+                  dayDate.toDateString() === data.todayBrasilia.toDateString();
                 const activitiesForDay = data.weekActivities[dayDateKey] || [];
 
                 return (
                   <div style={style} className="pb-2">
                     <div className="flex flex-col bg-gray-50 rounded-md p-2 h-full">
-                      <div className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-700"}`}>
+                      <div
+                        className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-700"}`}
+                      >
                         {dayName}
                       </div>
                       <div className="flex-1 min-h-0">
@@ -495,12 +496,21 @@ export function ActivityPlanner({
                               completed: data.completedActivities,
                             }}
                           >
-                            {({ index: actIndex, style: actStyle, data: actData }) => {
-                              const activity: CalendarItem = actData.activities[actIndex];
-                              const isCompleted = (actData.completed as Set<string>).has(activity.id);
+                            {({
+                              index: actIndex,
+                              style: actStyle,
+                              data: actData,
+                            }) => {
+                              const activity: CalendarItem =
+                                actData.activities[actIndex];
+                              const isCompleted = (
+                                actData.completed as Set<string>
+                              ).has(activity.id);
                               const consultant = activity.responsavel || "—";
-                              const maybeMechanic = data.getDisplayResponsavel(activity) || "—";
-                              const statusLower = activity.status?.toLowerCase() || "";
+                              const maybeMechanic =
+                                data.getDisplayResponsavel(activity) || "—";
+                              const statusLower =
+                                activity.status?.toLowerCase() || "";
                               const showMechanic =
                                 (statusLower.includes("exec") ||
                                   statusLower.includes("análise") ||
@@ -508,7 +518,7 @@ export function ActivityPlanner({
                                   statusLower.includes("revis")) &&
                                 maybeMechanic &&
                                 maybeMechanic !== consultant;
-                              
+
                               return (
                                 <div style={actStyle} className="px-1">
                                   <div
@@ -529,7 +539,9 @@ export function ActivityPlanner({
                                             {consultant}
                                           </span>
                                           {showMechanic && (
-                                            <span className="text-gray-400">•</span>
+                                            <span className="text-gray-400">
+                                              •
+                                            </span>
                                           )}
                                           {showMechanic && (
                                             <span className="truncate">
@@ -562,7 +574,9 @@ export function ActivityPlanner({
                                             Compartilhar via chat
                                           </DropdownMenuItem>
                                           <DropdownMenuItem
-                                            onClick={() => data.openTaskModal(activity)}
+                                            onClick={() =>
+                                              data.openTaskModal(activity)
+                                            }
                                           >
                                             <ListTodo className="h-4 w-4 mr-2" />{" "}
                                             Adicionar tarefa (Agenda)
@@ -593,7 +607,7 @@ export function ActivityPlanner({
               }}
             </List>
           </div>
-          
+
           {/* Desktop layout - original grid */}
           <div className="hidden lg:contents">
             {["SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA"].map(
@@ -636,7 +650,8 @@ export function ActivityPlanner({
                           }}
                         >
                           {({ index, style, data }) => {
-                            const activity: CalendarItem = data.activities[index];
+                            const activity: CalendarItem =
+                              data.activities[index];
                             const isCompleted = (
                               data.completed as Set<string>
                             ).has(activity.id);
@@ -652,7 +667,7 @@ export function ActivityPlanner({
                                 statusLower.includes("revis")) &&
                               maybeMechanic &&
                               maybeMechanic !== consultant;
-                            
+
                             return (
                               <div style={style} className="px-1">
                                 <div
@@ -673,7 +688,9 @@ export function ActivityPlanner({
                                           {consultant}
                                         </span>
                                         {showMechanic && (
-                                          <span className="text-gray-400">•</span>
+                                          <span className="text-gray-400">
+                                            •
+                                          </span>
                                         )}
                                         {showMechanic && (
                                           <span className="truncate">
@@ -706,7 +723,9 @@ export function ActivityPlanner({
                                           Compartilhar via chat
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                          onClick={() => openTaskModal(activity)}
+                                          onClick={() =>
+                                            openTaskModal(activity)
+                                          }
                                         >
                                           <ListTodo className="h-4 w-4 mr-2" />{" "}
                                           Adicionar tarefa (Agenda)

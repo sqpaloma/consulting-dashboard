@@ -77,7 +77,7 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+              className="!text-white !hover:bg-blue-700"
             >
               <Grid3X3 className="h-5 w-5" />
             </Button>
@@ -87,7 +87,7 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+              className="!text-white !hover:bg-blue-700"
             >
               <Calendar className="h-5 w-5" />
             </Button>
@@ -97,7 +97,7 @@ export function Header({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+                className="!text-white !hover:bg-blue-700"
               >
                 <BarChart3 className="h-5 w-5" />
               </Button>
@@ -108,7 +108,7 @@ export function Header({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+                className="!text-white !hover:bg-blue-700"
               >
                 <TrendingUp className="h-5 w-5" />
               </Button>
@@ -118,7 +118,7 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+              className="!text-white !hover:bg-blue-700"
             >
               <BookOpen className="h-5 w-5" />
             </Button>
@@ -127,7 +127,7 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+              className="!text-white !hover:bg-blue-700"
             >
               <Bell className="h-5 w-5" />
             </Button>
@@ -137,7 +137,7 @@ export function Header({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+                className="!text-white !hover:bg-blue-700"
               >
                 <Settings className="h-5 w-5" />
               </Button>
@@ -146,7 +146,7 @@ export function Header({
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+            className="!text-white !hover:bg-blue-700"
             onClick={handleLogout}
             title="Sair"
           >

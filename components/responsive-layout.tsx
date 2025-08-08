@@ -70,7 +70,7 @@ function HamburgerMenuButton() {
       onClick={toggleSidebar}
       variant="ghost"
       size="icon"
-      className="text-white hover:bg-blue-700 p-2 rounded-md h-10 w-10 !text-white !hover:bg-blue-700"
+      className="!text-white !hover:bg-blue-700 p-2 rounded-md h-10 w-10"
     >
       <Menu className="h-6 w-6" />
       <span className="sr-only">Abrir menu</span>
@@ -187,7 +187,7 @@ export function ResponsiveLayout({
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         asChild
-                        className={`text-white hover:bg-white/10 !text-white !hover:bg-white/10 ${
+                        className={`!text-white !hover:bg-white/10 ${
                           pathname === item.href
                             ? "!bg-white/10 !hover:bg-white/10"
                             : ""
@@ -202,7 +202,7 @@ export function ResponsiveLayout({
                   ))}
                   {/* Notifications */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton className="text-white hover:bg-white/10 !text-white !hover:bg-white/10">
+                    <SidebarMenuButton className="!text-white !hover:bg-white/10">
                       <NotificationsPanel>
                         <div className="flex items-center space-x-2">
                           <Bell className="h-5 w-5" />
@@ -216,7 +216,7 @@ export function ResponsiveLayout({
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={handleLogout}
-                      className="text-white hover:bg-white/10 !text-white !hover:bg-white/10"
+                      className="!text-white !hover:bg-white/10"
                     >
                       <LogOut className="h-5 w-5" />
                       Sair
