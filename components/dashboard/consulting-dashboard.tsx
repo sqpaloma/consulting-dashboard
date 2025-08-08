@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import { ResponsiveLayout } from "@/components/responsive-layout";
 import { DashboardMetrics } from "./dashboard-metrics";
@@ -18,10 +18,12 @@ import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useAuth } from "@/hooks/use-auth";
 import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
 import Image from "next/image";
+import { useNotificationsCenter } from "@/hooks/use-notifications-center";
 
 export function ConsultingDashboard() {
   const { dashboardData, processedItems, loadSavedData } = useDashboardData();
   const { user } = useAuth();
+  const { add } = useNotificationsCenter();
 
   // Estados para modais
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -98,11 +100,11 @@ export function ConsultingDashboard() {
       if (match) {
         if (format.source.includes("yyyy")) {
           // Formato com ano completo
-          const [, day, month, year] = match;
+          const [, day, month, year] = match as any;
           return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
         } else {
           // Formato com ano abreviado
-          const [, day, month, year] = match;
+          const [, day, month, year] = match as any;
           const fullYear =
             parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
           return new Date(fullYear, parseInt(month) - 1, parseInt(day));
@@ -185,7 +187,7 @@ export function ConsultingDashboard() {
     const overdueItems: any[] = [];
 
     filteredItems.forEach((item) => {
-      let itemDate = null;
+      let itemDate: Date | null = null;
 
       // Tenta extrair a data do prazo
       if (item.data_registro && item.data_registro.includes("-")) {
@@ -206,6 +208,71 @@ export function ConsultingDashboard() {
 
     return overdueItems;
   }, [filteredItems]);
+
+  // Notificações: atrasados e aguardando aprovação
+  const notifiedOverdueRef = useRef<Set<string>>(new Set());
+  const notifiedApprovalRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    filteredItems.forEach((item) => {
+      // Determinar data do item
+      let date: Date | null = null;
+      if (item.data_registro && item.data_registro.includes("-")) {
+        const d = new Date(item.data_registro);
+        date = isNaN(d.getTime()) ? null : d;
+      } else if (item.prazo) {
+        date = parseDate(item.prazo);
+      } else if (item.data) {
+        date = parseDate(item.data);
+      }
+
+      // Atrasados
+      if (date && date < today) {
+        if (!notifiedOverdueRef.current.has(item.id)) {
+          add({
+            type: "project",
+            title: `Item ${item.os} atrasado`,
+            message: `${item.titulo || "Item"} do cliente ${item.cliente} está atrasado`,
+            urgent: true,
+          });
+          notifiedOverdueRef.current.add(item.id);
+        }
+      } else if (date && date >= today && date <= tomorrow) {
+        // Vão atrasar (prazo hoje ou amanhã)
+        if (!notifiedOverdueRef.current.has(item.id)) {
+          add({
+            type: "calendar",
+            title: `Prazo próximo: ${item.os}`,
+            message: `${item.titulo || "Item"} vence em breve (${date.toLocaleDateString("pt-BR")})`,
+            urgent: false,
+          });
+          notifiedOverdueRef.current.add(item.id);
+        }
+      }
+
+      // Aguardando aprovação
+      const status = (item.status || "").toLowerCase();
+      const isWaitingApproval =
+        status.includes("aguardando") ||
+        status.includes("pendente") ||
+        status.includes("aprovação") ||
+        status.includes("aprovacao");
+      if (isWaitingApproval && !notifiedApprovalRef.current.has(item.id)) {
+        add({
+          type: "system",
+          title: `Aprovação pendente: ${item.os}`,
+          message: `${item.titulo || "Item"} aguarda aprovação`,
+          urgent: false,
+        });
+        notifiedApprovalRef.current.add(item.id);
+      }
+    });
+  }, [filteredItems, add, parseDate]);
 
   useEffect(() => {
     loadSavedData();

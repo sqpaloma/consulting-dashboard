@@ -1,6 +1,8 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
+import { useNotificationsCenter } from "@/hooks/use-notifications-center";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,78 +21,7 @@ import {
   Clock,
   X,
 } from "lucide-react";
-
-interface Notification {
-  id: string;
-  type: "message" | "calendar" | "project" | "system";
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  urgent: boolean;
-}
-
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "message",
-    title: "Nova Mensagem",
-    message:
-      "Maria Santos enviou uma atualização sobre o projeto de automação industrial",
-    timestamp: "2 min",
-    read: false,
-    urgent: false,
-  },
-  {
-    id: "2",
-    type: "calendar",
-    title: "Reunião em 30 minutos",
-    message:
-      "Reunião de apresentação com cliente - Projeto Otimização de Processos",
-    timestamp: "30 min",
-    read: false,
-    urgent: true,
-  },
-  {
-    id: "3",
-    type: "project",
-    title: "Entrega Finalizada",
-    message:
-      "O relatório de consultoria do projeto Melhoria Contínua foi finalizado",
-    timestamp: "1 hora",
-    read: false,
-    urgent: false,
-  },
-  {
-    id: "4",
-    type: "calendar",
-    title: "Agendamento Confirmado",
-    message:
-      "Cliente confirmou reunião para análise de ROI - Terça-feira às 14h",
-    timestamp: "2 horas",
-    read: true,
-    urgent: false,
-  },
-  {
-    id: "5",
-    type: "system",
-    title: "Relatório Mensal Disponível",
-    message: "Relatório de performance dos projetos de janeiro está disponível",
-    timestamp: "3 horas",
-    read: true,
-    urgent: false,
-  },
-  {
-    id: "6",
-    type: "message",
-    title: "Feedback do Cliente",
-    message:
-      "Cliente da IndústriaTech deixou feedback positivo sobre a consultoria",
-    timestamp: "1 dia",
-    read: true,
-    urgent: false,
-  },
-];
+import type { AppNotification } from "@/hooks/use-notifications-center";
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -127,25 +58,9 @@ interface NotificationsPanelProps {
 }
 
 export function NotificationsPanel({ children }: NotificationsPanelProps) {
-  const [notifications, setNotifications] =
-    useState<Notification[]>(mockNotifications);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, remove } =
+    useNotificationsCenter();
   const [isOpen, setIsOpen] = useState(false);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const removeNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -198,7 +113,7 @@ export function NotificationsPanel({ children }: NotificationsPanelProps) {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {notifications.map((notification) => (
+                  {notifications.map((notification: AppNotification) => (
                     <div
                       key={notification.id}
                       className={`p-3 sm:p-4 border-b border-gray-100 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors ${
@@ -240,9 +155,9 @@ export function NotificationsPanel({ children }: NotificationsPanelProps) {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => {
+                              onClick={(e: React.MouseEvent) => {
                                 e.stopPropagation();
-                                removeNotification(notification.id);
+                                remove(notification.id);
                               }}
                               className="h-6 w-6 p-0 hover:bg-red-100 active:bg-red-200 shrink-0 touch-manipulation !text-gray-600"
                             >

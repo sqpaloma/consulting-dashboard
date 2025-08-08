@@ -14,14 +14,13 @@ import {
   useChatState,
   useCurrentUser,
   useSearchUsers,
-  useNotifications,
 } from "@/hooks/use-chat";
+import { useNotificationsCenter } from "@/hooks/use-notifications-center";
 import { Id } from "@/convex/_generated/dataModel";
 import { ChatSidebar } from "./chat-sidebar";
 import { ChatArea } from "./chat-area";
 import { DeleteConfirmationModal } from "./delete-confirmation-modal";
 import { TodoModal } from "./todo-modal";
-import { NotificationToast } from "./notification-toast";
 import { LoginPrompt } from "./login-prompt";
 
 export function ChatPage() {
@@ -34,7 +33,7 @@ export function ChatPage() {
     showUserSearch,
     setShowUserSearch,
   } = useChatState();
-  const { addNotification, notifications } = useNotifications();
+  const { add } = useNotificationsCenter();
 
   const [newMessage, setNewMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -85,14 +84,41 @@ export function ChatPage() {
     }
   }, [selectedConversation, currentUser?.id, markAsRead]);
 
+  // Notificar novas mensagens com base no aumento de unreadCount
+  const unreadRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    (conversations as any[])?.forEach((c: any) => {
+      const prev = unreadRef.current[c.id] || 0;
+      const curr = c.unreadCount || 0;
+      if (curr > prev) {
+        const title = c.otherUser?.name
+          ? `Nova mensagem de ${c.otherUser.name}`
+          : "Nova mensagem";
+        const snippet = c.lastMessage ? `\"${c.lastMessage}\"` : "";
+        add({ type: "message", title, message: snippet, urgent: false });
+      }
+      unreadRef.current[c.id] = curr;
+    });
+  }, [conversations, add]);
+
   const handleSendMessage = async () => {
     if (newMessage.trim() && selectedConversation && currentUser?.id) {
       try {
         await sendMessage(selectedConversation, newMessage.trim());
         setNewMessage("");
-        addNotification("Mensagem enviada");
+        add({
+          type: "message",
+          title: "Mensagem enviada",
+          message: "Sua mensagem foi enviada",
+          urgent: false,
+        });
       } catch (error) {
-        addNotification("Erro ao enviar mensagem");
+        add({
+          type: "system",
+          title: "Erro",
+          message: "Erro ao enviar mensagem",
+          urgent: false,
+        });
       }
     }
   };
@@ -106,10 +132,20 @@ export function ChatPage() {
         setSelectedConversation(conversationId);
         setShowUserSearch(false);
         setSearchQuery("");
-        addNotification("Conversa criada");
+        add({
+          type: "message",
+          title: "Conversa criada",
+          message: "Nova conversa iniciada",
+          urgent: false,
+        });
       }
     } catch (error) {
-      addNotification("Erro ao criar conversa");
+      add({
+        type: "system",
+        title: "Erro",
+        message: "Erro ao criar conversa",
+        urgent: false,
+      });
     }
   };
 
@@ -121,11 +157,20 @@ export function ChatPage() {
         messageId: messageId as Id<"messages">,
         userId: currentUser.id,
       });
-
-      addNotification("Mensagem deletada com sucesso");
+      add({
+        type: "message",
+        title: "Mensagem deletada",
+        message: "Mensagem removida",
+        urgent: false,
+      });
       setDeleteConfirmation(null);
     } catch (error) {
-      addNotification("Erro ao deletar mensagem");
+      add({
+        type: "system",
+        title: "Erro",
+        message: "Erro ao deletar mensagem",
+        urgent: false,
+      });
     }
   };
 
@@ -137,12 +182,21 @@ export function ChatPage() {
         conversationId: conversationId as Id<"conversations">,
         userId: currentUser.id,
       });
-
-      addNotification("Conversa deletada com sucesso");
+      add({
+        type: "message",
+        title: "Conversa deletada",
+        message: "Conversa removida",
+        urgent: false,
+      });
       setSelectedConversation(null);
       setDeleteConfirmation(null);
     } catch (error) {
-      addNotification("Erro ao deletar conversa");
+      add({
+        type: "system",
+        title: "Erro",
+        message: "Erro ao deletar conversa",
+        urgent: false,
+      });
     }
   };
 
@@ -171,7 +225,7 @@ export function ChatPage() {
     return <LoginPrompt />;
   }
 
-  const selectedConversationData = conversations?.find(
+  const selectedConversationData = (conversations as any[])?.find(
     (c: any) => c.id === selectedConversation
   );
 
@@ -182,14 +236,16 @@ export function ChatPage() {
         {/* Contacts Sidebar */}
         <div className="lg:col-span-1">
           <ChatSidebar
-            conversations={conversations}
-            searchResults={searchResults}
+            conversations={(conversations as any[]) || []}
+            searchResults={(searchResults as any[]) || []}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             showUserSearch={showUserSearch}
             setShowUserSearch={setShowUserSearch}
             selectedConversation={selectedConversation}
-            setSelectedConversation={setSelectedConversation}
+            setSelectedConversation={(id: string) =>
+              setSelectedConversation(id as any)
+            }
             onCreateConversation={handleCreateConversation}
             onDeleteConversation={(id: string) =>
               setDeleteConfirmation({
@@ -205,7 +261,7 @@ export function ChatPage() {
         <div className="lg:col-span-3">
           <ChatArea
             selectedConversationData={selectedConversationData}
-            messages={messages}
+            messages={(messages as any[]) || []}
             newMessage={newMessage}
             setNewMessage={setNewMessage}
             onSendMessage={handleSendMessage}
@@ -244,15 +300,24 @@ export function ChatPage() {
           selectedMessage={selectedMessageForTodo}
           onClose={handleTodoModalClose}
           onSuccess={() => {
-            addNotification("Todo criado com sucesso!");
+            add({
+              type: "project",
+              title: "Todo criado",
+              message: "Tarefa criada com sucesso",
+              urgent: false,
+            });
             handleTodoModalClose();
           }}
-          onError={() => addNotification("Erro ao criar todo")}
+          onError={() =>
+            add({
+              type: "system",
+              title: "Erro",
+              message: "Erro ao criar todo",
+              urgent: false,
+            })
+          }
         />
       )}
-
-      {/* Notificações */}
-      <NotificationToast notifications={notifications} />
     </ResponsiveLayout>
   );
 }

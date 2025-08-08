@@ -11,14 +11,13 @@ import {
   useChatState,
   useCurrentUser,
   useSearchUsers,
-  useNotifications,
 } from "@/hooks/use-chat";
+import { useNotificationsCenter } from "@/hooks/use-notifications-center";
 import { Id } from "@/convex/_generated/dataModel";
 import { ChatSidebar } from "./chat-sidebar";
 import { ChatArea } from "./chat-area";
 import { DeleteConfirmationModal } from "./delete-confirmation-modal";
 import { TodoModal } from "./todo-modal";
-import { NotificationToast } from "./notification-toast";
 
 export function ChatEmbedded() {
   const currentUser = useCurrentUser();
@@ -30,7 +29,7 @@ export function ChatEmbedded() {
     showUserSearch,
     setShowUserSearch,
   } = useChatState();
-  const { addNotification, notifications } = useNotifications();
+  const { add } = useNotificationsCenter();
 
   const [newMessage, setNewMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -112,9 +111,19 @@ export function ChatEmbedded() {
       try {
         await sendMessage(selectedConversation, newMessage.trim());
         setNewMessage("");
-        addNotification("Mensagem enviada");
+        add({
+          type: "message",
+          title: "Mensagem enviada",
+          message: "Sua mensagem foi enviada",
+          urgent: false,
+        });
       } catch (error) {
-        addNotification("Erro ao enviar mensagem");
+        add({
+          type: "system",
+          title: "Erro",
+          message: "Erro ao enviar mensagem",
+          urgent: false,
+        });
       }
     }
   };
@@ -128,10 +137,20 @@ export function ChatEmbedded() {
         setSelectedConversation(conversationId);
         setShowUserSearch(false);
         setSearchQuery("");
-        addNotification("Conversa criada");
+        add({
+          type: "message",
+          title: "Conversa criada",
+          message: "Nova conversa iniciada",
+          urgent: false,
+        });
       }
     } catch (error) {
-      addNotification("Erro ao criar conversa");
+      add({
+        type: "system",
+        title: "Erro",
+        message: "Erro ao criar conversa",
+        urgent: false,
+      });
     }
   };
 
@@ -143,10 +162,20 @@ export function ChatEmbedded() {
         messageId: messageId as Id<"messages">,
         userId: currentUser.id,
       });
-      addNotification("Mensagem deletada com sucesso");
+      add({
+        type: "message",
+        title: "Mensagem deletada",
+        message: "Mensagem removida",
+        urgent: false,
+      });
       setDeleteConfirmation(null);
     } catch (error) {
-      addNotification("Erro ao deletar mensagem");
+      add({
+        type: "system",
+        title: "Erro",
+        message: "Erro ao deletar mensagem",
+        urgent: false,
+      });
     }
   };
 
@@ -158,11 +187,21 @@ export function ChatEmbedded() {
         conversationId: conversationId as Id<"conversations">,
         userId: currentUser.id,
       });
-      addNotification("Conversa deletada com sucesso");
+      add({
+        type: "message",
+        title: "Conversa deletada",
+        message: "Conversa removida",
+        urgent: false,
+      });
       setSelectedConversation(null);
       setDeleteConfirmation(null);
     } catch (error) {
-      addNotification("Erro ao deletar conversa");
+      add({
+        type: "system",
+        title: "Erro",
+        message: "Erro ao deletar conversa",
+        urgent: false,
+      });
     }
   };
 
@@ -243,14 +282,24 @@ export function ChatEmbedded() {
           selectedMessage={selectedMessageForTodo}
           onClose={handleTodoModalClose}
           onSuccess={() => {
-            addNotification("Todo criado com sucesso!");
+            add({
+              type: "project",
+              title: "Todo criado",
+              message: "Tarefa criada com sucesso",
+              urgent: false,
+            });
             handleTodoModalClose();
           }}
-          onError={() => addNotification("Erro ao criar todo")}
+          onError={() =>
+            add({
+              type: "system",
+              title: "Erro",
+              message: "Erro ao criar todo",
+              urgent: false,
+            })
+          }
         />
       )}
-
-      <NotificationToast notifications={notifications} />
     </div>
   );
 }

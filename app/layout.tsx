@@ -4,6 +4,7 @@ import { ConvexClientProvider } from "@/lib/convex-provider";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { NotificationsProvider } from "@/hooks/use-notifications-center";
 
 export const metadata: Metadata = {
   title: "Novak & Gouveia",
@@ -30,8 +31,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ConvexClientProvider>
-            <AuthLayout>{children}</AuthLayout>
-            <Toaster richColors position="bottom-right" />
+            <NotificationsProvider>
+              <AuthLayout>{children}</AuthLayout>
+              <Toaster richColors position="bottom-right" />
+            </NotificationsProvider>
           </ConvexClientProvider>
         </ThemeProvider>
       </body>
