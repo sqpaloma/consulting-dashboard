@@ -51,7 +51,49 @@ export function useActivityData(
     return null;
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, itemDate?: string) => {
+    // Verifica se o item está atrasado
+    const isOverdue = (dateString: string | undefined): boolean => {
+      if (!dateString) return false;
+      
+      let itemDateParsed = null;
+      
+      // Primeiro, tenta usar o campo data se estiver em formato ISO
+      if (dateString && dateString.includes("-")) {
+        // Para datas em formato YYYY-MM-DD, força interpretação no fuso horário local
+        const dateParts = dateString.split("-");
+        if (dateParts.length === 3) {
+          itemDateParsed = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+        } else {
+          itemDateParsed = new Date(dateString);
+        }
+        if (isNaN(itemDateParsed.getTime())) {
+          itemDateParsed = null;
+        }
+      } else if (dateString) {
+        itemDateParsed = parseDate(dateString);
+      }
+      
+      if (itemDateParsed) {
+        const today = new Date();
+        const todayBrasilia = new Date(
+          today.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+        );
+        todayBrasilia.setHours(0, 0, 0, 0);
+        itemDateParsed.setHours(0, 0, 0, 0);
+        
+        
+        return itemDateParsed < todayBrasilia;
+      }
+      
+      return false;
+    };
+
+    // Se o item estiver atrasado, retorna cor vermelha
+    if (isOverdue(itemDate)) {
+      return "bg-red-100 border-red-300"; // vermelho para itens atrasados
+    }
+
     const statusLower = status.toLowerCase();
     if (
       statusLower.includes("análise") ||

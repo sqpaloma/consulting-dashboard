@@ -19,10 +19,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
 import Image from "next/image";
 import { useNotificationsCenter } from "@/hooks/use-notifications-center";
+import { useAdmin } from "@/hooks/use-admin";
 
 export function ConsultingDashboard() {
   const { dashboardData, processedItems, loadSavedData } = useDashboardData();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const { add } = useNotificationsCenter();
 
   // Estados para modais
@@ -42,8 +44,8 @@ export function ConsultingDashboard() {
     user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
 
   // Flag global: consultores (e exceções por email) veem apenas seus próprios itens
-  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
-  const shouldForceOwn = isConsultor || forceOwnByEmail;
+  const isConsultor = user?.role === "consultor" && !isAdmin;
+  const shouldForceOwn = isAdmin ? false : isConsultor || forceOwnByEmail;
 
   const isGiovanniManager =
     user?.email?.toLowerCase() === "giovanni.gamero@novakgouveia.com.br";
@@ -72,7 +74,8 @@ export function ConsultingDashboard() {
       !shouldForceOwn &&
       !filteredByResponsavel &&
       user?.name &&
-      !isGiovanniManager
+      !isGiovanniManager &&
+      !isAdmin
     ) {
       const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
       return base.filter((item) =>
@@ -88,6 +91,7 @@ export function ConsultingDashboard() {
     user?.name,
     user?.email,
     isGiovanniManager,
+    isAdmin,
   ]);
 
   // Função para fazer parse de diferentes formatos de data (copiada do calendário)
@@ -408,10 +412,7 @@ export function ConsultingDashboard() {
   };
 
   const canSeeResponsavelFilter =
-    (user?.role === "gerente" ||
-      user?.role === "diretor" ||
-      user?.role === "admin" ||
-      user?.isAdmin) &&
+    (isAdmin || user?.role === "gerente" || user?.role === "diretor") &&
     !forceOwnByEmail;
 
   return (

@@ -13,6 +13,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FixedSizeList as List } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { useState } from "react";
 
 interface DepartamentoInfoProps {
   processedItems: any[];
@@ -22,25 +31,10 @@ interface DepartamentoInfoProps {
 
 // Helpers locais de time dos consultores (mecânicos)
 const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
-  paloma: [
-    "GUSTAVOBEL",
-    "GUILHERME",
-    "EDUARDO",
-    "YURI",
-    "VAGNER",
-    "FABIO F",
-    "NIVALDO",
-  ],
-  lucas: [
-    "ALEXANDRE",
-    "ALEXSANDRO",
-    "ROBERTO P",
-    "KAUAN",
-    "KAUA",
-    "MARCELINO",
-    "LEANDRO",
-    "RODRIGO N",
-  ],
+  "paloma-hidraulicos": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
+  "paloma-engrenagens": ["VAGNER", "FABIO F", "NIVALDO"],
+  "lucas-bomba": ["ALEXANDRE", "ALEXSANDRO", "ROBERTO P", "KAUA", "MARCELINO"],
+  "lucas-comandos": ["LEANDRO", "RODRIGO N"],
   marcelo: [
     "ALZIRO",
     "G SIMAO",
@@ -54,10 +48,30 @@ const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
   carlinhos: ["SHEINE"],
 };
 
-function getTeamForConsultant(name: string | undefined | null): string[] {
+function getTeamForConsultant(
+  name: string | undefined | null,
+  departmentType?: string
+): string[] {
   const n = (name || "").toLowerCase();
-  if (n.includes("paloma")) return TEAMS_BY_CONSULTANT.paloma;
-  if (n.includes("lucas")) return TEAMS_BY_CONSULTANT.lucas;
+  if (n.includes("paloma")) {
+    if (departmentType === "hidraulicos")
+      return TEAMS_BY_CONSULTANT["paloma-hidraulicos"];
+    if (departmentType === "engrenagens")
+      return TEAMS_BY_CONSULTANT["paloma-engrenagens"];
+    return [
+      ...TEAMS_BY_CONSULTANT["paloma-hidraulicos"],
+      ...TEAMS_BY_CONSULTANT["paloma-engrenagens"],
+    ];
+  }
+  if (n.includes("lucas")) {
+    if (departmentType === "bomba") return TEAMS_BY_CONSULTANT["lucas-bomba"];
+    if (departmentType === "comandos")
+      return TEAMS_BY_CONSULTANT["lucas-comandos"];
+    return [
+      ...TEAMS_BY_CONSULTANT["lucas-bomba"],
+      ...TEAMS_BY_CONSULTANT["lucas-comandos"],
+    ];
+  }
   if (n.includes("marcelo")) return TEAMS_BY_CONSULTANT.marcelo;
   if (n.includes("carlinhos")) return TEAMS_BY_CONSULTANT.carlinhos;
   return [];
@@ -72,20 +86,52 @@ function formatPersonName(name: string): string {
     .join(" ");
 }
 
-function parseBRDate(input: string): Date | null {
-  if (!input) return null;
-  // Try ISO or Date.parse first
-  const direct = new Date(input);
-  if (!isNaN(direct.getTime())) return direct;
-  // Try dd/MM/yyyy
-  const m = input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (m) {
-    const d = parseInt(m[1], 10);
-    const mo = parseInt(m[2], 10) - 1;
-    const y = parseInt(m[3].length === 2 ? `20${m[3]}` : m[3], 10);
-    const dt = new Date(y, mo, d, 23, 59, 59);
-    return isNaN(dt.getTime()) ? null : dt;
+// Função para fazer parse de diferentes formatos de data (baseada no dashboard-metrics.tsx)
+function parseBRDate(dateString: string): Date | null {
+  if (!dateString) return null;
+
+  // Remove espaços extras
+  const cleanDate = dateString.toString().trim();
+
+  // Tenta diferentes formatos
+  const formats = [
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+    /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
+    /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
+  ];
+
+  for (const format of formats) {
+    const match = cleanDate.match(format);
+    if (match) {
+      if (format.source.includes("yyyy")) {
+        // Formato com ano completo
+        const [, day, month, year] = match;
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        // Formato com ano abreviado
+        const [, day, month, year] = match;
+        const fullYear =
+          parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
+        return new Date(fullYear, parseInt(month) - 1, parseInt(day));
+      }
+    }
   }
+
+  // Se for uma data ISO (YYYY-MM-DD), usa diretamente
+  if (cleanDate.includes("-") && cleanDate.length === 10) {
+    const date = new Date(cleanDate);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Se for um número (data do Excel)
+  if (!isNaN(Number(cleanDate)) && cleanDate.length > 4) {
+    const excelDate = Number(cleanDate);
+    return new Date((excelDate - 25569) * 86400 * 1000);
+  }
+
   return null;
 }
 
@@ -98,19 +144,58 @@ function isInExecution(status: string | undefined | null): boolean {
   );
 }
 
+// Função para verificar se um item está atrasado (baseada no dashboard-metrics.tsx)
 function isOverdue(item: any): boolean {
-  const dueStr = (item.data_registro || item.prazo || "").toString().trim();
-  const due = parseBRDate(dueStr);
-  if (!due) return false;
+  let deadlineDate = null;
+
+  // Tenta usar data_registro primeiro
+  if (item.data_registro) {
+    deadlineDate = new Date(item.data_registro);
+  } else if (item.raw_data?.prazo) {
+    deadlineDate = parseBRDate(item.raw_data.prazo);
+  } else if (item.rawData) {
+    // Se rawData é array, procura por campos de data
+    if (Array.isArray(item.rawData)) {
+      for (const val of item.rawData) {
+        if (val && typeof val === "object") {
+          const possibleDateFields = [
+            "prazo",
+            "data_registro",
+            "data_prazo",
+            "deadline",
+          ];
+          for (const field of possibleDateFields) {
+            if ((val as any)[field]) {
+              deadlineDate = parseBRDate((val as any)[field]);
+              if (deadlineDate) break;
+            }
+          }
+        } else if (val && typeof val === "string") {
+          // Se é string que pode ser uma data
+          const testDate = parseBRDate(val);
+          if (testDate) {
+            deadlineDate = testDate;
+            break;
+          }
+        }
+        if (deadlineDate) break;
+      }
+    }
+    // Se não encontrou e item tem prazo diretamente
+    if (!deadlineDate && item.prazo) {
+      deadlineDate = parseBRDate(item.prazo);
+    }
+  }
+
+  if (!deadlineDate || isNaN(deadlineDate.getTime())) {
+    return false; // Se não tem data válida, considera no prazo
+  }
+
   const today = new Date();
-  // Comparar somente data
-  const dueYMD = new Date(due.getFullYear(), due.getMonth(), due.getDate());
-  const todayYMD = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
-  return dueYMD.getTime() < todayYMD.getTime();
+  today.setHours(0, 0, 0, 0);
+  (deadlineDate as Date).setHours(0, 0, 0, 0);
+
+  return (deadlineDate as Date) < today;
 }
 
 function extractMechanicFromItem(
@@ -192,11 +277,458 @@ function computeMechanicCounts(
   return { execCount, overdueCount };
 }
 
+function computeDepartmentTotals(
+  processedItems: any[],
+  consultantName: string,
+  team: string[]
+): { totalExecCount: number; totalOverdueCount: number } {
+  const consultantLower = (consultantName || "").toLowerCase().trim();
+  let totalExecCount = 0;
+  let totalOverdueCount = 0;
+
+  for (const item of processedItems) {
+    const respLower = (item.responsavel || "").toLowerCase();
+    if (!respLower.includes(consultantLower)) continue;
+    if (!isInExecution(item.status)) continue;
+
+    const mech = extractMechanicFromItem(item, consultantName, team);
+    if (!mech) continue;
+
+    totalExecCount += 1;
+    if (isOverdue(item)) totalOverdueCount += 1;
+  }
+
+  return { totalExecCount, totalOverdueCount };
+}
+
+interface ModalData {
+  title: string;
+  items: any[];
+}
+
+function getItemsForModal(
+  processedItems: any[],
+  consultantName: string,
+  team: string[],
+  filterType: "all" | "execution" | "overdue"
+): any[] {
+  const consultantLower = (consultantName || "").toLowerCase().trim();
+
+  const filtered = processedItems.filter((item) => {
+    const respLower = (item.responsavel || "").toLowerCase();
+    if (!respLower.includes(consultantLower)) return false;
+
+    if (filterType === "all") return true;
+
+    if (filterType === "execution") {
+      return isInExecution(item.status);
+    }
+
+    if (filterType === "overdue") {
+      return isInExecution(item.status) && isOverdue(item);
+    }
+
+    return false;
+  });
+
+  return filtered;
+}
+
+function getItemsForMechanic(
+  processedItems: any[],
+  consultantName: string,
+  mechanicName: string,
+  team: string[],
+  filterType: "execution" | "overdue"
+): any[] {
+  const consultantLower = (consultantName || "").toLowerCase().trim();
+  const mechanicUpper = mechanicName.toUpperCase();
+
+  const filtered = processedItems.filter((item) => {
+    const respLower = (item.responsavel || "").toLowerCase();
+    if (!respLower.includes(consultantLower)) return false;
+    if (!isInExecution(item.status)) return false;
+
+    const mech = extractMechanicFromItem(item, consultantName, team);
+    if (!mech || mech !== mechanicUpper) return false;
+
+    if (filterType === "execution") return true;
+    if (filterType === "overdue") return isOverdue(item);
+
+    return false;
+  });
+
+  return filtered;
+}
+
+interface MechanicItemProps {
+  index: number;
+  style: React.CSSProperties;
+  data: {
+    mechanics: string[];
+    processedItems: any[];
+    consultantName: string;
+    teamList: string[];
+    openModal: (title: string, items: any[]) => void;
+  };
+}
+
+const MechanicItem = ({ index, style, data }: MechanicItemProps) => {
+  const { mechanics, processedItems, consultantName, teamList, openModal } =
+    data;
+  const m = mechanics[index];
+  const mechanicUpper = m.toUpperCase();
+  const counts = computeMechanicCounts(
+    processedItems,
+    consultantName,
+    mechanicUpper,
+    teamList
+  );
+
+  return (
+    <div style={style}>
+      <li className="text-sm text-gray-700 flex items-center justify-between px-1">
+        <span>{formatPersonName(m)}</span>
+        <span className="text-xs">
+          <span
+            className="text-gray-700 font-medium mr-2 cursor-pointer hover:opacity-75 transition-opacity"
+            onClick={() => {
+              const items = getItemsForMechanic(
+                processedItems,
+                consultantName,
+                m,
+                teamList,
+                "execution"
+              );
+              openModal(`${formatPersonName(m)} - Em Execução`, items);
+            }}
+          >
+            {counts.execCount}
+          </span>
+          <span
+            className="text-red-600 font-semibold cursor-pointer hover:opacity-75 transition-opacity"
+            onClick={() => {
+              const items = getItemsForMechanic(
+                processedItems,
+                consultantName,
+                m,
+                teamList,
+                "overdue"
+              );
+              openModal(`${formatPersonName(m)} - Em Atraso`, items);
+            }}
+          >
+            {counts.overdueCount}
+          </span>
+        </span>
+      </li>
+    </div>
+  );
+};
+
+interface DepartmentSectionProps {
+  title: string;
+  mechanics: string[];
+  processedItems: any[];
+  consultantName: string;
+  teamList: string[];
+  openModal: (title: string, items: any[]) => void;
+}
+
+const DepartmentSection = ({
+  title,
+  mechanics,
+  processedItems,
+  consultantName,
+  teamList,
+  openModal,
+}: DepartmentSectionProps) => {
+  const itemData = {
+    mechanics,
+    processedItems,
+    consultantName,
+    teamList,
+    openModal,
+  };
+
+  const departmentTotals = computeDepartmentTotals(
+    processedItems,
+    consultantName,
+    mechanics
+  );
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2 pb-1 border-b border-blue-300">
+        <p className="text-xs text-gray-600 font-medium">{title}</p>
+        <div className="flex items-center gap-2 text-xs">
+          <span
+            className="text-gray-700 font-medium cursor-pointer hover:opacity-75 transition-opacity"
+            onClick={() => {
+              const items = processedItems.filter((item) => {
+                const respLower = (item.responsavel || "").toLowerCase();
+                if (!respLower.includes(consultantName.toLowerCase()))
+                  return false;
+                if (!isInExecution(item.status)) return false;
+                const mech = extractMechanicFromItem(
+                  item,
+                  consultantName,
+                  teamList
+                );
+                return (
+                  mech && mechanics.map((m) => m.toUpperCase()).includes(mech)
+                );
+              });
+              openModal(`${title} - Em Execução`, items);
+            }}
+          >
+            {departmentTotals.totalExecCount}
+          </span>
+          <span
+            className="text-red-600 font-semibold cursor-pointer hover:opacity-75 transition-opacity"
+            onClick={() => {
+              const items = processedItems.filter((item) => {
+                const respLower = (item.responsavel || "").toLowerCase();
+                if (!respLower.includes(consultantName.toLowerCase()))
+                  return false;
+                if (!isInExecution(item.status)) return false;
+                if (!isOverdue(item)) return false;
+                const mech = extractMechanicFromItem(
+                  item,
+                  consultantName,
+                  teamList
+                );
+                return (
+                  mech && mechanics.map((m) => m.toUpperCase()).includes(mech)
+                );
+              });
+              openModal(`${title} - Em Atraso`, items);
+            }}
+          >
+            {departmentTotals.totalOverdueCount}
+          </span>
+        </div>
+      </div>
+      <ul className="flex flex-col gap-0">
+        {mechanics.length > 5 ? (
+          <div style={{ height: "120px", width: "100%" }}>
+            <AutoSizer disableHeight>
+              {({ width }: { width: number }) => (
+                <List
+                  height={120}
+                  width={width}
+                  itemCount={mechanics.length}
+                  itemSize={24}
+                  itemData={itemData}
+                >
+                  {MechanicItem}
+                </List>
+              )}
+            </AutoSizer>
+          </div>
+        ) : (
+          mechanics.map((m) => {
+            const mechanicUpper = m.toUpperCase();
+            const counts = computeMechanicCounts(
+              processedItems,
+              consultantName,
+              mechanicUpper,
+              teamList
+            );
+            return (
+              <li
+                key={m}
+                className="text-sm text-gray-700 flex items-center justify-between"
+              >
+                <span>{formatPersonName(m)}</span>
+                <span className="text-xs">
+                  <span
+                    className="text-gray-700 font-medium mr-2 cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => {
+                      const items = getItemsForMechanic(
+                        processedItems,
+                        consultantName,
+                        m,
+                        teamList,
+                        "execution"
+                      );
+                      openModal(`${formatPersonName(m)} - Em Execução`, items);
+                    }}
+                  >
+                    {counts.execCount}
+                  </span>
+                  <span
+                    className="text-red-600 font-semibold cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => {
+                      const items = getItemsForMechanic(
+                        processedItems,
+                        consultantName,
+                        m,
+                        teamList,
+                        "overdue"
+                      );
+                      openModal(`${formatPersonName(m)} - Em Atraso`, items);
+                    }}
+                  >
+                    {counts.overdueCount}
+                  </span>
+                </span>
+              </li>
+            );
+          })
+        )}
+      </ul>
+    </div>
+  );
+};
+
+interface DepartmentItemProps {
+  index: number;
+  style: React.CSSProperties;
+  data: {
+    departments: any[];
+    processedItems: any[];
+    getTeamForConsultant: (name: string) => string[];
+    openModal: (title: string, items: any[]) => void;
+  };
+}
+
+const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
+  const { departments, processedItems, getTeamForConsultant, openModal } = data;
+  const dep = departments[index];
+  const team = getTeamForConsultant(dep.responsavel);
+  const depTotals = computeDepartmentTotals(
+    processedItems,
+    dep.responsavel,
+    team
+  );
+
+  return (
+    <div style={style}>
+      <AccordionItem key={dep.id} value={dep.id}>
+        <AccordionTrigger className="px-3 no-underline hover:no-underline [&[data-state=open]]:no-underline">
+          <div className="flex w-full items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-gray-900">
+                  {dep.responsavel}
+                </span>
+              </div>
+            </div>
+            <div className="text-right space-y-1">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-right">
+                  <p className="text-xs text-gray-500">Total:</p>
+                  <p
+                    className="text-sm font-bold text-blue-600 cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => {
+                      const items = getItemsForModal(
+                        processedItems,
+                        dep.responsavel,
+                        team,
+                        "all"
+                      );
+                      openModal(`${dep.responsavel} - Todos os Itens`, items);
+                    }}
+                  >
+                    {dep.totalItens}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AccordionTrigger>
+        {team.length > 0 && (
+          <AccordionContent>
+            <div className="px-3">
+              {dep.responsavel.toLowerCase().includes("paloma") ? (
+                <div className="space-y-4">
+                  <DepartmentSection
+                    title="Bombas e Motores Hidráulicos"
+                    mechanics={TEAMS_BY_CONSULTANT["paloma-hidraulicos"]}
+                    processedItems={processedItems}
+                    consultantName={dep.responsavel}
+                    teamList={team}
+                    openModal={openModal}
+                  />
+                  <DepartmentSection
+                    title="Bombas e Motores de Engrenagens"
+                    mechanics={TEAMS_BY_CONSULTANT["paloma-engrenagens"]}
+                    processedItems={processedItems}
+                    consultantName={dep.responsavel}
+                    teamList={team}
+                    openModal={openModal}
+                  />
+                </div>
+              ) : dep.responsavel.toLowerCase().includes("lucas") ? (
+                <div className="space-y-4">
+                  <DepartmentSection
+                    title="Bomba e Motores de Grande Porte"
+                    mechanics={TEAMS_BY_CONSULTANT["lucas-bomba"]}
+                    processedItems={processedItems}
+                    consultantName={dep.responsavel}
+                    teamList={team}
+                    openModal={openModal}
+                  />
+                  <DepartmentSection
+                    title="Comandos Hidráulicos de Grande Porte"
+                    mechanics={TEAMS_BY_CONSULTANT["lucas-comandos"]}
+                    processedItems={processedItems}
+                    consultantName={dep.responsavel}
+                    teamList={team}
+                    openModal={openModal}
+                  />
+                </div>
+              ) : (
+                <DepartmentSection
+                  title="Mecânicos do time"
+                  mechanics={team}
+                  processedItems={processedItems}
+                  consultantName={dep.responsavel}
+                  teamList={team}
+                  openModal={openModal}
+                />
+              )}
+            </div>
+          </AccordionContent>
+        )}
+      </AccordionItem>
+    </div>
+  );
+};
+
 export function DepartamentoInfo({
   processedItems,
   filteredByResponsavel,
   className,
 }: DepartamentoInfoProps) {
+  const [modalData, setModalData] = useState<ModalData | null>(null);
+
+  const openModal = (title: string, items: any[]) => {
+    setModalData({ title, items });
+  };
+
+  const closeModal = () => {
+    setModalData(null);
+  };
+
+  const ClickableNumber = ({
+    number,
+    className,
+    onClick,
+  }: {
+    number: number;
+    className: string;
+    onClick: () => void;
+  }) => (
+    <span
+      className={`${className} cursor-pointer hover:opacity-75 transition-opacity`}
+      onClick={onClick}
+    >
+      {number}
+    </span>
+  );
   const getDepartamentoStats = () => {
     if (filteredByResponsavel) {
       const responsavelInfo = getResponsavelInfo(filteredByResponsavel);
@@ -280,174 +812,448 @@ export function DepartamentoInfo({
       : [];
 
     return (
-      <Card
-        className={`bg-white border-gray-200 text-gray-900 flex flex-col h-full ${className || ""}`}
-      >
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            {responsavel.isGerente ? (
-              <Building className="h-5 w-5 text-amber-400" />
-            ) : (
-              <User className="h-5 w-5 text-blue-400" />
-            )}
-            {responsavel.nome}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">
-              {responsavel.isGerente ? "Posição" : "Departamento"}:
-            </p>
-            <p className="font-medium text-gray-900">
-              {responsavel.isGerente
-                ? "Gerente Geral"
-                : departamento?.nome || responsavel.departamento}
-            </p>
-          </div>
+      <>
+        <Card
+          className={`bg-white border-gray-200 text-gray-900 flex flex-col ${className || ""}`}
+          style={{ height: "520px" }}
+        >
+          <CardHeader className="pb-3 flex-shrink-0">
+            <CardTitle className="text-lg flex items-center gap-2">
+              {responsavel.isGerente ? (
+                <Building className="h-5 w-5 text-amber-400" />
+              ) : (
+                <User className="h-5 w-5 text-blue-400" />
+              )}
+              {responsavel.nome}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex-shrink-0 space-y-3">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">
+                  {responsavel.isGerente ? "Posição" : "Departamento"}:
+                </p>
+                <p className="font-medium text-gray-900">
+                  {responsavel.isGerente
+                    ? "Gerente Geral"
+                    : departamento?.nome || responsavel.departamento}
+                </p>
+              </div>
 
-          {departamento && !responsavel.isGerente && (
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Descrição:</p>
-              <p className="text-sm text-gray-700">{departamento.descricao}</p>
-            </div>
-          )}
+              {departamento && !responsavel.isGerente && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Descrição:</p>
+                  <p className="text-sm text-gray-700">
+                    {departamento.descricao}
+                  </p>
+                </div>
+              )}
 
-          <div className="pt-2 border-t border-gray-200">
-            <div className="flex items-center justify-center">
-              <p className="text-xs text-gray-600 mr-2">Total de Itens:</p>
-              <p className="text-lg font-bold text-gray-900">{totalItens}</p>
-            </div>
-          </div>
-
-          {!responsavel.isGerente && teamList.length > 0 && (
-            <Accordion type="single" collapsible className="w-full pt-2">
-              <AccordionItem value="team">
-                <AccordionTrigger className="text-sm">
-                  Ver mecânicos do time
-                </AccordionTrigger>
-                <AccordionContent>
-                  <ul className="flex flex-col gap-2">
-                    {teamList.map((m) => {
-                      const mechanicUpper = m.toUpperCase();
-                      const counts = computeMechanicCounts(
+              <div className="pt-2 border-t border-gray-200">
+                <div className="flex items-center justify-center">
+                  <p className="text-xs text-gray-600 mr-2">Total de Itens:</p>
+                  <p
+                    className="text-lg font-bold text-blue-600 cursor-pointer hover:opacity-75 transition-opacity"
+                    onClick={() => {
+                      const items = getItemsForModal(
                         processedItems,
                         responsavel.nome,
-                        mechanicUpper,
-                        teamList
+                        teamList,
+                        "all"
                       );
-                      return (
-                        <li
-                          key={m}
-                          className="text-sm text-gray-700 flex items-center justify-between"
-                        >
-                          <span>{formatPersonName(m)}</span>
-                          <span className="text-xs">
-                            <span className="text-gray-700 font-medium mr-2">
-                              {counts.execCount}
-                            </span>
-                            <span className="text-red-600 font-semibold">
-                              {counts.overdueCount}
-                            </span>
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          )}
-        </CardContent>
-      </Card>
+                      openModal(`${responsavel.nome} - Todos os Itens`, items);
+                    }}
+                  >
+                    {totalItens}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {!responsavel.isGerente && teamList.length > 0 && (
+              <div className="flex-1 pt-2 overflow-hidden">
+                <Accordion type="single" collapsible className="w-full h-full">
+                  <AccordionItem value="team" className="h-full">
+                    <AccordionTrigger className="text-sm no-underline hover:no-underline [&[data-state=open]]:no-underline">
+                      Ver mecânicos do time
+                    </AccordionTrigger>
+                    <AccordionContent className="h-full overflow-hidden">
+                      <div className="h-full overflow-y-auto">
+                        {responsavel.nome.toLowerCase().includes("paloma") ? (
+                          <div className="space-y-4">
+                            <DepartmentSection
+                              title="Bombas e Motores Hidráulicos"
+                              mechanics={
+                                TEAMS_BY_CONSULTANT["paloma-hidraulicos"]
+                              }
+                              processedItems={processedItems}
+                              consultantName={responsavel.nome}
+                              teamList={teamList}
+                              openModal={openModal}
+                            />
+                            <DepartmentSection
+                              title="Bombas e Motores de Engrenagens"
+                              mechanics={
+                                TEAMS_BY_CONSULTANT["paloma-engrenagens"]
+                              }
+                              processedItems={processedItems}
+                              consultantName={responsavel.nome}
+                              teamList={teamList}
+                              openModal={openModal}
+                            />
+                          </div>
+                        ) : responsavel.nome.toLowerCase().includes("lucas") ? (
+                          <div className="space-y-4">
+                            <DepartmentSection
+                              title="Bomba e Motores de Grande Porte"
+                              mechanics={TEAMS_BY_CONSULTANT["lucas-bomba"]}
+                              processedItems={processedItems}
+                              consultantName={responsavel.nome}
+                              teamList={teamList}
+                              openModal={openModal}
+                            />
+                            <DepartmentSection
+                              title="Comandos Hidráulicos de Grande Porte"
+                              mechanics={TEAMS_BY_CONSULTANT["lucas-comandos"]}
+                              processedItems={processedItems}
+                              consultantName={responsavel.nome}
+                              teamList={teamList}
+                              openModal={openModal}
+                            />
+                          </div>
+                        ) : (
+                          <DepartmentSection
+                            title="Mecânicos do time"
+                            mechanics={teamList}
+                            processedItems={processedItems}
+                            consultantName={responsavel.nome}
+                            teamList={teamList}
+                            openModal={openModal}
+                          />
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        {modalData && (
+          <Dialog open={!!modalData} onOpenChange={() => closeModal()}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{modalData.title}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                {modalData.items.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">
+                    Nenhum item encontrado
+                  </p>
+                ) : (
+                  modalData.items.map((item, index) => (
+                    <div key={index} className="border rounded p-3 text-sm">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <strong>Status:</strong> {item.status || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Responsável:</strong>{" "}
+                          {item.responsavel || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Data:</strong>{" "}
+                          {item.data_registro || item.prazo || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Prioridade:</strong>{" "}
+                          {item.prioridade || "N/A"}
+                        </div>
+                      </div>
+                      {item.descricao && (
+                        <div className="mt-2">
+                          <strong>Descrição:</strong> {item.descricao}
+                        </div>
+                      )}
+                      {item.cliente && (
+                        <div className="mt-1">
+                          <strong>Cliente:</strong> {item.cliente}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </>
     );
   }
 
   // Visão geral dos departamentos
   return (
-    <Card
-      className={`bg-white border-gray-200 text-gray-900 flex flex-col h-full ${className || ""}`}
-    >
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Building className="h-5 w-5 text-amber-400" />
-          Departamentos
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1">
-        <Accordion type="multiple" className="w-full">
-          {stats.statsPorDepartamento
-            .filter((dep: any) => dep.totalItens > 0)
-            .sort((a: any, b: any) => b.totalItens - a.totalItens)
-            .map((dep: any) => {
-              const team = getTeamForConsultant(dep.responsavel);
-              return (
-                <AccordionItem key={dep.id} value={dep.id}>
-                  <AccordionTrigger className="px-3">
-                    <div className="flex w-full items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <User className="h-4 w-4 text-blue-600" />
-                          <span className="font-medium text-gray-900">
-                            {dep.responsavel}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-600 text-left">
-                          {dep.nome}
-                        </p>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2 text-right">
-                            <p className="text-xs text-gray-500">Total:</p>
-                            <p className="text-sm font-bold text-gray-900">
-                              {dep.totalItens}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+    <>
+      <Card
+        className={`bg-white border-gray-200 text-gray-900 flex flex-col ${className || ""}`}
+        style={{ height: "520px" }}
+      >
+        <CardHeader className="pb-3 flex-shrink-0">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Building className="h-5 w-5 text-amber-400" />
+            Departamentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden">
+          {(() => {
+            const filteredDepartments = stats.statsPorDepartamento
+              .filter((dep: any) => dep.totalItens > 0)
+              .sort((a: any, b: any) => b.totalItens - a.totalItens);
+
+            const departmentData = {
+              departments: filteredDepartments,
+              processedItems,
+              getTeamForConsultant,
+              openModal,
+            };
+
+            return (
+              <div className="h-full overflow-hidden">
+                <Accordion type="single" collapsible className="w-full h-full">
+                  {filteredDepartments.length > 8 ? (
+                    <div className="h-full" style={{ width: "100%" }}>
+                      <AutoSizer disableHeight>
+                        {({ width }: { width: number }) => (
+                          <List
+                            height={428}
+                            width={width}
+                            itemCount={filteredDepartments.length}
+                            itemSize={80}
+                            itemData={departmentData}
+                          >
+                            {DepartmentItem}
+                          </List>
+                        )}
+                      </AutoSizer>
                     </div>
-                  </AccordionTrigger>
-                  {team.length > 0 && (
-                    <AccordionContent>
-                      <div className="px-3">
-                        <p className="text-xs text-gray-600 mb-2">
-                          Mecânicos do time
-                        </p>
-                        <ul className="flex flex-col gap-2">
-                          {team.map((m) => {
-                            const mechanicUpper = m.toUpperCase();
-                            const counts = computeMechanicCounts(
-                              processedItems,
-                              dep.responsavel,
-                              mechanicUpper,
-                              team
-                            );
-                            return (
-                              <li
-                                key={m}
-                                className="text-sm text-gray-700 flex items-center justify-between"
-                              >
-                                <span>{formatPersonName(m)}</span>
-                                <span className="text-xs">
-                                  <span className="text-gray-700 font-medium mr-2">
-                                    {counts.execCount}
-                                  </span>
-                                  <span className="text-red-600 font-semibold">
-                                    {counts.overdueCount}
-                                  </span>
-                                </span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    </AccordionContent>
+                  ) : (
+                    <div className="h-full overflow-y-auto">
+                      {filteredDepartments.map((dep: any) => {
+                        const team = getTeamForConsultant(dep.responsavel);
+                        const depTotals = computeDepartmentTotals(
+                          processedItems,
+                          dep.responsavel,
+                          team
+                        );
+                        return (
+                          <AccordionItem key={dep.id} value={dep.id}>
+                            <AccordionTrigger className="px-3 no-underline hover:no-underline [&[data-state=open]]:no-underline">
+                              <div className="flex w-full items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-blue-600" />
+                                    <span className="font-medium text-gray-900">
+                                      {dep.responsavel}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-right space-y-1">
+                                  <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2 text-right">
+                                      <p className="text-xs text-gray-500">
+                                        Total:
+                                      </p>
+                                      <p
+                                        className="text-sm font-bold text-blue-600 cursor-pointer hover:opacity-75 transition-opacity"
+                                        onClick={() => {
+                                          const team = getTeamForConsultant(
+                                            dep.responsavel
+                                          );
+                                          const items = getItemsForModal(
+                                            processedItems,
+                                            dep.responsavel,
+                                            team,
+                                            "all"
+                                          );
+                                          openModal(
+                                            `${dep.responsavel} - Todos os Itens`,
+                                            items
+                                          );
+                                        }}
+                                      >
+                                        {dep.totalItens}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+                            {team.length > 0 && (
+                              <AccordionContent>
+                                <div className="px-3">
+                                  {dep.responsavel
+                                    .toLowerCase()
+                                    .includes("paloma") ? (
+                                    <div className="space-y-4">
+                                      <DepartmentSection
+                                        title="Bombas e Motores Hidráulicos"
+                                        mechanics={
+                                          TEAMS_BY_CONSULTANT[
+                                            "paloma-hidraulicos"
+                                          ]
+                                        }
+                                        processedItems={processedItems}
+                                        consultantName={dep.responsavel}
+                                        teamList={team}
+                                        openModal={openModal}
+                                      />
+                                      <DepartmentSection
+                                        title="Bombas e Motores de Engrenagens"
+                                        mechanics={
+                                          TEAMS_BY_CONSULTANT[
+                                            "paloma-engrenagens"
+                                          ]
+                                        }
+                                        processedItems={processedItems}
+                                        consultantName={dep.responsavel}
+                                        teamList={team}
+                                        openModal={openModal}
+                                      />
+                                    </div>
+                                  ) : dep.responsavel
+                                      .toLowerCase()
+                                      .includes("lucas") ? (
+                                    <div className="space-y-4">
+                                      <DepartmentSection
+                                        title="Bomba e Motores de Grande Porte"
+                                        mechanics={
+                                          TEAMS_BY_CONSULTANT["lucas-bomba"]
+                                        }
+                                        processedItems={processedItems}
+                                        consultantName={dep.responsavel}
+                                        teamList={team}
+                                        openModal={openModal}
+                                      />
+                                      <DepartmentSection
+                                        title="Comandos Hidráulicos de Grande Porte"
+                                        mechanics={
+                                          TEAMS_BY_CONSULTANT["lucas-comandos"]
+                                        }
+                                        processedItems={processedItems}
+                                        consultantName={dep.responsavel}
+                                        teamList={team}
+                                        openModal={openModal}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <DepartmentSection
+                                      title="Mecânicos do time"
+                                      mechanics={team}
+                                      processedItems={processedItems}
+                                      consultantName={dep.responsavel}
+                                      teamList={team}
+                                      openModal={openModal}
+                                    />
+                                  )}
+                                </div>
+                              </AccordionContent>
+                            )}
+                          </AccordionItem>
+                        );
+                      })}
+                    </div>
                   )}
-                </AccordionItem>
-              );
-            })}
-        </Accordion>
-      </CardContent>
-    </Card>
+                </Accordion>
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+      {modalData && (
+        <Dialog open={!!modalData} onOpenChange={() => closeModal()}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{modalData.title}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              {modalData.items.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">
+                  Nenhum item encontrado
+                </p>
+              ) : (
+                modalData.items.map((item, index) => {
+                  const isItemOverdue = isOverdue(item);
+                  return (
+                    <div
+                      key={index}
+                      className={`border rounded p-3 text-sm ${isItemOverdue ? "border-red-300 bg-red-50" : "border-gray-200"}`}
+                    >
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <strong>Status:</strong> {item.status || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Responsável:</strong>{" "}
+                          {item.responsavel || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Data Registro:</strong>{" "}
+                          {item.data_registro || "N/A"}
+                        </div>
+                        <div
+                          className={
+                            isItemOverdue ? "text-red-600 font-semibold" : ""
+                          }
+                        >
+                          <strong>Prazo:</strong>{" "}
+                          {item.raw_data?.prazo ||
+                            item.prazo ||
+                            (item.rawData && Array.isArray(item.rawData)
+                              ? item.rawData.find(
+                                  (val: any) =>
+                                    val &&
+                                    typeof val === "string" &&
+                                    parseBRDate(val)
+                                ) || "N/A"
+                              : "N/A")}
+                          {isItemOverdue && " ⚠️"}
+                        </div>
+                        <div>
+                          <strong>Prioridade:</strong>{" "}
+                          {item.prioridade || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Categoria:</strong> {item.categoria || "N/A"}
+                        </div>
+                      </div>
+                      {item.descricao && (
+                        <div className="mt-2">
+                          <strong>Descrição:</strong> {item.descricao}
+                        </div>
+                      )}
+                      {item.cliente && (
+                        <div className="mt-1">
+                          <strong>Cliente:</strong> {item.cliente}
+                        </div>
+                      )}
+                      {item.equipamento && (
+                        <div className="mt-1">
+                          <strong>Equipamento:</strong> {item.equipamento}
+                        </div>
+                      )}
+                      {item.observacoes && (
+                        <div className="mt-1">
+                          <strong>Observações:</strong> {item.observacoes}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }

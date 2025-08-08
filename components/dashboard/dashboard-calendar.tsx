@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { loadDashboardData } from "@/lib/dashboard-supabase-client";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
 
 interface CalendarItem {
   id: string;
@@ -31,6 +32,7 @@ export function DashboardCalendar({
   filteredByResponsavel,
 }: DashboardCalendarProps) {
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [calendarItems, setCalendarItems] = useState<{
@@ -43,8 +45,8 @@ export function DashboardCalendar({
   const forceOwnByEmail =
     user?.email?.toLowerCase() === "lucas@novakgouveia.com.br" ||
     user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
-  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
-  const shouldForceOwn = isConsultor || forceOwnByEmail;
+  const isConsultor = user?.role === "consultor" && !isAdmin;
+  const shouldForceOwn = isAdmin ? false : isConsultor || forceOwnByEmail;
   const isGiovanniManager =
     user?.email?.toLowerCase() === "giovanni.gamero@novakgouveia.com.br";
 
@@ -95,7 +97,8 @@ export function DashboardCalendar({
         !shouldForceOwn &&
         !filteredByResponsavel &&
         user?.name &&
-        !isGiovanniManager
+        !isGiovanniManager &&
+        !isAdmin
       ) {
         const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
         dbItems = dbItems.filter((item) =>
@@ -117,7 +120,7 @@ export function DashboardCalendar({
   useEffect(() => {
     loadDatabaseItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredByResponsavel, shouldForceOwn, user?.name, user?.email]);
+  }, [filteredByResponsavel, shouldForceOwn, user?.name, user?.email, isAdmin]);
 
   // Processa os itens para extrair datas de prazo
   useEffect(() => {

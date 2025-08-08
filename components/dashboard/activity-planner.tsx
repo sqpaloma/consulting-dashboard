@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { EllipsisVertical, Share2, ListTodo } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
 import { useChat, useSearchUsers } from "@/hooks/use-chat";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -71,6 +72,7 @@ export function ActivityPlanner({
   );
 
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const { sendMessage, createDirectConversation } = useChat(
     user?.userId as any
   );
@@ -93,8 +95,8 @@ export function ActivityPlanner({
   const forceOwnByEmail =
     user?.email?.toLowerCase() === "lucas@novakgouveia.com.br" ||
     user?.email?.toLowerCase() === "lucas.santos@novakgouveia.com.br";
-  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
-  const shouldForceOwn = isConsultor || forceOwnByEmail;
+  const isConsultor = user?.role === "consultor" && !isAdmin;
+  const shouldForceOwn = isAdmin ? false : isConsultor || forceOwnByEmail;
   const isGiovanniManager =
     user?.email?.toLowerCase() === "giovanni.gamero@novakgouveia.com.br";
 
@@ -313,7 +315,8 @@ export function ActivityPlanner({
         !shouldForceOwn &&
         !filteredByResponsavel &&
         user?.name &&
-        !isGiovanniManager
+        !isGiovanniManager &&
+        !isAdmin
       ) {
         const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
         dbItems = dbItems.filter((item) =>
@@ -336,7 +339,7 @@ export function ActivityPlanner({
   useEffect(() => {
     loadDatabaseItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredByResponsavel, shouldForceOwn, user?.name, user?.email]);
+  }, [filteredByResponsavel, shouldForceOwn, user?.name, user?.email, isAdmin]);
 
   const today = new Date();
   const todayBrasilia = new Date(
@@ -480,9 +483,14 @@ export function ActivityPlanner({
                   <div style={style} className="pb-2">
                     <div className="flex flex-col bg-gray-50 rounded-md p-2 h-full">
                       <div
-                        className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-700"}`}
+                        className={`text-xs font-semibold mb-4 flex items-center justify-between ${isToday ? "text-blue-600" : "text-gray-700"}`}
                       >
-                        {dayName}
+                        <div className="flex-1 text-center">
+                          {dayName}
+                        </div>
+                        <div className="bg-gray-200 text-gray-600 rounded-full px-2 py-1 text-xs min-w-[20px] text-center">
+                          {activitiesForDay.length}
+                        </div>
                       </div>
                       <div className="flex-1 min-h-0">
                         {activitiesForDay.length > 0 ? (
@@ -522,7 +530,7 @@ export function ActivityPlanner({
                               return (
                                 <div style={actStyle} className="px-1">
                                   <div
-                                    className={`p-2 rounded-md text-xs border mb-1 ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : data.getStatusColor(activity.status)}`}
+                                    className={`p-2 rounded-md text-xs border ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : data.getStatusColor(activity.status, activity.data || activity.prazo)}`}
                                   >
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="min-w-0 flex-1">
@@ -633,9 +641,14 @@ export function ActivityPlanner({
                     className="flex flex-col bg-gray-50 rounded-md p-2"
                   >
                     <div
-                      className={`text-xs font-semibold mb-2 ${isToday ? "text-blue-600" : "text-gray-700"}`}
+                      className={`text-xs font-semibold mb-4 flex items-center justify-between ${isToday ? "text-blue-600" : "text-gray-700"}`}
                     >
-                      {dayName}
+                      <div className="flex-1 text-center">
+                        {dayName}
+                      </div>
+                      <div className="bg-gray-200 text-gray-600 rounded-full px-2 py-1 text-xs min-w-[20px] text-center">
+                        {activitiesForDay.length}
+                      </div>
                     </div>
                     <div className="flex-1 min-h-0">
                       {activitiesForDay.length > 0 ? (
@@ -671,7 +684,7 @@ export function ActivityPlanner({
                             return (
                               <div style={style} className="px-1">
                                 <div
-                                  className={`p-2 rounded-md text-xs border mb-1 ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : getStatusColor(activity.status)}`}
+                                  className={`p-2 rounded-md text-xs border ${isCompleted ? "bg-gray-100 opacity-60 line-through border-gray-300" : getStatusColor(activity.status, activity.data || activity.prazo)}`}
                                 >
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0 flex-1">
