@@ -9,3 +9,4 @@ export { DeleteConfirmationModal } from "./delete-confirmation-modal";
 export { TodoModal } from "./todo-modal";
 export { NotificationToast } from "./notification-toast";
 export { LoginPrompt } from "./login-prompt";
+export { ChatEmbedded } from "./chat-embedded";

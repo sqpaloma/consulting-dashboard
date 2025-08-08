@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
   Grid3X3,
-  MessageSquare,
   Calendar,
   BarChart3,
   BookOpen,
@@ -40,6 +39,7 @@ export function Header({
   };
 
   const canSeeAnalytics = isAdmin || user?.role === "diretor";
+  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
 
   return (
     <>
@@ -82,15 +82,7 @@ export function Header({
               <Grid3X3 className="h-5 w-5" />
             </Button>
           </Link>
-          <Link href="/chat">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
-            >
-              <MessageSquare className="h-5 w-5" />
-            </Button>
-          </Link>
+          {/* Chat removido: ícone suprimido */}
           <Link href="/calendar">
             <Button
               variant="ghost"
@@ -111,15 +103,17 @@ export function Header({
               </Button>
             </Link>
           )}
-          <Link href="/indicadores">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
-            >
-              <TrendingUp className="h-5 w-5" />
-            </Button>
-          </Link>
+          {!isConsultor && (
+            <Link href="/indicadores">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-blue-700 !text-white !hover:bg-blue-700"
+              >
+                <TrendingUp className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
           <Link href="/manual">
             <Button
               variant="ghost"

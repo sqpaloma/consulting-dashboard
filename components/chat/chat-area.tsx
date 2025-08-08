@@ -18,12 +18,12 @@ interface ChatAreaProps {
   selectedConversationData: any;
   messages: any[];
   newMessage: string;
-  setNewMessage: (message: string) => void;
+  setNewMessage: (message: string | ((prev: string) => string)) => void;
   onSendMessage: () => void;
   onDeleteMessage: (id: string) => void;
   onDeleteConversation: (id: string) => void;
   onCreateTodoFromMessage: (messageId: string, content: string) => void;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function ChatArea({
@@ -46,16 +46,16 @@ export function ChatArea({
 
   if (!selectedConversationData) {
     return (
-      <Card className="bg-white h-full flex flex-col max-h-[700px]">
+      <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col max-h-[700px]">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageSquare className="h-8 w-8 text-gray-400" />
+            <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageSquare className="h-8 w-8 text-white/70" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-white mb-2">
               Selecione uma conversa
             </h3>
-            <p className="text-gray-500">
+            <p className="text-white/70">
               Escolha uma conversa na barra lateral para começar a conversar
             </p>
           </div>
@@ -65,9 +65,9 @@ export function ChatArea({
   }
 
   return (
-    <Card className="bg-white h-full flex flex-col max-h-[700px]">
-      {/* Chat Header */}
-      <CardHeader className="pb-3 border-b flex-shrink-0">
+    <Card className="bg-white/10 border-white/20 text-white h-full flex flex-col max-h-[700px]">
+      {/* Chat Header fixo */}
+      <CardHeader className="sticky top-0 z-10 pb-3 border-b border-white/10 bg-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
@@ -79,11 +79,11 @@ export function ChatArea({
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium text-gray-900">
+              <h3 className="font-medium text-white">
                 {selectedConversationData.otherUser?.name ||
                   "Conversa em grupo"}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-white/70">
                 {selectedConversationData.otherUser?.isOnline
                   ? "Online"
                   : "Offline"}
@@ -96,10 +96,15 @@ export function ChatArea({
               size="icon"
               onClick={() => onDeleteConversation(selectedConversationData.id)}
               title="Deletar conversa"
+              className="text-white hover:bg-white/10"
             >
-              <MessageSquareX className="h-4 w-4 text-red-500" />
+              <MessageSquareX className="h-4 w-4 text-red-400" />
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10"
+            >
               <MoreVertical className="h-4 w-4" />
             </Button>
           </div>

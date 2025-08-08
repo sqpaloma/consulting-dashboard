@@ -506,3 +506,59 @@ export const deleteConversation = mutation({
     return args.conversationId;
   },
 });
+
+export const getOrCreateGlobalConversation = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    // Try to find an existing global group conversation named "Geral"
+    const conversations = await ctx.db.query("conversations").collect();
+    let global = conversations.find(
+      (c: any) =>
+        c.isGroup && c.type === "group" && c.name === "Geral" && !c.isDeleted
+    );
+
+    const now = Date.now();
+
+    if (!global) {
+      const conversationId = await ctx.db.insert("conversations", {
+        name: "Geral",
+        type: "group",
+        isGroup: true,
+        createdBy: args.userId,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+      const created = await ctx.db.get(conversationId);
+      if (!created) throw new Error("Falha ao recuperar conversa criada");
+      global = created as any;
+    }
+
+    if (!global) throw new Error("Falha ao criar conversa de grupo");
+
+    // Ensure all users are participants
+    const users = await ctx.db.query("users").collect();
+    for (const user of users) {
+      const existing = await ctx.db
+        .query("conversationParticipants")
+        .withIndex("by_conversation_user", (q) =>
+          q
+            .eq("conversationId", global._id)
+            .eq("userId", user._id as Id<"users">)
+        )
+        .first();
+
+      if (!existing) {
+        await ctx.db.insert("conversationParticipants", {
+          conversationId: global._id,
+          userId: user._id as Id<"users">,
+          joinedAt: now,
+          isActive: true,
+        });
+      } else if (!existing.isActive) {
+        await ctx.db.patch(existing._id, { isActive: true });
+      }
+    }
+
+    return global._id as Id<"conversations">;
+  },
+});

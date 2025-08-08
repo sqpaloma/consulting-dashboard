@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/sidebar";
 import {
   Grid3X3,
-  MessageSquare,
   Calendar,
   BarChart3,
   BookOpen,
@@ -50,20 +49,11 @@ const baseMenuItems = [
     href: "/",
   },
   {
-    icon: MessageSquare,
-    label: "Chat",
-    href: "/chat",
-  },
-  {
     icon: Calendar,
     label: "Calendário",
     href: "/calendar",
   },
-  {
-    icon: TrendingUp,
-    label: "Indicadores",
-    href: "/indicadores",
-  },
+
   {
     icon: BookOpen,
     label: "Manual",
@@ -106,9 +96,19 @@ export function ResponsiveLayout({
   };
 
   const canSeeAnalytics = isAdmin || user?.role === "diretor";
+  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
 
   const extendedMenuItems = [
     ...baseMenuItems,
+    ...(!isConsultor
+      ? [
+          {
+            icon: TrendingUp,
+            label: "Indicadores",
+            href: "/indicadores",
+          },
+        ]
+      : []),
     ...(canSeeAnalytics
       ? [
           {

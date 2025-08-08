@@ -7,7 +7,7 @@ interface MessageListProps {
   messages: any[];
   onDeleteMessage: (id: string) => void;
   onCreateTodoFromMessage: (messageId: string, content: string) => void;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function MessageList({
@@ -17,7 +17,10 @@ export function MessageList({
   messagesEndRef,
 }: MessageListProps) {
   return (
-    <div className="overflow-y-auto p-4 h-[450px]">
+    <div
+      id="chat-messages-container"
+      className="overflow-y-auto p-4 h-[450px] bg-transparent"
+    >
       <div className="space-y-4">
         {messages?.map((message: any) => (
           <MessageItem

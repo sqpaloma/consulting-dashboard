@@ -41,14 +41,14 @@ export function MessageItem({
         <div
           className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
             message.isOwn
-              ? "bg-blue-500 text-white"
-              : "bg-gray-100 text-gray-900"
+              ? "bg-blue-500/80 text-white"
+              : "bg-white/10 text-white"
           }`}
         >
           <p className="text-sm">{message.content}</p>
           <p
             className={`text-xs mt-1 ${
-              message.isOwn ? "text-blue-100" : "text-gray-500"
+              message.isOwn ? "text-blue-100" : "text-white/70"
             }`}
           >
             {message.timestamp}
