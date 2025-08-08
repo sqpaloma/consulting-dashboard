@@ -380,7 +380,7 @@ export function ActivityPlanner({
       setSelectedUserId(null);
       setShareMessage("");
       if (redirectToChat) {
-        window.location.href = "/chat";
+        window.location.href = `/calendar?conv=${conversationId}`;
       }
     } catch (e) {
       // noop
@@ -619,7 +619,7 @@ export function ActivityPlanner({
                 onCheckedChange={setRedirectToChat}
               />
               <Label htmlFor="redirect-chat" className="text-sm text-gray-600">
-                Abrir página de chat após enviar
+                Abrir página de agenda após enviar
               </Label>
             </div>
           </div>

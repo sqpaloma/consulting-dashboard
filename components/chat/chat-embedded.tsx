@@ -18,6 +18,7 @@ import { ChatSidebar } from "./chat-sidebar";
 import { ChatArea } from "./chat-area";
 import { DeleteConfirmationModal } from "./delete-confirmation-modal";
 import { TodoModal } from "./todo-modal";
+import { useSearchParams } from "next/navigation";
 
 export function ChatEmbedded() {
   const currentUser = useCurrentUser();
@@ -30,6 +31,9 @@ export function ChatEmbedded() {
     setShowUserSearch,
   } = useChatState();
   const { add } = useNotificationsCenter();
+
+  const searchParams = useSearchParams();
+  const convParam = searchParams.get("conv");
 
   const [newMessage, setNewMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -49,14 +53,13 @@ export function ChatEmbedded() {
 
   // Criar/garantir conversa global "Geral"
   const getOrCreateGlobal = useMutation(api.chat.getOrCreateGlobalConversation);
-
   useEffect(() => {
     const ensureGlobal = async () => {
       if (!currentUser?.id) return;
       try {
         const convId = await getOrCreateGlobal({ userId: currentUser.id });
-        // Seleciona "Geral" ao entrar na página (e quando ainda não há seleção)
-        if (!selectedConversation) {
+        // Seleciona "Geral" apenas se não houver conversa pré-selecionada via URL
+        if (!selectedConversation && !convParam) {
           setSelectedConversation(convId);
         }
       } catch (e) {
@@ -65,7 +68,18 @@ export function ChatEmbedded() {
     };
     ensureGlobal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id]);
+  }, [currentUser?.id, convParam, selectedConversation]);
+
+  // Seleciona conversa a partir do parâmetro de URL (?conv=...)
+  useEffect(() => {
+    if (convParam) {
+      setSelectedConversation(convParam as any);
+      try {
+        window.history.replaceState({}, "", "/calendar");
+      } catch {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convParam]);
 
   // Buscar mensagens da conversa selecionada
   const messages = useMessages(
