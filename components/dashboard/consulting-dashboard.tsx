@@ -506,10 +506,10 @@ export function ConsultingDashboard() {
           <div className="space-y-2 col-span-2 xl:col-span-3">
             {/* Gráficos empilhados */}
             <div className="block">
-              <div className="h-[250px]">
+              <div className="h-[256px]">
                 <DistributionPanel dashboardData={filteredDashboardData} />
               </div>
-              <div className="mt-2 h-[250px]">
+              <div className="mt-2 h-[256px]">
                 <OverdueDistribution overdueItems={overdueItems} />
               </div>
             </div>

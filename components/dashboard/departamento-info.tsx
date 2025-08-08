@@ -74,10 +74,6 @@ export function DepartamentoInfo({
         ...dep,
         totalItens: itensDoDepto.length,
         itensCompletos: itensCompletos.length,
-        percentualConclusao:
-          itensDoDepto.length > 0
-            ? (itensCompletos.length / itensDoDepto.length) * 100
-            : 0,
       };
     });
 
@@ -101,12 +97,10 @@ export function DepartamentoInfo({
       totalItens?: number;
       itensCompletos?: number;
     };
-    const percentualConclusao =
-      totalItens > 0 ? (itensCompletos / totalItens) * 100 : 0;
 
     return (
       <Card
-        className={`bg-white/10 border-white/20 text-white flex flex-col h-full ${className || ""}`}
+        className={`bg-white border-gray-200 text-gray-900 flex flex-col h-full ${className || ""}`}
       >
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -120,10 +114,10 @@ export function DepartamentoInfo({
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <p className="text-sm text-white/70 mb-1">
+            <p className="text-sm text-gray-600 mb-1">
               {responsavel.isGerente ? "Posição" : "Departamento"}:
             </p>
-            <p className="font-medium text-white">
+            <p className="font-medium text-gray-900">
               {responsavel.isGerente
                 ? "Gerente Geral"
                 : departamento?.nome || responsavel.departamento}
@@ -132,27 +126,15 @@ export function DepartamentoInfo({
 
           {departamento && !responsavel.isGerente && (
             <div>
-              <p className="text-sm text-white/70 mb-1">Descrição:</p>
-              <p className="text-sm text-white/90">{departamento.descricao}</p>
+              <p className="text-sm text-gray-600 mb-1">Descrição:</p>
+              <p className="text-sm text-gray-700">{departamento.descricao}</p>
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4 pt-2 border-t border-white/10">
+          <div className="grid grid-cols-1 gap-4 pt-2 border-t border-gray-200">
             <div className="text-center">
-              <p className="text-lg font-bold text-white">{totalItens}</p>
-              <p className="text-xs text-white/70">Total de Itens</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-green-400">
-                {itensCompletos}
-              </p>
-              <p className="text-xs text-white/70">Completos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-blue-400">
-                {percentualConclusao.toFixed(1)}%
-              </p>
-              <p className="text-xs text-white/70">Conclusão</p>
+              <p className="text-lg font-bold text-gray-900">{totalItens}</p>
+              <p className="text-xs text-gray-600">Total de Itens</p>
             </div>
           </div>
         </CardContent>
@@ -163,7 +145,7 @@ export function DepartamentoInfo({
   // Visão geral dos departamentos
   return (
     <Card
-      className={`bg-white/10 border-white/20 text-white flex flex-col h-full ${className || ""}`}
+      className={`bg-white border-gray-200 text-gray-900 flex flex-col h-full ${className || ""}`}
     >
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
@@ -179,36 +161,24 @@ export function DepartamentoInfo({
             .map((dep: any, index: number) => (
               <div
                 key={dep.id}
-                className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <User className="h-4 w-4 text-blue-400" />
-                    <span className="font-medium text-white">
+                    <User className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-gray-900">
                       {dep.responsavel}
                     </span>
                   </div>
-                  <p className="text-xs text-white/70">{dep.nome}</p>
+                  <p className="text-xs text-gray-600">{dep.nome}</p>
                 </div>
                 <div className="text-right space-y-1">
                   <div className="flex items-center gap-4">
                     <div className="text-center">
-                      <p className="text-sm font-bold text-white">
+                      <p className="text-sm font-bold text-gray-900">
                         {dep.totalItens}
                       </p>
-                      <p className="text-xs text-white/60">Total</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-green-400">
-                        {dep.itensCompletos}
-                      </p>
-                      <p className="text-xs text-white/60">OK</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-blue-400">
-                        {dep.percentualConclusao.toFixed(0)}%
-                      </p>
-                      <p className="text-xs text-white/60">Meta</p>
+                      <p className="text-xs text-gray-500">Total</p>
                     </div>
                   </div>
                 </div>

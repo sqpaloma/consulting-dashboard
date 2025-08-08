@@ -22,11 +22,6 @@ interface DistributionPanelProps {
 }
 
 export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
-  // Calcula as porcentagens
-  const calculatePercentage = (value: number, total: number): number => {
-    if (total === 0) return 0;
-    return Math.round((value / total) * 100);
-  };
 
   // Calcula o total real dos itens que serão exibidos
   const totalDisplayedItems =
@@ -41,46 +36,26 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
     {
       name: "Aguardando Aprovação",
       value: dashboardData.aguardandoAprovacao,
-      percentage: calculatePercentage(
-        dashboardData.aguardandoAprovacao,
-        totalDisplayedItems
-      ),
       color: "#1E40AF", // dark blue
     },
     {
       name: "Análises",
       value: dashboardData.analises,
-      percentage: calculatePercentage(
-        dashboardData.analises,
-        totalDisplayedItems
-      ),
       color: "#1D4ED8", // dark blue
     },
     {
       name: "Em Execução",
       value: dashboardData.emExecucao,
-      percentage: calculatePercentage(
-        dashboardData.emExecucao,
-        totalDisplayedItems
-      ),
       color: "#3B82F6", // medium blue
     },
     {
       name: "Orçamentos",
       value: dashboardData.orcamentos,
-      percentage: calculatePercentage(
-        dashboardData.orcamentos,
-        totalDisplayedItems
-      ),
       color: "#60A5FA", // light blue
     },
     {
       name: "Pronto",
       value: dashboardData.pronto,
-      percentage: calculatePercentage(
-        dashboardData.pronto,
-        totalDisplayedItems
-      ),
       color: "#BFDBFE", // very light blue
     },
   ].filter((item) => item.value > 0); // Remove itens com valor 0
@@ -94,7 +69,7 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
           <p className="font-medium text-gray-800">{data.name}</p>
           <p className="text-sm text-gray-600">
-            {data.value} itens ({data.percentage}%)
+            {data.value} itens
           </p>
         </div>
       );
@@ -103,7 +78,7 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
   };
 
   return (
-    <Card className="bg-white h-[250px] flex flex-col overflow-hidden">
+    <Card className="bg-white h-full flex flex-col overflow-hidden">
       <CardHeader className="pb-1">
         <CardTitle className="text-sm text-gray-800 flex items-center">
           <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
@@ -150,7 +125,7 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
                   ></div>
                   <div className="flex-1">
                     <div className="text-xs font-medium text-gray-800">
-                      {item.name}: {item.percentage}%
+                      {item.name}: {item.value}
                     </div>
                   </div>
                 </div>
