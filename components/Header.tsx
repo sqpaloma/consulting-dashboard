@@ -39,7 +39,7 @@ export function Header({
   };
 
   const canSeeAnalytics = isAdmin || user?.role === "diretor";
-  const isConsultor = user?.role === "consultor" && !user?.isAdmin;
+  const isConsultor = user?.role === "consultor" && !isAdmin;
 
   return (
     <>
