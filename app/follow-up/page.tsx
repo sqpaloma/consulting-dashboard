@@ -5,13 +5,7 @@ import { ResponsiveLayout } from "@/components/responsive-layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Search,
-  CheckCircle2,
-  Clock8,
-  FileText,
-  LayoutTemplate,
-} from "lucide-react";
+import { Search, Clock8 } from "lucide-react";
 import {
   useDashboardItemsByCliente,
   useUniqueClientes,
@@ -63,21 +57,6 @@ export default function FollowUpPage() {
           s.includes("orcamento") ||
           s.includes("cotação") ||
           s.includes("cotacao")
-        );
-      }),
-    [items]
-  );
-
-  const approved = useMemo(
-    () =>
-      items.filter((it: any) => {
-        const s = (it.status || "").toLowerCase();
-        return (
-          s.includes("pronto") ||
-          s.includes("concluído") ||
-          s.includes("concluido") ||
-          s.includes("finalizado") ||
-          s.includes("entregue")
         );
       }),
     [items]
@@ -192,46 +171,6 @@ export default function FollowUpPage() {
                   <li
                     key={it._id}
                     className="border rounded p-3 bg-amber-50/50"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">
-                        {it.titulo || `Item ${it.os}`}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        OS {it.os}
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-600">{it.status}</div>
-                    {it.dataRegistro && (
-                      <div className="text-xs text-gray-500">
-                        Registro: {it.dataRegistro}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Aprovados (nosso design/layout) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700">
-              <CheckCircle2 className="h-5 w-5" /> Aprovados (Design/Layout)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {approved.length === 0 ? (
-              <div className="text-sm text-muted-foreground">
-                Nenhum item aprovado encontrado para este cliente.
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {approved.map((it: any) => (
-                  <li
-                    key={it._id}
-                    className="border rounded p-3 bg-green-50/50"
                   >
                     <div className="flex items-center justify-between">
                       <div className="font-medium">
