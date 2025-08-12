@@ -12,6 +12,19 @@ import {
   useUniqueClientes,
 } from "@/lib/convex-dashboard-client";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 
 interface DashboardItemLike {
   _id?: string;
@@ -159,12 +172,32 @@ function extractOrcamento(item: DashboardItemLike): string | null {
   return null;
 }
 
+function getFirstName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  // pega apenas a primeira palavra
+  return trimmed.split(/\s+/)[0];
+}
+
+const STATUS_COLORS = [
+  "#4F46E5",
+  "#0EA5E9",
+  "#22C55E",
+  "#F59E0B",
+  "#EF4444",
+  "#8B5CF6",
+  "#14B8A6",
+];
+
+type ItemFilter = "onTime" | "overdue" | "dueSoon" | null;
+
 export default function FollowUpPage() {
   const { user } = useAuth();
 
   const [query, setQuery] = useState("");
   const [tabs, setTabs] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
+  const [filter, setFilter] = useState<ItemFilter>(null);
 
   // Auto-complete
   const uniqueClientes = useUniqueClientes() || [];
@@ -246,6 +279,74 @@ export default function FollowUpPage() {
   };
 
   const handleAddCliente = () => addClienteTab(query);
+
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      const da = extractDeadline(a);
+      const db = extractDeadline(b);
+      const ta =
+        da && !isNaN(da.getTime()) ? da.getTime() : Number.POSITIVE_INFINITY;
+      const tb =
+        db && !isNaN(db.getTime()) ? db.getTime() : Number.POSITIVE_INFINITY;
+      if (ta === tb) {
+        const aos = String(a.os || "");
+        const bos = String(b.os || "");
+        return aos.localeCompare(bos, "pt-BR");
+      }
+      return ta - tb; // crescente
+    });
+  }, [items]);
+
+  const categorizeItem = (
+    it: DashboardItemLike
+  ): "onTime" | "overdue" | "dueSoon" => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
+    const dl = extractDeadline(it);
+    if (!dl || isNaN(dl.getTime())) return "onTime"; // sem data conta como no prazo
+    const d = new Date(dl);
+    d.setHours(0, 0, 0, 0);
+    if (d < today) return "overdue";
+    const diff = +d - +today;
+    if (diff <= fiveDaysMs) return "dueSoon";
+    return "onTime";
+  };
+
+  const filteredSortedItems = useMemo(() => {
+    if (!filter) return sortedItems;
+    return sortedItems.filter((it) => categorizeItem(it) === filter);
+  }, [sortedItems, filter]);
+
+  const statusChartData = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const it of items) {
+      const s = (it.status || "Sem Status").toString().trim();
+      if (!s) continue;
+      counts.set(s, (counts.get(s) || 0) + 1);
+    }
+    const arr = Array.from(counts.entries()).map(([name, value]) => ({
+      name,
+      value,
+    }));
+    arr.sort((a, b) => (b.value as number) - (a.value as number));
+    return arr;
+  }, [items]);
+
+  const responsavelChartData = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const it of items) {
+      const r = (it.responsavel || "Sem Responsável").toString().trim();
+      if (!r) continue;
+      counts.set(r, (counts.get(r) || 0) + 1);
+    }
+    const arr = Array.from(counts.entries()).map(([name, value]) => ({
+      name,
+      value,
+    }));
+    arr.sort((a, b) => (b.value as number) - (a.value as number));
+    return arr.slice(0, 10); // top 10
+  }, [items]);
 
   return (
     <ResponsiveLayout
@@ -335,8 +436,9 @@ export default function FollowUpPage() {
                     key={name}
                     value={name}
                     className="truncate max-w-[200px]"
+                    title={name}
                   >
-                    {name}
+                    {getFirstName(name)}
                   </TabsTrigger>
                 ))
               )}
@@ -344,87 +446,199 @@ export default function FollowUpPage() {
 
             {tabs.map((name) => (
               <TabsContent key={name} value={name} className="space-y-4">
-                {/* Resumo de status */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div
-                    className="rounded-md border p-4"
-                    style={{ backgroundColor: "#BBDEFB" }}
-                  >
-                    <div className="text-xs uppercase tracking-wide text-gray-700">
-                      No prazo
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Coluna esquerda: contadores + tabela */}
+                  <div className="space-y-4">
+                    {/* Resumo de status */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div
+                        className={`rounded-md border-2 p-4 bg-white cursor-pointer transition ring-offset-2 ${
+                          filter === "onTime" ? "ring-2 ring-[#BBDEFB]" : ""
+                        }`}
+                        style={{ borderColor: "#BBDEFB" }}
+                        onClick={() =>
+                          setFilter(filter === "onTime" ? null : "onTime")
+                        }
+                        role="button"
+                        aria-pressed={filter === "onTime"}
+                        tabIndex={0}
+                      >
+                        <div className="text-xs uppercase tracking-wide text-gray-700">
+                          No prazo
+                        </div>
+                        <div className="text-2xl font-semibold">{onTime}</div>
+                      </div>
+                      <div
+                        className={`rounded-md border-2 p-4 bg-white cursor-pointer transition ring-offset-2 ${
+                          filter === "overdue" ? "ring-2 ring-[#FFCDD2]" : ""
+                        }`}
+                        style={{ borderColor: "#FFCDD2" }}
+                        onClick={() =>
+                          setFilter(filter === "overdue" ? null : "overdue")
+                        }
+                        role="button"
+                        aria-pressed={filter === "overdue"}
+                        tabIndex={0}
+                      >
+                        <div className="text-xs uppercase tracking-wide text-gray-700">
+                          Atrasados
+                        </div>
+                        <div className="text-2xl font-semibold">{overdue}</div>
+                      </div>
+                      <div
+                        className={`rounded-md border-2 p-4 bg-white cursor-pointer transition ring-offset-2 ${
+                          filter === "dueSoon" ? "ring-2 ring-[#FFF9C4]" : ""
+                        }`}
+                        style={{ borderColor: "#FFF9C4" }}
+                        onClick={() =>
+                          setFilter(filter === "dueSoon" ? null : "dueSoon")
+                        }
+                        role="button"
+                        aria-pressed={filter === "dueSoon"}
+                        tabIndex={0}
+                      >
+                        <div className="text-xs uppercase tracking-wide text-gray-700">
+                          Vão atrasar (≤ 5 dias)
+                        </div>
+                        <div className="text-2xl font-semibold">{dueSoon}</div>
+                      </div>
                     </div>
-                    <div className="text-2xl font-semibold">{onTime}</div>
-                  </div>
-                  <div
-                    className="rounded-md border p-4"
-                    style={{ backgroundColor: "#FFCDD2" }}
-                  >
-                    <div className="text-xs uppercase tracking-wide text-gray-700">
-                      Atrasados
-                    </div>
-                    <div className="text-2xl font-semibold">{overdue}</div>
-                  </div>
-                  <div
-                    className="rounded-md border p-4"
-                    style={{ backgroundColor: "#FFF9C4" }}
-                  >
-                    <div className="text-xs uppercase tracking-wide text-gray-700">
-                      Vão atrasar (≤ 5 dias)
-                    </div>
-                    <div className="text-2xl font-semibold">{dueSoon}</div>
-                  </div>
-                </div>
 
-                {/* Lista de itens */}
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-xs text-gray-600 border-b">
-                        <th className="py-2 pr-4">Responsável</th>
-                        <th className="py-2 pr-4">OS</th>
-                        <th className="py-2 pr-4">Orçamento</th>
-                        <th className="py-2 pr-4">Prazo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={4}
-                            className="py-4 text-muted-foreground"
-                          >
-                            Nenhum item encontrado para este cliente.
-                          </td>
-                        </tr>
-                      ) : (
-                        items.map((it) => {
-                          const dl = extractDeadline(it);
-                          const prazoDisplay = dl
-                            ? dl.toLocaleDateString("pt-BR")
-                            : "";
-                          const orc = extractOrcamento(it) || "";
-                          return (
-                            <tr
-                              key={String(it._id) + String(it.os)}
-                              className="border-b hover:bg-muted/40"
-                            >
-                              <td className="py-2 pr-4">
-                                {it.responsavel || "-"}
+                    {/* Lista de itens */}
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-600 border-b">
+                            <th className="py-2 pr-4">Responsável</th>
+                            <th className="py-2 pr-4">OS</th>
+                            <th className="py-2 pr-4">Status</th>
+                            <th className="py-2 pr-4">Orçamento</th>
+                            <th className="py-2 pr-4">Prazo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredSortedItems.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan={5}
+                                className="py-4 text-muted-foreground"
+                              >
+                                Nenhum item encontrado para este cliente.
                               </td>
-                              <td className="py-2 pr-4">{it.os || "-"}</td>
-                              <td className="py-2 pr-4">{orc}</td>
-                              <td className="py-2 pr-4">{prazoDisplay}</td>
                             </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                          ) : (
+                            filteredSortedItems.map((it) => {
+                              const dl = extractDeadline(it);
+                              const prazoDisplay = dl
+                                ? dl.toLocaleDateString("pt-BR")
+                                : "";
+                              const orc = extractOrcamento(it) || "";
+                              return (
+                                <tr
+                                  key={String(it._id) + String(it.os)}
+                                  className="border-b hover:bg-muted/40"
+                                >
+                                  <td className="py-2 pr-4">
+                                    {it.responsavel || "-"}
+                                  </td>
+                                  <td className="py-2 pr-4">{it.os || "-"}</td>
+                                  <td className="py-2 pr-4">
+                                    {it.status || "-"}
+                                  </td>
+                                  <td className="py-2 pr-4">{orc}</td>
+                                  <td className="py-2 pr-4">{prazoDisplay}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
 
-                {/* Salvar clientes */}
-                <div className="pt-2 flex justify-end">
-                  <Button onClick={saveTabs}>Salvar clientes</Button>
+                    {/* Salvar clientes */}
+                    <div className="pt-2 flex justify-end">
+                      <Button onClick={saveTabs}>Salvar clientes</Button>
+                    </div>
+                  </div>
+
+                  {/* Coluna direita: gráficos */}
+                  <div className="space-y-4">
+                    <Card
+                      className="bg-white border-2"
+                      style={{ borderColor: "#BBDEFB" }}
+                    >
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">
+                          Distribuição por Status
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[260px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={statusChartData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                              >
+                                {statusChartData.map((_, idx) => (
+                                  <Cell
+                                    key={idx}
+                                    fill={
+                                      STATUS_COLORS[idx % STATUS_COLORS.length]
+                                    }
+                                  />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card
+                      className="bg-white border-2"
+                      style={{ borderColor: "#FFCDD2" }}
+                    >
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">
+                          Itens por Responsável (Top 10)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[260px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={responsavelChartData}
+                              margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis
+                                dataKey="name"
+                                tick={{ fontSize: 10 }}
+                                interval={0}
+                                angle={-20}
+                                textAnchor="end"
+                                height={50}
+                              />
+                              <YAxis allowDecimals={false} width={24} />
+                              <RechartsTooltip />
+                              <Bar
+                                dataKey="value"
+                                fill="#3B82F6"
+                                radius={[4, 4, 0, 0]}
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </TabsContent>
             ))}
