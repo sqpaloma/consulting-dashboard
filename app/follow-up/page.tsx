@@ -172,6 +172,52 @@ function extractOrcamento(item: DashboardItemLike): string | null {
   return null;
 }
 
+function extractOS(item: DashboardItemLike): string | null {
+  if (item.os) return String(item.os);
+  const raw = (item as any).raw_data ?? item.rawData;
+  const keys = [
+    "os",
+    "ordem_servico",
+    "ordem de servico",
+    "ordem de serviço",
+    "nro os",
+    "numero os",
+    "num os",
+    "o.s.",
+  ];
+  const checkObj = (obj: Record<string, any>) => {
+    for (const k of Object.keys(obj)) {
+      const lk = k.toLowerCase();
+      if (keys.some((p) => lk.includes(p) || lk === p)) {
+        const v = obj[k];
+        if (v == null) continue;
+        const s = v.toString().trim();
+        if (s) return s;
+      }
+    }
+    return null;
+  };
+  if (raw) {
+    if (typeof raw === "object" && !Array.isArray(raw)) {
+      const v = checkObj(raw);
+      if (v) return v;
+    }
+    if (Array.isArray(raw)) {
+      for (const val of raw) {
+        if (val && typeof val === "object") {
+          const v = checkObj(val as Record<string, any>);
+          if (v) return v;
+        } else if (typeof val === "string") {
+          // tenta extrair uma sequência numérica razoável como OS
+          const m = val.match(/\b\d{3,}\b/);
+          if (m?.[0]) return m[0];
+        }
+      }
+    }
+  }
+  return null;
+}
+
 function getFirstName(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return "";
@@ -610,9 +656,8 @@ export default function FollowUpPage() {
                         <thead>
                           <tr className="text-left text-xs text-gray-600 border-b">
                             <th className="py-2 pr-4">Responsável</th>
-                            <th className="py-2 pr-4">OS</th>
+                            <th className="py-2 pr-4">OS / Orçamento</th>
                             <th className="py-2 pr-4">Status</th>
-                            <th className="py-2 pr-4">Orçamento</th>
                             <th className="py-2 pr-4">Prazo</th>
                           </tr>
                         </thead>
@@ -620,7 +665,7 @@ export default function FollowUpPage() {
                           {filteredSortedItems.length === 0 ? (
                             <tr>
                               <td
-                                colSpan={5}
+                                colSpan={4}
                                 className="py-4 text-muted-foreground"
                               >
                                 Nenhum item encontrado para este cliente.
@@ -633,6 +678,7 @@ export default function FollowUpPage() {
                                 ? dl.toLocaleDateString("pt-BR")
                                 : "";
                               const orc = extractOrcamento(it) || "";
+                              const osStr = extractOS(it) || "-";
                               return (
                                 <tr
                                   key={String(it._id) + String(it.os)}
@@ -641,11 +687,17 @@ export default function FollowUpPage() {
                                   <td className="py-2 pr-4">
                                     {it.responsavel || "-"}
                                   </td>
-                                  <td className="py-2 pr-4">{it.os || "-"}</td>
+                                  <td className="py-2 pr-4">
+                                    {osStr}
+                                    {orc && (
+                                      <span className="text-xs text-muted-foreground ml-2">
+                                        • {orc}
+                                      </span>
+                                    )}
+                                  </td>
                                   <td className="py-2 pr-4">
                                     {it.status || "-"}
                                   </td>
-                                  <td className="py-2 pr-4">{orc}</td>
                                   <td className="py-2 pr-4">{prazoDisplay}</td>
                                 </tr>
                               );
