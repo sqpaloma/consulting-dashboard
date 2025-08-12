@@ -340,7 +340,14 @@ export function ActivityPlanner({
   useEffect(() => {
     loadDatabaseItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredByResponsavel, shouldForceOwn, user?.name, user?.email, isAdmin]);
+  }, [
+    filteredByResponsavel,
+    shouldForceOwn,
+    user?.name,
+    user?.email,
+    isAdmin,
+    dashboardData,
+  ]);
 
   const today = new Date();
   const todayBrasilia = new Date(
@@ -486,9 +493,7 @@ export function ActivityPlanner({
                       <div
                         className={`text-xs font-semibold mb-4 flex items-center justify-between ${isToday ? "text-blue-600" : "text-gray-700"}`}
                       >
-                        <div className="flex-1 text-center">
-                          {dayName}
-                        </div>
+                        <div className="flex-1 text-center">{dayName}</div>
                         <div className="bg-gray-200 text-gray-600 rounded-full px-2 py-1 text-xs min-w-[20px] text-center">
                           {activitiesForDay.length}
                         </div>
@@ -644,9 +649,7 @@ export function ActivityPlanner({
                     <div
                       className={`text-xs font-semibold mb-4 flex items-center justify-between ${isToday ? "text-blue-600" : "text-gray-700"}`}
                     >
-                      <div className="flex-1 text-center">
-                        {dayName}
-                      </div>
+                      <div className="flex-1 text-center">{dayName}</div>
                       <div className="bg-gray-200 text-gray-600 rounded-full px-2 py-1 text-xs min-w-[20px] text-center">
                         {activitiesForDay.length}
                       </div>

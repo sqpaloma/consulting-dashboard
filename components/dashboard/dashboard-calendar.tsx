@@ -121,7 +121,14 @@ export function DashboardCalendar({
   useEffect(() => {
     loadDatabaseItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredByResponsavel, shouldForceOwn, user?.name, user?.email, isAdmin]);
+  }, [
+    filteredByResponsavel,
+    shouldForceOwn,
+    user?.name,
+    user?.email,
+    isAdmin,
+    dashboardData,
+  ]);
 
   // Processa os itens para extrair datas de prazo
   useEffect(() => {
