@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ResponsiveLayout } from "@/components/responsive-layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import {
   useDashboardItemsByCliente,
   useUniqueClientes,
@@ -198,16 +198,17 @@ export default function FollowUpPage() {
   const [tabs, setTabs] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
   const [filter, setFilter] = useState<ItemFilter>(null);
+  const [draggingName, setDraggingName] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   // Auto-complete
   const uniqueClientes = useUniqueClientes() || [];
   const suggestions = useMemo(() => {
     const q = query.toLowerCase().trim();
-    if (!q) return uniqueClientes.slice(0, 10);
-    return uniqueClientes
-      .filter((c) => c.toLowerCase().includes(q))
-      .slice(0, 10);
-  }, [query, uniqueClientes]);
+    const remaining = uniqueClientes.filter((c) => !tabs.includes(c));
+    if (!q) return remaining.slice(0, 10);
+    return remaining.filter((c) => c.toLowerCase().includes(q)).slice(0, 10);
+  }, [query, uniqueClientes, tabs]);
 
   // Load saved tabs per user
   useEffect(() => {
@@ -236,9 +237,35 @@ export default function FollowUpPage() {
     });
   };
 
-  const saveTabs = () => {
+  // Auto-salvar abas quando houver mudanças
+  useEffect(() => {
     const key = `followup_clients_${user?.userId || "__anon__"}`;
-    localStorage.setItem(key, JSON.stringify(tabs));
+    try {
+      localStorage.setItem(key, JSON.stringify(tabs));
+    } catch {}
+  }, [tabs, user?.userId]);
+
+  const removeClienteTab = (name: string) => {
+    setTabs((prev) => {
+      const next = prev.filter((n) => n !== name);
+      if (activeTab === name) {
+        setActiveTab(next[0] || "");
+      }
+      return next;
+    });
+  };
+
+  const reorderTabs = (sourceName: string, targetName: string) => {
+    if (!sourceName || !targetName || sourceName === targetName) return;
+    setTabs((prev) => {
+      const srcIdx = prev.indexOf(sourceName);
+      const tgtIdx = prev.indexOf(targetName);
+      if (srcIdx === -1 || tgtIdx === -1) return prev;
+      const next = [...prev];
+      next.splice(srcIdx, 1);
+      next.splice(tgtIdx, 0, sourceName);
+      return next;
+    });
   };
 
   // Items for active client
@@ -274,11 +301,18 @@ export default function FollowUpPage() {
   }, [items]);
 
   const handleSelectSuggestion = (name: string) => {
-    setQuery(name);
     addClienteTab(name);
+    setQuery("");
+    inputRef.current?.blur();
   };
 
-  const handleAddCliente = () => addClienteTab(query);
+  const handleAddCliente = () => {
+    const val = query.trim();
+    if (!val) return;
+    addClienteTab(val);
+    setQuery("");
+    inputRef.current?.blur();
+  };
 
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
@@ -348,6 +382,14 @@ export default function FollowUpPage() {
     return arr.slice(0, 10); // top 10
   }, [items]);
 
+  const filterMeta = useMemo(() => {
+    if (filter === "onTime") return { label: "No prazo", color: "#BBDEFB" };
+    if (filter === "overdue") return { label: "Atrasados", color: "#FFCDD2" };
+    if (filter === "dueSoon")
+      return { label: "Vão atrasar (≤ 5 dias)", color: "#FFF9C4" };
+    return null;
+  }, [filter]);
+
   return (
     <ResponsiveLayout
       title="Follow-up"
@@ -360,6 +402,7 @@ export default function FollowUpPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-8 w-64 text-sm pl-3 pr-3"
+              ref={inputRef}
             />
             {query && suggestions.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow">
@@ -402,6 +445,7 @@ export default function FollowUpPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="pl-3 pr-3"
+                  ref={inputRef}
                 />
                 {query && suggestions.length > 0 && (
                   <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow">
@@ -435,10 +479,47 @@ export default function FollowUpPage() {
                   <TabsTrigger
                     key={name}
                     value={name}
-                    className="truncate max-w-[200px]"
+                    className={`group relative max-w-[200px] pr-6 truncate ${
+                      draggingName === name ? "opacity-60" : ""
+                    }`}
                     title={name}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      setDraggingName(name);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggingName) reorderTabs(draggingName, name);
+                      setDraggingName(null);
+                    }}
+                    onDragEnd={() => setDraggingName(null)}
                   >
                     {getFirstName(name)}
+                    <span
+                      role="button"
+                      aria-label={`Fechar ${name}`}
+                      tabIndex={0}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:block rounded-sm p-0 hover:bg-muted cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        removeClienteTab(name);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeClienteTab(name);
+                        }
+                      }}
+                    >
+                      <X className="h-2 w-2" />
+                    </span>
                   </TabsTrigger>
                 ))
               )}
@@ -504,6 +585,25 @@ export default function FollowUpPage() {
                       </div>
                     </div>
 
+                    {/* Filtro ativo */}
+                    {filterMeta && (
+                      <div
+                        className="flex items-center justify-between rounded-md border-2 px-3 py-2 text-sm bg-white"
+                        style={{ borderColor: filterMeta.color }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Filtro ativo:</span>
+                          <span>{filterMeta.label}</span>
+                        </div>
+                        <button
+                          onClick={() => setFilter(null)}
+                          className="text-xs text-gray-600 hover:underline"
+                        >
+                          Limpar
+                        </button>
+                      </div>
+                    )}
+
                     {/* Lista de itens */}
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-sm">
@@ -555,10 +655,7 @@ export default function FollowUpPage() {
                       </table>
                     </div>
 
-                    {/* Salvar clientes */}
-                    <div className="pt-2 flex justify-end">
-                      <Button onClick={saveTabs}>Salvar clientes</Button>
-                    </div>
+                    {/* Autosave ativado: botão removido */}
                   </div>
 
                   {/* Coluna direita: gráficos */}
