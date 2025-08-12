@@ -122,13 +122,23 @@ export function DashboardMetrics({
 
   // Função para verificar se um item está atrasado
   const isItemOverdue = (item: any): boolean => {
-    let deadlineDate = null;
+    let deadlineDate: Date | null = null;
 
-    // Tenta usar data_registro primeiro
-    if (item.data_registro) {
+    // Suporta múltiplos formatos/campos vindos do Convex e do processamento local
+    if (item.dataRegistro) {
+      // Campo salvo no Convex
+      deadlineDate = new Date(item.dataRegistro);
+    } else if (item.data_registro) {
+      // Campo usado nos itens processados localmente
       deadlineDate = new Date(item.data_registro);
+    } else if (item.rawData?.prazo) {
+      deadlineDate = parseDate(item.rawData.prazo);
     } else if (item.raw_data?.prazo) {
       deadlineDate = parseDate(item.raw_data.prazo);
+    } else if (item.prazo) {
+      deadlineDate = parseDate(item.prazo);
+    } else if (item.data) {
+      deadlineDate = parseDate(item.data);
     }
 
     if (!deadlineDate || isNaN(deadlineDate.getTime())) {
@@ -154,7 +164,7 @@ export function DashboardMetrics({
   useEffect(() => {
     if (dashData?.items) {
       const allItems = dashData.items;
-      
+
       // Filtra itens por categoria
       const aprovacaoItems = allItems.filter((item: any) => {
         const status = item.status.toLowerCase();
