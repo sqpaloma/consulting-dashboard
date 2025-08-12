@@ -22,6 +22,7 @@ interface HeaderProps {
   subtitle?: string;
   showBack?: boolean;
   backHref?: string;
+  actions?: React.ReactNode; // NOVO: ações à direita do título
 }
 
 export function Header({
@@ -29,6 +30,7 @@ export function Header({
   subtitle,
   showBack = false,
   backHref = "/",
+  actions,
 }: HeaderProps) {
   const { signOut } = useAuth();
   const { isAdmin, user } = useAdmin();
@@ -157,7 +159,12 @@ export function Header({
 
       {/* Title Section */}
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold text-white">{title}</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-4xl font-bold text-white">{title}</h1>
+          {actions && (
+            <div className="hidden xl:flex items-center">{actions}</div>
+          )}
+        </div>
         {subtitle && (
           <h2 className="text-3xl font-light text-gray-100">{subtitle}</h2>
         )}

@@ -40,6 +40,7 @@ interface ResponsiveLayoutProps {
   subtitle?: string;
   showBack?: boolean;
   backHref?: string;
+  titleRight?: React.ReactNode; // NOVO: conteúdo à direita do título
 }
 
 const baseMenuItems = [
@@ -90,6 +91,7 @@ export function ResponsiveLayout({
   subtitle,
   showBack = false,
   backHref = "/",
+  titleRight,
 }: ResponsiveLayoutProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
@@ -296,6 +298,7 @@ export function ResponsiveLayout({
           subtitle={subtitle}
           showBack={showBack}
           backHref={backHref}
+          actions={titleRight}
         />
         {children}
       </div>

@@ -63,10 +63,46 @@ export default function FollowUpPage() {
   );
 
   return (
-    <ResponsiveLayout title="Follow-up" subtitle="Acompanhe por cliente">
+    <ResponsiveLayout
+      title="Follow-up"
+      subtitle="Acompanhe por cliente"
+      titleRight={
+        <div className="hidden xl:flex items-center gap-2">
+          <div className="relative">
+            <Input
+              placeholder="Buscar Cliente"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-8 w-64 text-sm pl-3 pr-3"
+            />
+            {query && suggestions.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow">
+                {suggestions.map((name) => (
+                  <button
+                    key={name}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
+                    onClick={() => handleSearch(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <Button
+            size="sm"
+            onClick={() => handleSearch(query)}
+            disabled={!query.trim()}
+            className="h-8"
+          >
+            Buscar
+          </Button>
+        </div>
+      }
+    >
       <div className="space-y-6">
-        {/* Busca */}
-        <Card>
+        {/* Busca (exibida apenas no mobile/tablet) */}
+        <Card className="xl:hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5" /> Buscar Cliente
