@@ -579,7 +579,7 @@ export default function FollowUpPage() {
                         tabIndex={0}
                       >
                         <div className="text-xs uppercase tracking-wide text-gray-700">
-                          Vão atrasar (≤ 5 dias)
+                          Essa semana (≤ 5 dias)
                         </div>
                         <div className="text-2xl font-semibold">{dueSoon}</div>
                       </div>
