@@ -831,11 +831,10 @@ export function useAnalyticsData() {
         // Verifica se é erro de migração
         if (result.error === "migration_needed") {
           alert(
-            "Para salvar com dados de cliente, execute primeiro o script de migração no Supabase:\n\n" +
-              "1. Acesse o painel do Supabase\n" +
-              "2. Vá para SQL Editor\n" +
-              "3. Execute: scripts/migrate-analytics-add-cliente.sql\n\n" +
-              "Depois tente salvar novamente."
+            "Para salvar com dados de cliente, é necessário aplicar uma migração no backend (Convex).\n\n" +
+              "1. Verifique se as funções e o schema do Convex estão atualizados.\n" +
+              "2. Faça o deploy do Convex: npm run convex:deploy\n\n" +
+              "Depois, tente salvar novamente."
           );
         } else {
           alert("Erro ao salvar dados. Tente novamente.");
