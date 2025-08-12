@@ -13,15 +13,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { FixedSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { useState } from "react";
+import type React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface DepartamentoInfoProps {
   processedItems: any[];
@@ -133,6 +129,62 @@ function parseBRDate(dateString: string): Date | null {
   }
 
   return null;
+}
+
+// Extrai número de orçamento do item (de raw_data ou rawData)
+function extractOrcamentoFromItem(item: any): string | null {
+  const raw: any = item?.raw_data || item?.rawData;
+  if (!raw) return null;
+
+  const checkObject = (obj: Record<string, any>) => {
+    for (const key of Object.keys(obj)) {
+      const k = key.toLowerCase();
+      if (
+        k.includes("orcamento") ||
+        k.includes("orçamento") ||
+        k.includes("nro orc") ||
+        k.includes("numero orc") ||
+        k.includes("num orc") ||
+        k === "orc" ||
+        k === "orcamento"
+      ) {
+        const v = obj[key];
+        if (v == null) continue;
+        const s = v.toString().trim();
+        if (s) return s;
+      }
+    }
+    return null;
+  };
+
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    const fromObj = checkObject(raw as Record<string, any>);
+    if (fromObj) return fromObj;
+  }
+
+  if (Array.isArray(raw)) {
+    for (const val of raw) {
+      if (val && typeof val === "object") {
+        const found = checkObject(val as Record<string, any>);
+        if (found) return found;
+      } else if (typeof val === "string") {
+        const lower = val.toLowerCase();
+        if (lower.includes("orc") || lower.includes("orç")) {
+          const m = val.match(/\d{3,}/);
+          if (m && m[0]) return m[0];
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatPrazoDisplay(prazoStr: string | null | undefined): string {
+  if (!prazoStr) return "N/A";
+  const d = parseBRDate(prazoStr.toString());
+  if (d && !isNaN(d.getTime())) return d.toLocaleDateString("pt-BR");
+  return prazoStr.toString();
 }
 
 function isInExecution(status: string | undefined | null): boolean {
@@ -301,66 +353,6 @@ function computeDepartmentTotals(
   return { totalExecCount, totalOverdueCount };
 }
 
-interface ModalData {
-  title: string;
-  items: any[];
-}
-
-function getItemsForModal(
-  processedItems: any[],
-  consultantName: string,
-  team: string[],
-  filterType: "all" | "execution" | "overdue"
-): any[] {
-  const consultantLower = (consultantName || "").toLowerCase().trim();
-
-  const filtered = processedItems.filter((item) => {
-    const respLower = (item.responsavel || "").toLowerCase();
-    if (!respLower.includes(consultantLower)) return false;
-
-    if (filterType === "all") return true;
-
-    if (filterType === "execution") {
-      return isInExecution(item.status);
-    }
-
-    if (filterType === "overdue") {
-      return isInExecution(item.status) && isOverdue(item);
-    }
-
-    return false;
-  });
-
-  return filtered;
-}
-
-function getItemsForMechanic(
-  processedItems: any[],
-  consultantName: string,
-  mechanicName: string,
-  team: string[],
-  filterType: "execution" | "overdue"
-): any[] {
-  const consultantLower = (consultantName || "").toLowerCase().trim();
-  const mechanicUpper = mechanicName.toUpperCase();
-
-  const filtered = processedItems.filter((item) => {
-    const respLower = (item.responsavel || "").toLowerCase();
-    if (!respLower.includes(consultantLower)) return false;
-    if (!isInExecution(item.status)) return false;
-
-    const mech = extractMechanicFromItem(item, consultantName, team);
-    if (!mech || mech !== mechanicUpper) return false;
-
-    if (filterType === "execution") return true;
-    if (filterType === "overdue") return isOverdue(item);
-
-    return false;
-  });
-
-  return filtered;
-}
-
 interface MechanicItemProps {
   index: number;
   style: React.CSSProperties;
@@ -369,13 +361,11 @@ interface MechanicItemProps {
     processedItems: any[];
     consultantName: string;
     teamList: string[];
-    openModal: (title: string, items: any[]) => void;
   };
 }
 
 const MechanicItem = ({ index, style, data }: MechanicItemProps) => {
-  const { mechanics, processedItems, consultantName, teamList, openModal } =
-    data;
+  const { mechanics, processedItems, consultantName, teamList } = data;
   const m = mechanics[index];
   const mechanicUpper = m.toUpperCase();
   const counts = computeMechanicCounts(
@@ -390,34 +380,10 @@ const MechanicItem = ({ index, style, data }: MechanicItemProps) => {
       <li className="text-sm text-gray-700 flex items-center justify-between px-1">
         <span>{formatPersonName(m)}</span>
         <span className="text-xs">
-          <span
-            className="text-gray-700 font-medium mr-2 cursor-pointer hover:opacity-75 transition-opacity"
-            onClick={() => {
-              const items = getItemsForMechanic(
-                processedItems,
-                consultantName,
-                m,
-                teamList,
-                "execution"
-              );
-              openModal(`${formatPersonName(m)} - Em Execução`, items);
-            }}
-          >
+          <span className="text-gray-700 font-medium mr-2">
             {counts.execCount}
           </span>
-          <span
-            className="text-red-600 font-semibold cursor-pointer hover:opacity-75 transition-opacity"
-            onClick={() => {
-              const items = getItemsForMechanic(
-                processedItems,
-                consultantName,
-                m,
-                teamList,
-                "overdue"
-              );
-              openModal(`${formatPersonName(m)} - Em Atraso`, items);
-            }}
-          >
+          <span className="text-red-600 font-semibold">
             {counts.overdueCount}
           </span>
         </span>
@@ -432,7 +398,6 @@ interface DepartmentSectionProps {
   processedItems: any[];
   consultantName: string;
   teamList: string[];
-  openModal: (title: string, items: any[]) => void;
 }
 
 const DepartmentSection = ({
@@ -441,14 +406,12 @@ const DepartmentSection = ({
   processedItems,
   consultantName,
   teamList,
-  openModal,
 }: DepartmentSectionProps) => {
   const itemData = {
     mechanics,
     processedItems,
     consultantName,
     teamList,
-    openModal,
   };
 
   const departmentTotals = computeDepartmentTotals(
@@ -462,49 +425,10 @@ const DepartmentSection = ({
       <div className="flex items-center justify-between mb-2 pb-1 border-b border-blue-300">
         <p className="text-xs text-gray-600 font-medium">{title}</p>
         <div className="flex items-center gap-2 text-xs">
-          <span
-            className="text-gray-700 font-medium cursor-pointer hover:opacity-75 transition-opacity"
-            onClick={() => {
-              const items = processedItems.filter((item) => {
-                const respLower = (item.responsavel || "").toLowerCase();
-                if (!respLower.includes(consultantName.toLowerCase()))
-                  return false;
-                if (!isInExecution(item.status)) return false;
-                const mech = extractMechanicFromItem(
-                  item,
-                  consultantName,
-                  teamList
-                );
-                return (
-                  mech && mechanics.map((m) => m.toUpperCase()).includes(mech)
-                );
-              });
-              openModal(`${title} - Em Execução`, items);
-            }}
-          >
+          <span className="text-gray-700 font-medium">
             {departmentTotals.totalExecCount}
           </span>
-          <span
-            className="text-red-600 font-semibold cursor-pointer hover:opacity-75 transition-opacity"
-            onClick={() => {
-              const items = processedItems.filter((item) => {
-                const respLower = (item.responsavel || "").toLowerCase();
-                if (!respLower.includes(consultantName.toLowerCase()))
-                  return false;
-                if (!isInExecution(item.status)) return false;
-                if (!isOverdue(item)) return false;
-                const mech = extractMechanicFromItem(
-                  item,
-                  consultantName,
-                  teamList
-                );
-                return (
-                  mech && mechanics.map((m) => m.toUpperCase()).includes(mech)
-                );
-              });
-              openModal(`${title} - Em Atraso`, items);
-            }}
-          >
+          <span className="text-red-600 font-semibold">
             {departmentTotals.totalOverdueCount}
           </span>
         </div>
@@ -542,34 +466,10 @@ const DepartmentSection = ({
               >
                 <span>{formatPersonName(m)}</span>
                 <span className="text-xs">
-                  <span
-                    className="text-gray-700 font-medium mr-2 cursor-pointer hover:opacity-75 transition-opacity"
-                    onClick={() => {
-                      const items = getItemsForMechanic(
-                        processedItems,
-                        consultantName,
-                        m,
-                        teamList,
-                        "execution"
-                      );
-                      openModal(`${formatPersonName(m)} - Em Execução`, items);
-                    }}
-                  >
+                  <span className="text-gray-700 font-medium mr-2">
                     {counts.execCount}
                   </span>
-                  <span
-                    className="text-red-600 font-semibold cursor-pointer hover:opacity-75 transition-opacity"
-                    onClick={() => {
-                      const items = getItemsForMechanic(
-                        processedItems,
-                        consultantName,
-                        m,
-                        teamList,
-                        "overdue"
-                      );
-                      openModal(`${formatPersonName(m)} - Em Atraso`, items);
-                    }}
-                  >
+                  <span className="text-red-600 font-semibold">
                     {counts.overdueCount}
                   </span>
                 </span>
@@ -589,12 +489,11 @@ interface DepartmentItemProps {
     departments: any[];
     processedItems: any[];
     getTeamForConsultant: (name: string) => string[];
-    openModal: (title: string, items: any[]) => void;
   };
 }
 
 const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
-  const { departments, processedItems, getTeamForConsultant, openModal } = data;
+  const { departments, processedItems, getTeamForConsultant } = data;
   const dep = departments[index];
   const team = getTeamForConsultant(dep.responsavel);
   const depTotals = computeDepartmentTotals(
@@ -620,18 +519,7 @@ const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-right">
                   <p className="text-xs text-gray-500">Total:</p>
-                  <p
-                    className="text-sm font-bold text-blue-600 cursor-pointer hover:opacity-75 transition-opacity"
-                    onClick={() => {
-                      const items = getItemsForModal(
-                        processedItems,
-                        dep.responsavel,
-                        team,
-                        "all"
-                      );
-                      openModal(`${dep.responsavel} - Todos os Itens`, items);
-                    }}
-                  >
+                  <p className="text-sm font-bold text-blue-600">
                     {dep.totalItens}
                   </p>
                 </div>
@@ -650,7 +538,6 @@ const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
                     processedItems={processedItems}
                     consultantName={dep.responsavel}
                     teamList={team}
-                    openModal={openModal}
                   />
                   <DepartmentSection
                     title="Bombas e Motores de Engrenagens"
@@ -658,7 +545,6 @@ const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
                     processedItems={processedItems}
                     consultantName={dep.responsavel}
                     teamList={team}
-                    openModal={openModal}
                   />
                 </div>
               ) : dep.responsavel.toLowerCase().includes("lucas") ? (
@@ -669,7 +555,6 @@ const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
                     processedItems={processedItems}
                     consultantName={dep.responsavel}
                     teamList={team}
-                    openModal={openModal}
                   />
                   <DepartmentSection
                     title="Comandos Hidráulicos de Grande Porte"
@@ -677,7 +562,6 @@ const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
                     processedItems={processedItems}
                     consultantName={dep.responsavel}
                     teamList={team}
-                    openModal={openModal}
                   />
                 </div>
               ) : (
@@ -687,7 +571,6 @@ const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
                   processedItems={processedItems}
                   consultantName={dep.responsavel}
                   teamList={team}
-                  openModal={openModal}
                 />
               )}
             </div>
@@ -703,32 +586,6 @@ export function DepartamentoInfo({
   filteredByResponsavel,
   className,
 }: DepartamentoInfoProps) {
-  const [modalData, setModalData] = useState<ModalData | null>(null);
-
-  const openModal = (title: string, items: any[]) => {
-    setModalData({ title, items });
-  };
-
-  const closeModal = () => {
-    setModalData(null);
-  };
-
-  const ClickableNumber = ({
-    number,
-    className,
-    onClick,
-  }: {
-    number: number;
-    className: string;
-    onClick: () => void;
-  }) => (
-    <span
-      className={`${className} cursor-pointer hover:opacity-75 transition-opacity`}
-      onClick={onClick}
-    >
-      {number}
-    </span>
-  );
   const getDepartamentoStats = () => {
     if (filteredByResponsavel) {
       const responsavelInfo = getResponsavelInfo(filteredByResponsavel);
@@ -852,18 +709,7 @@ export function DepartamentoInfo({
               <div className="pt-2 border-t border-gray-200">
                 <div className="flex items-center justify-center">
                   <p className="text-xs text-gray-600 mr-2">Total de Itens:</p>
-                  <p
-                    className="text-lg font-bold text-blue-600 cursor-pointer hover:opacity-75 transition-opacity"
-                    onClick={() => {
-                      const items = getItemsForModal(
-                        processedItems,
-                        responsavel.nome,
-                        teamList,
-                        "all"
-                      );
-                      openModal(`${responsavel.nome} - Todos os Itens`, items);
-                    }}
-                  >
+                  <p className="text-lg font-bold text-blue-600">
                     {totalItens}
                   </p>
                 </div>
@@ -889,7 +735,6 @@ export function DepartamentoInfo({
                               processedItems={processedItems}
                               consultantName={responsavel.nome}
                               teamList={teamList}
-                              openModal={openModal}
                             />
                             <DepartmentSection
                               title="Bombas e Motores de Engrenagens"
@@ -899,7 +744,6 @@ export function DepartamentoInfo({
                               processedItems={processedItems}
                               consultantName={responsavel.nome}
                               teamList={teamList}
-                              openModal={openModal}
                             />
                           </div>
                         ) : responsavel.nome.toLowerCase().includes("lucas") ? (
@@ -910,7 +754,6 @@ export function DepartamentoInfo({
                               processedItems={processedItems}
                               consultantName={responsavel.nome}
                               teamList={teamList}
-                              openModal={openModal}
                             />
                             <DepartmentSection
                               title="Comandos Hidráulicos de Grande Porte"
@@ -918,7 +761,6 @@ export function DepartamentoInfo({
                               processedItems={processedItems}
                               consultantName={responsavel.nome}
                               teamList={teamList}
-                              openModal={openModal}
                             />
                           </div>
                         ) : (
@@ -928,7 +770,6 @@ export function DepartamentoInfo({
                             processedItems={processedItems}
                             consultantName={responsavel.nome}
                             teamList={teamList}
-                            openModal={openModal}
                           />
                         )}
                       </div>
@@ -939,54 +780,6 @@ export function DepartamentoInfo({
             )}
           </CardContent>
         </Card>
-        {modalData && (
-          <Dialog open={!!modalData} onOpenChange={() => closeModal()}>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{modalData.title}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-2">
-                {modalData.items.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">
-                    Nenhum item encontrado
-                  </p>
-                ) : (
-                  modalData.items.map((item, index) => (
-                    <div key={index} className="border rounded p-3 text-sm">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <strong>Status:</strong> {item.status || "N/A"}
-                        </div>
-                        <div>
-                          <strong>Responsável:</strong>{" "}
-                          {item.responsavel || "N/A"}
-                        </div>
-                        <div>
-                          <strong>Data:</strong>{" "}
-                          {item.data_registro || item.prazo || "N/A"}
-                        </div>
-                        <div>
-                          <strong>Prioridade:</strong>{" "}
-                          {item.prioridade || "N/A"}
-                        </div>
-                      </div>
-                      {item.descricao && (
-                        <div className="mt-2">
-                          <strong>Descrição:</strong> {item.descricao}
-                        </div>
-                      )}
-                      {item.cliente && (
-                        <div className="mt-1">
-                          <strong>Cliente:</strong> {item.cliente}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
       </>
     );
   }
@@ -999,10 +792,21 @@ export function DepartamentoInfo({
         style={{ height: "520px" }}
       >
         <CardHeader className="pb-3 flex-shrink-0">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Building className="h-5 w-5 text-amber-400" />
-            Departamentos
-          </CardTitle>
+          <div className="flex w-full items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building className="h-5 w-5 text-amber-400" />
+              Departamentos
+            </CardTitle>
+            <Link href="/programacao">
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full border-blue-600 text-blue-700 hover:bg-blue-50"
+              >
+                Programação
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden">
           {(() => {
@@ -1014,7 +818,6 @@ export function DepartamentoInfo({
               departments: filteredDepartments,
               processedItems,
               getTeamForConsultant,
-              openModal,
             };
 
             return (
@@ -1063,24 +866,7 @@ export function DepartamentoInfo({
                                       <p className="text-xs text-gray-500">
                                         Total:
                                       </p>
-                                      <p
-                                        className="text-sm font-bold text-blue-600 cursor-pointer hover:opacity-75 transition-opacity"
-                                        onClick={() => {
-                                          const team = getTeamForConsultant(
-                                            dep.responsavel
-                                          );
-                                          const items = getItemsForModal(
-                                            processedItems,
-                                            dep.responsavel,
-                                            team,
-                                            "all"
-                                          );
-                                          openModal(
-                                            `${dep.responsavel} - Todos os Itens`,
-                                            items
-                                          );
-                                        }}
-                                      >
+                                      <p className="text-sm font-bold text-blue-600">
                                         {dep.totalItens}
                                       </p>
                                     </div>
@@ -1105,7 +891,6 @@ export function DepartamentoInfo({
                                         processedItems={processedItems}
                                         consultantName={dep.responsavel}
                                         teamList={team}
-                                        openModal={openModal}
                                       />
                                       <DepartmentSection
                                         title="Bombas e Motores de Engrenagens"
@@ -1117,7 +902,6 @@ export function DepartamentoInfo({
                                         processedItems={processedItems}
                                         consultantName={dep.responsavel}
                                         teamList={team}
-                                        openModal={openModal}
                                       />
                                     </div>
                                   ) : dep.responsavel
@@ -1132,7 +916,6 @@ export function DepartamentoInfo({
                                         processedItems={processedItems}
                                         consultantName={dep.responsavel}
                                         teamList={team}
-                                        openModal={openModal}
                                       />
                                       <DepartmentSection
                                         title="Comandos Hidráulicos de Grande Porte"
@@ -1142,7 +925,6 @@ export function DepartamentoInfo({
                                         processedItems={processedItems}
                                         consultantName={dep.responsavel}
                                         teamList={team}
-                                        openModal={openModal}
                                       />
                                     </div>
                                   ) : (
@@ -1152,7 +934,6 @@ export function DepartamentoInfo({
                                       processedItems={processedItems}
                                       consultantName={dep.responsavel}
                                       teamList={team}
-                                      openModal={openModal}
                                     />
                                   )}
                                 </div>
@@ -1169,91 +950,6 @@ export function DepartamentoInfo({
           })()}
         </CardContent>
       </Card>
-      {modalData && (
-        <Dialog open={!!modalData} onOpenChange={() => closeModal()}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{modalData.title}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2">
-              {modalData.items.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">
-                  Nenhum item encontrado
-                </p>
-              ) : (
-                modalData.items.map((item, index) => {
-                  const isItemOverdue = isOverdue(item);
-                  return (
-                    <div
-                      key={index}
-                      className={`border rounded p-3 text-sm ${isItemOverdue ? "border-red-300 bg-red-50" : "border-gray-200"}`}
-                    >
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <strong>Status:</strong> {item.status || "N/A"}
-                        </div>
-                        <div>
-                          <strong>Responsável:</strong>{" "}
-                          {item.responsavel || "N/A"}
-                        </div>
-                        <div>
-                          <strong>Data Registro:</strong>{" "}
-                          {item.data_registro || "N/A"}
-                        </div>
-                        <div
-                          className={
-                            isItemOverdue ? "text-red-600 font-semibold" : ""
-                          }
-                        >
-                          <strong>Prazo:</strong>{" "}
-                          {item.raw_data?.prazo ||
-                            item.prazo ||
-                            (item.rawData && Array.isArray(item.rawData)
-                              ? item.rawData.find(
-                                  (val: any) =>
-                                    val &&
-                                    typeof val === "string" &&
-                                    parseBRDate(val)
-                                ) || "N/A"
-                              : "N/A")}
-                          {isItemOverdue && " ⚠️"}
-                        </div>
-                        <div>
-                          <strong>Prioridade:</strong>{" "}
-                          {item.prioridade || "N/A"}
-                        </div>
-                        <div>
-                          <strong>Categoria:</strong> {item.categoria || "N/A"}
-                        </div>
-                      </div>
-                      {item.descricao && (
-                        <div className="mt-2">
-                          <strong>Descrição:</strong> {item.descricao}
-                        </div>
-                      )}
-                      {item.cliente && (
-                        <div className="mt-1">
-                          <strong>Cliente:</strong> {item.cliente}
-                        </div>
-                      )}
-                      {item.equipamento && (
-                        <div className="mt-1">
-                          <strong>Equipamento:</strong> {item.equipamento}
-                        </div>
-                      )}
-                      {item.observacoes && (
-                        <div className="mt-1">
-                          <strong>Observações:</strong> {item.observacoes}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </>
   );
 }

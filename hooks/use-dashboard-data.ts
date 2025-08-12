@@ -146,7 +146,7 @@ export function useDashboardData() {
               responsavel: item.responsavel || "Não informado",
               status: item.status,
               data: item.dataRegistro ? formatDateToBR(item.dataRegistro) : "",
-              prazo: item.rawData?.prazo || "",
+              prazo: item.dataRegistro || (item.rawData as any)?.prazo || "",
               rawData: item.rawData,
               data_registro: item.dataRegistro || "",
             }))
@@ -219,9 +219,18 @@ export function useDashboardData() {
           const prazoIndex = headers.findIndex(
             (header) =>
               header &&
-              (header.toLowerCase().includes("prazo") ||
-                header.toLowerCase().includes("data") ||
-                header.toLowerCase().includes("vencimento"))
+              (() => {
+                const h = header.toLowerCase();
+                return (
+                  h.includes("prazo") ||
+                  h.includes("vencimento") ||
+                  h.includes("data prazo") ||
+                  h.includes("data do prazo") ||
+                  h.includes("data limite") ||
+                  h.includes("dt prazo") ||
+                  h.trim() === "prazo"
+                );
+              })()
           );
 
           const responsavelIndex = headers.findIndex((header) => {
@@ -432,7 +441,7 @@ export function useDashboardData() {
         dashboardData: dashboardDataToSave,
         items: itemsToSave,
         fileName,
-        uploadedBy: "Paloma"
+        uploadedBy: "Paloma",
       });
 
       if (result.success) {
@@ -457,7 +466,14 @@ export function useDashboardData() {
       // Sempre desmarcar o estado global
       isSavingGlobal = false;
     }
-  }, [processedItems, dashboardData, fileName, saveStatus, loadUploadHistory, saveDashboardMutation]);
+  }, [
+    processedItems,
+    dashboardData,
+    fileName,
+    saveStatus,
+    loadUploadHistory,
+    saveDashboardMutation,
+  ]);
 
   const handleClearData = async () => {
     if (
