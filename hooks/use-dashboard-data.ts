@@ -1,14 +1,14 @@
 import { useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import {
-  saveDashboardData,
-  loadDashboardData,
-  getDashboardUploadHistory,
-  clearAllDashboardData,
+  useSaveDashboardData,
+  useDashboardData as useLoadDashboardData,
+  useDashboardUploadHistory,
+  useClearDashboardData,
   type DashboardData as DashboardDataType,
   type DashboardItem,
   type DashboardUpload,
-} from "@/lib/dashboard-supabase-client";
+} from "@/lib/convex-dashboard-client";
 import { mapEngineerResponsible } from "@/lib/engineer-mapping";
 
 // Estado global para controlar salvamento
@@ -101,6 +101,12 @@ export function formatDateToBR(dateStr: string) {
 }
 
 export function useDashboardData() {
+  // Convex hooks
+  const savedData = useLoadDashboardData();
+  const uploadHistoryData = useDashboardUploadHistory();
+  const saveDashboardMutation = useSaveDashboardData();
+  const clearDataMutation = useClearDashboardData();
+
   const [dashboardData, setDashboardData] = useState<DashboardDataRow>({
     totalItens: 0,
     aguardandoAprovacao: 0,
@@ -120,47 +126,49 @@ export function useDashboardData() {
   const loadSavedData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { dashboardData: savedDashboardData, items } =
-        await loadDashboardData();
-      if (savedDashboardData && items.length > 0) {
-        setDashboardData({
-          totalItens: savedDashboardData.total_itens,
-          aguardandoAprovacao: savedDashboardData.aguardando_aprovacao,
-          analises: savedDashboardData.analises,
-          orcamentos: savedDashboardData.orcamentos,
-          emExecucao: savedDashboardData.em_execucao,
-          pronto: savedDashboardData.pronto || 0,
-        });
-        setProcessedItems(
-          items.map((item) => ({
-            id: item.os,
-            os: item.os,
-            titulo: item.titulo || `Item ${item.os}`,
-            cliente: item.cliente || "Cliente não informado",
-            responsavel: item.responsavel || "Não informado",
-            status: item.status,
-            data: item.data_registro ? formatDateToBR(item.data_registro) : "",
-            prazo: item.raw_data?.prazo || "",
-            rawData: item.raw_data,
-            data_registro: item.data_registro || "",
-          }))
-        );
+      if (savedData) {
+        const { dashboardData: savedDashboardData, items } = savedData;
+        if (savedDashboardData && items.length > 0) {
+          setDashboardData({
+            totalItens: savedDashboardData.totalItens,
+            aguardandoAprovacao: savedDashboardData.aguardandoAprovacao,
+            analises: savedDashboardData.analises,
+            orcamentos: savedDashboardData.orcamentos,
+            emExecucao: savedDashboardData.emExecucao,
+            pronto: savedDashboardData.pronto || 0,
+          });
+          setProcessedItems(
+            items.map((item) => ({
+              id: item.os,
+              os: item.os,
+              titulo: item.titulo || `Item ${item.os}`,
+              cliente: item.cliente || "Cliente não informado",
+              responsavel: item.responsavel || "Não informado",
+              status: item.status,
+              data: item.dataRegistro ? formatDateToBR(item.dataRegistro) : "",
+              prazo: item.rawData?.prazo || "",
+              rawData: item.rawData,
+              data_registro: item.dataRegistro || "",
+            }))
+          );
+        }
       }
     } catch (error) {
       // Silently handle error
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [savedData]);
 
   const loadUploadHistory = useCallback(async () => {
     try {
-      const history = await getDashboardUploadHistory();
-      setUploadHistory(history);
+      if (uploadHistoryData) {
+        setUploadHistory(uploadHistoryData);
+      }
     } catch (error) {
       // Silently handle error
     }
-  }, []);
+  }, [uploadHistoryData]);
 
   const handleFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -399,33 +407,33 @@ export function useDashboardData() {
     setSaveStatus("saving");
 
     try {
-      const dashboardDataToSave: DashboardDataType = {
-        total_itens: dashboardData.totalItens,
-        aguardando_aprovacao: dashboardData.aguardandoAprovacao,
+      const dashboardDataToSave = {
+        totalItens: dashboardData.totalItens,
+        aguardandoAprovacao: dashboardData.aguardandoAprovacao,
         analises: dashboardData.analises,
         orcamentos: dashboardData.orcamentos,
-        em_execucao: dashboardData.emExecucao,
+        emExecucao: dashboardData.emExecucao,
         pronto: dashboardData.pronto,
         devolucoes: 0,
         movimentacoes: 0,
       };
 
-      const itemsToSave: DashboardItem[] = processedItems.map((item) => ({
+      const itemsToSave = processedItems.map((item) => ({
         os: item.os,
         titulo: item.titulo,
         cliente: item.cliente,
         responsavel: item.responsavel,
         status: item.status,
-        data_registro: item.data_registro || undefined,
-        raw_data: item.rawData,
+        dataRegistro: item.data_registro || undefined,
+        rawData: item.rawData,
       }));
 
-      const result = await saveDashboardData(
-        dashboardDataToSave,
-        itemsToSave,
+      const result = await saveDashboardMutation({
+        dashboardData: dashboardDataToSave,
+        items: itemsToSave,
         fileName,
-        "Paloma"
-      );
+        uploadedBy: "Paloma"
+      });
 
       if (result.success) {
         setSaveStatus("saved");
@@ -449,7 +457,7 @@ export function useDashboardData() {
       // Sempre desmarcar o estado global
       isSavingGlobal = false;
     }
-  }, [processedItems, dashboardData, fileName, saveStatus, loadUploadHistory]);
+  }, [processedItems, dashboardData, fileName, saveStatus, loadUploadHistory, saveDashboardMutation]);
 
   const handleClearData = async () => {
     if (
@@ -459,7 +467,7 @@ export function useDashboardData() {
     ) {
       setIsLoading(true);
       try {
-        await clearAllDashboardData();
+        await clearDataMutation();
         setDashboardData({
           totalItens: 0,
           aguardandoAprovacao: 0,

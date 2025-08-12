@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/select";
 import { User, X, Building } from "lucide-react";
 import {
-  getUniqueResponsaveis,
-  loadDashboardData,
-} from "@/lib/dashboard-supabase-client";
+  useUniqueResponsaveis,
+  useDashboardData,
+} from "@/lib/convex-dashboard-client";
 import { RESPONSAVEIS, getDepartamentoByResponsavel } from "./types";
 
 interface ResponsavelFilterProps {
@@ -26,6 +26,9 @@ export function ResponsavelFilter({
   onFilterChange,
   processedItems,
 }: ResponsavelFilterProps) {
+  const uniqueResponsaveisData = useUniqueResponsaveis();
+  const dashboardData = useDashboardData();
+  
   const [responsaveis, setResponsaveis] = useState<string[]>([]);
   const [selectedResponsavel, setSelectedResponsavel] = useState<string | null>(
     null
@@ -34,13 +37,13 @@ export function ResponsavelFilter({
 
   useEffect(() => {
     loadResponsaveis();
-  }, [processedItems]);
+  }, [processedItems, uniqueResponsaveisData]);
 
   const loadResponsaveis = async () => {
     try {
       setIsLoading(true);
 
-      const responsaveisFromDB = await getUniqueResponsaveis();
+      const responsaveisFromDB = uniqueResponsaveisData || [];
 
       if (responsaveisFromDB.length > 0) {
         // Combinar dados do banco com dados dos tipos para ter informações completas

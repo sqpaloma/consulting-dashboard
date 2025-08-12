@@ -269,6 +269,9 @@ export function AnalyticsPage() {
           <AnalyticsClientAnalysis
             uploadedData={displayData}
             rawData={filteredRawData}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            selectedEngineer={selectedEngineer}
           />
 
           {/* Admin Data Table */}

@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TrendingUp, FileText, AlertCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
+import { useClientSummary } from "@/lib/convex-analytics-client";
 
 interface RawDataRow {
   responsavel: string;
@@ -10,7 +11,7 @@ interface RawDataRow {
   mes: number;
   valor: number;
   descricao: string;
-  orcamentoId: string | null;
+  orcamentoId: string | undefined;
   isOrcamento: boolean;
   isVendaNormal: boolean;
   isVendaServicos: boolean;
@@ -19,11 +20,18 @@ interface RawDataRow {
 interface AnalyticsClientAnalysisProps {
   uploadedData: any[];
   rawData?: RawDataRow[];
+  // optional filters
+  selectedYear?: string;
+  selectedMonth?: string;
+  selectedEngineer?: string;
 }
 
 export function AnalyticsClientAnalysis({
   uploadedData,
   rawData,
+  selectedYear,
+  selectedMonth,
+  selectedEngineer,
 }: AnalyticsClientAnalysisProps) {
   const [activeTab, setActiveTab] = useState<"faturamento" | "orcamentos">(
     "faturamento"
@@ -36,7 +44,26 @@ export function AnalyticsClientAnalysis({
     }).format(value);
   };
 
-  // Processar dados dos clientes usando dados brutos se disponíveis
+  // Tentar buscar um resumo do servidor quando rawData não for passado
+  const yearNum =
+    selectedYear && selectedYear !== "todos" ? Number(selectedYear) : undefined;
+  const monthNum =
+    selectedMonth && selectedMonth !== "todos"
+      ? Number(selectedMonth)
+      : undefined;
+  const engineer =
+    selectedEngineer && selectedEngineer !== "todos"
+      ? selectedEngineer
+      : undefined;
+  const serverSummary =
+    useClientSummary({
+      year: yearNum,
+      month: monthNum,
+      engineer,
+      limit: 1000,
+    }) || [];
+
+  // Processar dados dos clientes usando dados brutos se disponíveis; caso contrário, usar o resumo do servidor
   const clientesMap = new Map();
   let hasClientData = false;
 
@@ -96,6 +123,18 @@ export function AnalyticsClientAnalysis({
         cliente.faturamentos = conversionsSet.size;
       }
     });
+  } else if (serverSummary && serverSummary.length > 0) {
+    // Fallback: usar resumo processado no servidor a partir do analyticsRawData
+    hasClientData = true;
+    for (const row of serverSummary as any[]) {
+      clientesMap.set(row.cliente, {
+        cliente: row.cliente,
+        orcamentos: row.orcamentos,
+        valorOrcamentos: row.valorOrcamentos,
+        faturamentos: row.faturamentos,
+        valorFaturamentos: row.valorFaturamentos,
+      });
+    }
   }
 
   const clientes = Array.from(clientesMap.values());
@@ -142,14 +181,14 @@ export function AnalyticsClientAnalysis({
             <p className="text-gray-500 text-center mb-4">
               {rawData && rawData.length > 0
                 ? "A planilha não contém informações da coluna 'Nome Parceiro (Parceiro)' ou os dados estão vazios."
-                : "Para ver a análise de clientes com dados salvos, execute primeiro a migração do banco de dados."}
+                : "Sem dados de cliente suficientes para análise."}
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
               <p className="text-blue-800">
                 <strong>Solução:</strong>{" "}
                 {rawData && rawData.length > 0
                   ? "Certifique-se de que a planilha contém a coluna 'Nome Parceiro (Parceiro)' com os dados preenchidos."
-                  : "Execute a migração do banco (scripts/migrate-analytics-add-cliente.sql) e faça novo upload dos dados."}
+                  : "Suba uma planilha com coluna de cliente ou ajuste os filtros."}
               </p>
             </div>
           </div>
@@ -262,14 +301,16 @@ export function AnalyticsClientAnalysis({
                 </h3>
               </div>
               <div className="border rounded-lg bg-gray-50">
-                <List
-                  height={380}
-                  width={"100%"}
-                  itemCount={faturamentoList.length}
-                  itemSize={56}
-                >
-                  {renderFaturamentoRow}
-                </List>
+                <div style={{ height: 380, width: "100%" }}>
+                  <List
+                    height={380}
+                    width={"100%"}
+                    itemCount={faturamentoList.length}
+                    itemSize={56}
+                  >
+                    {renderFaturamentoRow}
+                  </List>
+                </div>
               </div>
             </div>
           )}
@@ -283,14 +324,16 @@ export function AnalyticsClientAnalysis({
                 </h3>
               </div>
               <div className="border rounded-lg bg-gray-50">
-                <List
-                  height={380}
-                  width={"100%"}
-                  itemCount={orcamentosNaoConvertidosList.length}
-                  itemSize={56}
-                >
-                  {renderOrcamentoRow}
-                </List>
+                <div style={{ height: 380, width: "100%" }}>
+                  <List
+                    height={380}
+                    width={"100%"}
+                    itemCount={orcamentosNaoConvertidosList.length}
+                    itemSize={56}
+                  >
+                    {renderOrcamentoRow}
+                  </List>
+                </div>
               </div>
             </div>
           )}

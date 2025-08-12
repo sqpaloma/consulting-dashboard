@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
-import { loadDashboardData } from "@/lib/dashboard-supabase-client";
+import { useDashboardData } from "@/lib/convex-dashboard-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
 
@@ -33,6 +33,7 @@ export function DashboardCalendar({
 }: DashboardCalendarProps) {
   const { user } = useAuth();
   const { isAdmin } = useAdmin();
+  const dashboardData = useDashboardData();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [calendarItems, setCalendarItems] = useState<{
@@ -54,11 +55,11 @@ export function DashboardCalendar({
   const loadDatabaseItems = async () => {
     setIsLoading(true);
     try {
-      const { items } = await loadDashboardData();
+      const items = dashboardData?.items || [];
 
       // Converte os dados do banco para o formato do calendário
       let dbItems: CalendarItem[] = items
-        .filter((item) => item.data_registro) // Só inclui itens com data_registro
+        .filter((item) => item.dataRegistro) // Só inclui itens com dataRegistro
         .map((item) => ({
           id: item.os,
           os: item.os,
@@ -66,9 +67,9 @@ export function DashboardCalendar({
           cliente: item.cliente || "Cliente não informado",
           responsavel: item.responsavel || "Não informado",
           status: item.status,
-          prazo: item.data_registro || "", // Usa data_registro como prazo
-          data: item.data_registro || "",
-          rawData: item.raw_data || [],
+          prazo: item.dataRegistro || "", // Usa dataRegistro como prazo
+          data: item.dataRegistro || "",
+          rawData: item.rawData || [],
         }));
 
       // Aplica filtro por consultor logado (quando aplicável)

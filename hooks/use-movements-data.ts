@@ -1,14 +1,14 @@
 import { useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import {
-  saveMovimentacaoData,
-  loadMovimentacaoData,
-  getMovimentacaoUploadHistory,
-  clearAllMovimentacaoData,
+  useSaveMovimentacaoData,
+  useMovimentacaoData,
+  useMovimentacaoUploadHistory,
+  useClearMovimentacaoData,
   type MovimentacaoData,
   type MovimentacaoItem,
   type MovimentacaoUpload,
-} from "@/lib/returns-movements-supabase-client";
+} from "@/lib/convex-returns-movements-client";
 
 interface MovimentacaoDataRow {
   total: number;
@@ -52,6 +52,12 @@ function formatDateToBR(dateISO: string): string {
 }
 
 export function useMovementsData() {
+  // Convex hooks
+  const savedData = useMovimentacaoData();
+  const uploadHistoryData = useMovimentacaoUploadHistory();
+  const saveMovimentacaoMutation = useSaveMovimentacaoData();
+  const clearDataMutation = useClearMovimentacaoData();
+
   const [movimentacaoData, setMovimentacaoData] = useState<MovimentacaoDataRow>(
     {
       total: 0,
@@ -72,47 +78,49 @@ export function useMovementsData() {
   const loadSavedData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { movimentacaoData: savedData, items } =
-        await loadMovimentacaoData();
-      if (savedData && items.length > 0) {
-        setMovimentacaoData({
-          total: savedData.total,
-          entrada: savedData.entrada,
-          saida: savedData.saida,
-        });
-        setProcessedItems(
-          items.map((item) => ({
-            id: item.os,
-            os: item.os,
-            tipo: item.tipo,
-            produto: item.produto || "Produto não informado",
-            quantidade: item.quantidade || 0,
-            valor_unitario: item.valor_unitario || 0,
-            valor_total: item.valor_total || 0,
-            data_movimentacao: item.data_movimentacao
-              ? formatDateToBR(item.data_movimentacao)
-              : "",
-            origem: item.origem || "Não informado",
-            destino: item.destino || "Não informado",
-            responsavel: item.responsavel || "Não informado",
-            observacoes: item.observacoes || "",
-            rawData: item.raw_data,
-          }))
-        );
+      if (savedData) {
+        const { movimentacaoData: savedMovimentacaoData, items } = savedData;
+        if (savedMovimentacaoData && items.length > 0) {
+          setMovimentacaoData({
+            total: savedMovimentacaoData.total,
+            entrada: savedMovimentacaoData.entrada,
+            saida: savedMovimentacaoData.saida,
+          });
+          setProcessedItems(
+            items.map((item) => ({
+              id: item.os,
+              os: item.os,
+              tipo: item.tipo,
+              produto: item.produto || "Produto não informado",
+              quantidade: item.quantidade || 0,
+              valor_unitario: item.valorUnitario || 0,
+              valor_total: item.valorTotal || 0,
+              data_movimentacao: item.dataMovimentacao
+                ? formatDateToBR(item.dataMovimentacao)
+                : "",
+              origem: item.origem || "Não informado",
+              destino: item.destino || "Não informado",
+              responsavel: item.responsavel || "Não informado",
+              observacoes: item.observacoes || "",
+              rawData: item.rawData,
+            }))
+          );
+        }
       }
     } catch (error) {
       } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [savedData]);
 
   const loadUploadHistory = useCallback(async () => {
     try {
-      const history = await getMovimentacaoUploadHistory();
-      setUploadHistory(history);
+      if (uploadHistoryData) {
+        setUploadHistory(uploadHistoryData);
+      }
     } catch (error) {
       }
-  }, []);
+  }, [uploadHistoryData]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

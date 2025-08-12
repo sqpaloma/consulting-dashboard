@@ -16,7 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { type AnalyticsUpload } from "@/lib/supabase-client";
+import { type AnalyticsUpload } from "@/lib/convex-analytics-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sheet,

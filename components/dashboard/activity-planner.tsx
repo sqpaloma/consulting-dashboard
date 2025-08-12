@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FixedSizeList as List } from "react-window";
-import { loadDashboardData } from "@/lib/dashboard-supabase-client";
+import { useDashboardData } from "@/lib/convex-dashboard-client";
 import { useActivityStorage } from "./hooks/use-activity-storage";
 import { useActivityData } from "./hooks/use-activity-data";
 import { ActivityHeader } from "./activity-header";
@@ -44,6 +44,7 @@ export function ActivityPlanner({
   processedItems = [],
   filteredByResponsavel,
 }: ActivityPlannerProps) {
+  const dashboardData = useDashboardData();
   const [isLoading, setIsLoading] = useState(false);
   const [databaseItems, setDatabaseItems] = useState<CalendarItem[]>([]);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -272,11 +273,11 @@ export function ActivityPlanner({
   const loadDatabaseItems = async () => {
     setIsLoading(true);
     try {
-      const { items } = await loadDashboardData();
+      const items = dashboardData?.items || [];
 
       // Converte os dados do banco para o formato do calendário
       let dbItems: CalendarItem[] = items
-        .filter((item) => item.data_registro)
+        .filter((item) => item.dataRegistro)
         .map((item) => ({
           id: item.os,
           os: item.os,
@@ -284,9 +285,9 @@ export function ActivityPlanner({
           cliente: item.cliente || "Cliente não informado",
           responsavel: item.responsavel || "Não informado",
           status: item.status,
-          prazo: item.data_registro || "",
-          data: item.data_registro || "",
-          rawData: item.raw_data || [],
+          prazo: item.dataRegistro || "",
+          data: item.dataRegistro || "",
+          rawData: item.rawData || [],
         }));
 
       // Aplica filtro por consultor logado (quando aplicável)

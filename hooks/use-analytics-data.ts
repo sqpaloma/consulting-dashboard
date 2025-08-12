@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import {
-  saveAnalyticsData,
-  loadAnalyticsData,
-  getUploadHistory,
-  clearAllAnalyticsData,
+  useSaveAnalyticsData,
+  useAnalyticsData as useLoadAnalyticsData,
+  useUploadHistory,
+  useClearAnalyticsData,
+  useInitializeAnalyticsUpload,
+  useSaveAnalyticsDataBatch,
+  useSaveAnalyticsRawDataBatch,
+  useFinalizeAnalyticsUpload,
   type AnalyticsData,
   type AnalyticsUpload,
   type RawDataRow,
-} from "@/lib/supabase-client";
+} from "@/lib/convex-analytics-client";
 import { mapEngineerResponsible } from "@/lib/engineer-mapping";
 
 interface DataRow {
@@ -28,6 +32,18 @@ interface DataRow {
 }
 
 export function useAnalyticsData() {
+  // Convex hooks
+  const savedData = useLoadAnalyticsData();
+  const uploadHistoryData = useUploadHistory();
+  const saveAnalyticsMutation = useSaveAnalyticsData();
+  const clearDataMutation = useClearAnalyticsData();
+
+  // Batch processing hooks
+  const initializeUpload = useInitializeAnalyticsUpload();
+  const saveDataBatch = useSaveAnalyticsDataBatch();
+  const saveRawDataBatch = useSaveAnalyticsRawDataBatch();
+  const finalizeUpload = useFinalizeAnalyticsUpload();
+
   const [uploadedData, setUploadedData] = useState<DataRow[]>([]);
   const [rawData, setRawData] = useState<RawDataRow[]>([]);
   const [fileName, setFileName] = useState<string>("");
@@ -48,44 +64,100 @@ export function useAnalyticsData() {
     engineerBreakdown: any[];
   } | null>(null);
 
+  // Auto-sync when Convex query returns/changes
+  useEffect(() => {
+    if (!savedData) {
+      setUploadedData([]);
+      setRawData([]);
+      return;
+    }
+    const { data: loadedData, rawData: savedRawData } = savedData;
+    if (loadedData && loadedData.length > 0) {
+      const convertedData: DataRow[] = loadedData.map((item) => ({
+        engenheiro: item.engenheiro,
+        ano: item.ano,
+        mes: item.mes,
+        registros: item.registros,
+        servicos: item.servicos,
+        pecas: item.pecas,
+        valorTotal: item.valorTotal,
+        valorPecas: item.valorPecas,
+        valorServicos: item.valorServicos,
+        valorOrcamentos: item.valorOrcamentos,
+        projetos: item.projetos,
+        quantidade: item.quantidade,
+        cliente: item.cliente,
+      }));
+      setUploadedData(convertedData);
+      setRawData(savedRawData || []);
+    } else {
+      setUploadedData([]);
+      setRawData([]);
+    }
+  }, [savedData]);
+
+  useEffect(() => {
+    if (uploadHistoryData) {
+      setUploadHistory(uploadHistoryData);
+    }
+  }, [uploadHistoryData]);
+
   // Função para carregar dados salvos
   const loadSavedData = async () => {
     setIsLoading(true);
     try {
-      const { data: savedData, rawData: savedRawData } =
-        await loadAnalyticsData();
-      if (savedData.length > 0) {
-        const convertedData: DataRow[] = savedData.map((item) => ({
-          engenheiro: item.engenheiro,
-          ano: item.ano,
-          mes: item.mes,
-          registros: item.registros,
-          servicos: item.servicos,
-          pecas: item.pecas,
-          valorTotal: item.valor_total,
-          valorPecas: item.valor_pecas,
-          valorServicos: item.valor_servicos,
-          valorOrcamentos: item.valor_orcamentos,
-          projetos: item.projetos,
-          quantidade: item.quantidade,
-          cliente: item.cliente,
-        }));
-        setUploadedData(convertedData);
-        // Now we load raw data from the database too
-        setRawData(savedRawData);
+      console.log("Loading saved data...", savedData);
+      if (savedData) {
+        const { data: loadedData, rawData: savedRawData } = savedData;
+        console.log(
+          `Loaded ${loadedData?.length || 0} analytics items and ${savedRawData?.length || 0} raw data items`
+        );
+        if (loadedData && loadedData.length > 0) {
+          const convertedData: DataRow[] = loadedData.map((item) => ({
+            engenheiro: item.engenheiro,
+            ano: item.ano,
+            mes: item.mes,
+            registros: item.registros,
+            servicos: item.servicos,
+            pecas: item.pecas,
+            valorTotal: item.valorTotal,
+            valorPecas: item.valorPecas,
+            valorServicos: item.valorServicos,
+            valorOrcamentos: item.valorOrcamentos,
+            projetos: item.projetos,
+            quantidade: item.quantidade,
+            cliente: item.cliente,
+          }));
+          console.log("Setting uploaded data:", convertedData.length, "items");
+          setUploadedData(convertedData);
+          // Now we load raw data from the database too
+          console.log("Setting raw data:", savedRawData?.length || 0, "items");
+          setRawData(savedRawData || []);
+        } else {
+          console.log("No data loaded from database");
+          setUploadedData([]);
+          setRawData([]);
+        }
+      } else {
+        console.log("No saved data found");
+        setUploadedData([]);
+        setRawData([]);
       }
     } catch (error) {
-      } finally {
+      console.error("Error loading data:", error);
+      setUploadedData([]);
+      setRawData([]);
+    } finally {
       setIsLoading(false);
     }
   };
 
   const loadUploadHistory = async () => {
     try {
-      const history = await getUploadHistory();
-      setUploadHistory(history);
-    } catch (error) {
+      if (uploadHistoryData) {
+        setUploadHistory(uploadHistoryData);
       }
+    } catch (error) {}
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,7 +279,7 @@ export function useAnalyticsData() {
           const orcamentoId =
             orcamentoIndex !== -1 && row[orcamentoIndex]
               ? row[orcamentoIndex]?.toString().trim()
-              : null;
+              : undefined;
 
           // Processa a data de negociação
           let ano = 2025;
@@ -621,30 +693,130 @@ export function useAnalyticsData() {
 
     setSaveStatus("saving");
     try {
-      const analyticsData: AnalyticsData[] = uploadedData.map((item) => ({
+      const analyticsData = uploadedData.map((item) => ({
         engenheiro: item.engenheiro,
         ano: item.ano,
         mes: item.mes,
         registros: item.registros,
         servicos: item.servicos,
         pecas: item.pecas,
-        valor_total: item.valorTotal,
-        valor_pecas: item.valorPecas,
-        valor_servicos: item.valorServicos,
-        valor_orcamentos: item.valorOrcamentos,
+        valorTotal: item.valorTotal,
+        valorPecas: item.valorPecas,
+        valorServicos: item.valorServicos,
+        valorOrcamentos: item.valorOrcamentos,
         projetos: item.projetos,
         quantidade: item.quantidade,
         cliente: item.cliente,
       }));
 
-      const result = await saveAnalyticsData(
-        analyticsData,
-        rawData,
-        fileName,
-        "Paloma"
-      );
+      // Check if we need batch processing (Convex limit is around 8000 items)
+      const BATCH_SIZE = 5000; // Conservative batch size
+      const needsBatchProcessing =
+        rawData.length > BATCH_SIZE || analyticsData.length > BATCH_SIZE;
 
+      let result;
+
+      console.log(
+        `Processing ${rawData.length} raw data items and ${analyticsData.length} analytics items`
+      );
+      console.log(`Needs batch processing: ${needsBatchProcessing}`);
+
+      if (needsBatchProcessing) {
+        // Use batch processing for large datasets
+        console.log("Starting batch processing...");
+        const initResult = await initializeUpload({
+          fileName,
+          uploadedBy: "Paloma",
+          totalRecords: rawData.length,
+        });
+
+        console.log("Initialize upload result:", initResult);
+        if (!initResult.success) {
+          throw new Error("Falha ao inicializar upload");
+        }
+
+        // Process analytics data in batches
+        console.log(
+          `Processing ${analyticsData.length} analytics items in batches of ${BATCH_SIZE}`
+        );
+        for (let i = 0; i < analyticsData.length; i += BATCH_SIZE) {
+          const batch = analyticsData.slice(i, i + BATCH_SIZE);
+          console.log(
+            `Saving analytics batch ${Math.floor(i / BATCH_SIZE) + 1} with ${batch.length} items`
+          );
+          const batchResult = await saveDataBatch({
+            data: batch,
+            uploadId: initResult.uploadId!,
+          });
+
+          console.log(`Analytics batch result:`, batchResult);
+          if (!batchResult.success) {
+            throw new Error(
+              `Falha ao salvar lote ${Math.floor(i / BATCH_SIZE) + 1}`
+            );
+          }
+        }
+
+        // Process raw data in batches
+        console.log(
+          `Processing ${rawData.length} raw data items in batches of ${BATCH_SIZE}`
+        );
+        for (let i = 0; i < rawData.length; i += BATCH_SIZE) {
+          const batch = rawData.slice(i, i + BATCH_SIZE);
+
+          // Sanitize batch data: convert null to undefined for Convex compatibility
+          const sanitizedBatch = batch.map((item) => ({
+            ...item,
+            orcamentoId:
+              item.orcamentoId === null ? undefined : item.orcamentoId,
+          }));
+
+          console.log(
+            `Saving raw data batch ${Math.floor(i / BATCH_SIZE) + 1} with ${sanitizedBatch.length} items`
+          );
+          const batchResult = await saveRawDataBatch({
+            rawData: sanitizedBatch,
+            uploadId: initResult.uploadId!,
+          });
+
+          console.log(`Raw data batch result:`, batchResult);
+          if (!batchResult.success) {
+            throw new Error(
+              `Falha ao salvar dados brutos lote ${Math.floor(i / BATCH_SIZE) + 1}`
+            );
+          }
+        }
+
+        // Finalize upload
+        console.log("Finalizing upload...");
+        result = await finalizeUpload({
+          uploadId: initResult.uploadId!,
+        });
+        console.log("Finalize result:", result);
+      } else {
+        // Use single mutation for small datasets
+        console.log("Using single mutation for small dataset...");
+        // Sanitize rawData: convert null to undefined for Convex compatibility
+        const sanitizedRawData = rawData.map((item) => ({
+          ...item,
+          orcamentoId: item.orcamentoId === null ? undefined : item.orcamentoId,
+        }));
+
+        console.log(
+          `Saving ${analyticsData.length} analytics items and ${sanitizedRawData.length} raw data items`
+        );
+        result = await saveAnalyticsMutation({
+          data: analyticsData,
+          rawData: sanitizedRawData,
+          fileName,
+          uploadedBy: "Paloma",
+        });
+        console.log("Single mutation result:", result);
+      }
+
+      console.log("Final result:", result);
       if (result.success) {
+        console.log("Data saved successfully!");
         setSaveStatus("saved");
         await loadUploadHistory();
         setTimeout(() => setSaveStatus("idle"), 3000);
@@ -652,6 +824,7 @@ export function useAnalyticsData() {
           "Dados salvos com sucesso! Agora outras pessoas podem visualizar estes dados."
         );
       } else {
+        console.error("Failed to save data:", result.error);
         setSaveStatus("error");
         setTimeout(() => setSaveStatus("idle"), 3000);
 
@@ -683,7 +856,7 @@ export function useAnalyticsData() {
     ) {
       setIsLoading(true);
       try {
-        await clearAllAnalyticsData();
+        await clearDataMutation();
         setUploadedData([]);
         setRawData([]);
         setFileName("");

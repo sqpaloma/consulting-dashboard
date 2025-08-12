@@ -141,4 +141,167 @@ export default defineSchema({
     .index("by_conversation", ["conversationId"])
     .index("by_sender", ["senderId"])
     .index("by_conversation_created", ["conversationId", "createdAt"]),
+
+  // ===== TABELAS DO DASHBOARD =====
+  dashboardData: defineTable({
+    totalItens: v.number(),
+    aguardandoAprovacao: v.number(),
+    analises: v.number(),
+    orcamentos: v.number(),
+    emExecucao: v.number(),
+    pronto: v.number(),
+    devolucoes: v.number(),
+    movimentacoes: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  dashboardItens: defineTable({
+    os: v.string(),
+    titulo: v.optional(v.string()),
+    cliente: v.optional(v.string()),
+    responsavel: v.optional(v.string()),
+    status: v.string(),
+    dataRegistro: v.optional(v.string()),
+    rawData: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_responsavel", ["responsavel"])
+    .index("by_status", ["status"]),
+
+  dashboardUploads: defineTable({
+    fileName: v.string(),
+    uploadedBy: v.optional(v.string()),
+    uploadDate: v.optional(v.string()),
+    totalRecords: v.number(),
+    status: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  // ===== TABELAS DE ANALYTICS =====
+  analyticsData: defineTable({
+    engenheiro: v.string(),
+    ano: v.number(),
+    mes: v.number(),
+    registros: v.number(),
+    servicos: v.number(),
+    pecas: v.number(),
+    valorTotal: v.number(),
+    valorPecas: v.number(),
+    valorServicos: v.number(),
+    valorOrcamentos: v.number(),
+    projetos: v.number(),
+    quantidade: v.number(),
+    cliente: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_engenheiro", ["engenheiro"])
+    .index("by_ano_mes", ["ano", "mes"]),
+
+  analyticsRawData: defineTable({
+    responsavel: v.string(),
+    cliente: v.string(),
+    ano: v.number(),
+    mes: v.number(),
+    valor: v.number(),
+    descricao: v.string(),
+    orcamentoId: v.optional(v.string()),
+    isOrcamento: v.boolean(),
+    isVendaNormal: v.boolean(),
+    isVendaServicos: v.boolean(),
+    uploadId: v.optional(v.id("analyticsUploads")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_responsavel", ["responsavel"])
+    .index("by_upload", ["uploadId"])
+    .index("by_ano_mes", ["ano", "mes"]),
+
+  analyticsUploads: defineTable({
+    fileName: v.string(),
+    uploadedBy: v.string(),
+    uploadDate: v.string(),
+    totalRecords: v.number(),
+    status: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  // ===== TABELAS DE DEVOLUÇÕES =====
+  devolucoesData: defineTable({
+    total: v.number(),
+    pendentes: v.number(),
+    concluidas: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  devolucoesItens: defineTable({
+    os: v.string(),
+    cliente: v.optional(v.string()),
+    produto: v.optional(v.string()),
+    motivo: v.optional(v.string()),
+    status: v.string(),
+    dataDevolucao: v.optional(v.string()),
+    dataResolucao: v.optional(v.string()),
+    responsavel: v.optional(v.string()),
+    valor: v.optional(v.number()),
+    observacoes: v.optional(v.string()),
+    rawData: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_responsavel", ["responsavel"]),
+
+  devolucoesUploads: defineTable({
+    fileName: v.string(),
+    uploadedBy: v.optional(v.string()),
+    uploadDate: v.optional(v.string()),
+    totalRecords: v.number(),
+    status: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  // ===== TABELAS DE MOVIMENTAÇÕES =====
+  movimentacoesData: defineTable({
+    total: v.number(),
+    entrada: v.number(),
+    saida: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  movimentacoesItens: defineTable({
+    os: v.string(),
+    tipo: v.string(), // 'entrada' ou 'saida'
+    produto: v.optional(v.string()),
+    quantidade: v.optional(v.number()),
+    valorUnitario: v.optional(v.number()),
+    valorTotal: v.optional(v.number()),
+    dataMovimentacao: v.optional(v.string()),
+    origem: v.optional(v.string()),
+    destino: v.optional(v.string()),
+    responsavel: v.optional(v.string()),
+    observacoes: v.optional(v.string()),
+    rawData: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tipo", ["tipo"])
+    .index("by_responsavel", ["responsavel"]),
+
+  movimentacoesUploads: defineTable({
+    fileName: v.string(),
+    uploadedBy: v.optional(v.string()),
+    uploadDate: v.optional(v.string()),
+    totalRecords: v.number(),
+    status: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
 });

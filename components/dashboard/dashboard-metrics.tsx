@@ -4,13 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, DollarSign } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
-  loadDevolucaoData,
-  loadMovimentacaoData,
-} from "@/lib/returns-movements-supabase-client";
+  useDevolucaoData,
+  useMovimentacaoData,
+} from "@/lib/convex-returns-movements-client";
 import {
-  loadDashboardData,
-  getDashboardItemsByCategory,
-} from "@/lib/dashboard-supabase-client";
+  useDashboardData,
+  useDashboardItemsByCategory,
+} from "@/lib/convex-dashboard-client";
 
 interface DashboardData {
   totalItens: number;
@@ -38,6 +38,11 @@ export function DashboardMetrics({
   openModal,
   overdueItems = [],
 }: DashboardMetricsProps) {
+  // Convex hooks
+  const dashData = useDashboardData();
+  const devolucaoDataConvex = useDevolucaoData();
+  const movimentacaoDataConvex = useMovimentacaoData();
+
   const [devolucaoData, setDevolucaoData] = useState({
     total: 0,
     pendentes: 0,
@@ -147,63 +152,84 @@ export function DashboardMetrics({
   };
 
   useEffect(() => {
-    const loadItemMetrics = async () => {
-      try {
-        // Carrega todos os itens
-        const { items: allItems } = await loadDashboardData();
+    if (dashData?.items) {
+      const allItems = dashData.items;
+      
+      // Filtra itens por categoria
+      const aprovacaoItems = allItems.filter((item: any) => {
+        const status = item.status.toLowerCase();
+        return (
+          status.includes("aguardando") ||
+          status.includes("pendente") ||
+          status.includes("aprovação") ||
+          status.includes("aprovacao")
+        );
+      });
 
-        // Carrega itens por categoria
-        const [
-          totalItems,
-          aprovacaoItems,
-          analisesItems,
-          orcamentosItems,
-          execucaoItems,
-          prontoItems,
-        ] = await Promise.all([
-          Promise.resolve(allItems), // Todos os itens
-          getDashboardItemsByCategory("aprovacao"),
-          getDashboardItemsByCategory("analises"),
-          getDashboardItemsByCategory("orcamentos"),
-          getDashboardItemsByCategory("execucao"),
-          getDashboardItemsByCategory("pronto"),
-        ]);
+      const analisesItems = allItems.filter((item: any) => {
+        const status = item.status.toLowerCase();
+        return (
+          status.includes("análise") ||
+          status.includes("analise") ||
+          status.includes("revisão") ||
+          status.includes("revisao")
+        );
+      });
 
-        // Calcula métricas para cada categoria
-        setItemMetrics({
-          total: calculateMetrics(totalItems),
-          aprovacao: calculateMetrics(aprovacaoItems),
-          analises: calculateMetrics(analisesItems),
-          orcamentos: calculateMetrics(orcamentosItems),
-          execucao: calculateMetrics(execucaoItems),
-          pronto: calculateMetrics(prontoItems),
-        });
-      } catch (error) {}
-    };
+      const orcamentosItems = allItems.filter((item: any) => {
+        const status = item.status.toLowerCase();
+        return (
+          status.includes("orçamento") ||
+          status.includes("orcamento") ||
+          status.includes("cotação") ||
+          status.includes("cotacao")
+        );
+      });
 
-    loadItemMetrics();
-  }, [dashboardData]); // Recarrega quando dashboardData muda
+      const execucaoItems = allItems.filter((item: any) => {
+        const status = item.status.toLowerCase();
+        return (
+          status.includes("execução") ||
+          status.includes("execucao") ||
+          status.includes("andamento") ||
+          status.includes("progresso")
+        );
+      });
+
+      const prontoItems = allItems.filter((item: any) => {
+        const status = item.status.toLowerCase();
+        return (
+          status.includes("pronto") ||
+          status.includes("concluído") ||
+          status.includes("concluido") ||
+          status.includes("finalizado") ||
+          status.includes("entregue")
+        );
+      });
+
+      // Calcula métricas para cada categoria
+      setItemMetrics({
+        total: calculateMetrics(allItems),
+        aprovacao: calculateMetrics(aprovacaoItems),
+        analises: calculateMetrics(analisesItems),
+        orcamentos: calculateMetrics(orcamentosItems),
+        execucao: calculateMetrics(execucaoItems),
+        pronto: calculateMetrics(prontoItems),
+      });
+    }
+  }, [dashData]); // Recarrega quando dashData muda
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [devolucaoResult, movimentacaoResult] = await Promise.all([
-          loadDevolucaoData(),
-          loadMovimentacaoData(),
-        ]);
+    if (devolucaoDataConvex?.devolucaoData) {
+      setDevolucaoData(devolucaoDataConvex.devolucaoData);
+    }
+  }, [devolucaoDataConvex]);
 
-        if (devolucaoResult.devolucaoData) {
-          setDevolucaoData(devolucaoResult.devolucaoData);
-        }
-
-        if (movimentacaoResult.movimentacaoData) {
-          setMovimentacaoData(movimentacaoResult.movimentacaoData);
-        }
-      } catch (error) {}
-    };
-
-    loadData();
-  }, []);
+  useEffect(() => {
+    if (movimentacaoDataConvex?.movimentacaoData) {
+      setMovimentacaoData(movimentacaoDataConvex.movimentacaoData);
+    }
+  }, [movimentacaoDataConvex]);
 
   // Função para calcular percentual seguro
   const calculatePercentage = (value: number, total: number): number => {

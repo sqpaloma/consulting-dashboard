@@ -1,14 +1,14 @@
 import { useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import {
-  saveDevolucaoData,
-  loadDevolucaoData,
-  getDevolucaoUploadHistory,
-  clearAllDevolucaoData,
+  useSaveDevolucaoData,
+  useDevolucaoData,
+  useDevolucaoUploadHistory,
+  useClearDevolucaoData,
   type DevolucaoData,
   type DevolucaoItem,
   type DevolucaoUpload,
-} from "@/lib/returns-movements-supabase-client";
+} from "@/lib/convex-returns-movements-client";
 
 interface DevolucaoDataRow {
   total: number;
@@ -51,6 +51,12 @@ function formatDateToBR(dateISO: string): string {
 }
 
 export function useReturnsData() {
+  // Convex hooks
+  const savedData = useDevolucaoData();
+  const uploadHistoryData = useDevolucaoUploadHistory();
+  const saveDevolucaoMutation = useSaveDevolucaoData();
+  const clearDataMutation = useClearDevolucaoData();
+
   const [devolucaoData, setDevolucaoData] = useState<DevolucaoDataRow>({
     total: 0,
     pendentes: 0,
@@ -67,47 +73,50 @@ export function useReturnsData() {
   const loadSavedData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { devolucaoData: savedData, items } = await loadDevolucaoData();
-      if (savedData && items.length > 0) {
-        setDevolucaoData({
-          total: savedData.total,
-          pendentes: savedData.pendentes,
-          concluidas: savedData.concluidas,
-        });
-        setProcessedItems(
-          items.map((item) => ({
-            id: item.os,
-            os: item.os,
-            cliente: item.cliente || "Cliente não informado",
-            produto: item.produto || "Produto não informado",
-            motivo: item.motivo || "Motivo não informado",
-            status: item.status,
-            data_devolucao: item.data_devolucao
-              ? formatDateToBR(item.data_devolucao)
-              : "",
-            data_resolucao: item.data_resolucao
-              ? formatDateToBR(item.data_resolucao)
-              : "",
-            responsavel: item.responsavel || "Não informado",
-            valor: item.valor || 0,
-            observacoes: item.observacoes || "",
-            rawData: item.raw_data,
-          }))
-        );
+      if (savedData) {
+        const { devolucaoData: savedDevolucaoData, items } = savedData;
+        if (savedDevolucaoData && items.length > 0) {
+          setDevolucaoData({
+            total: savedDevolucaoData.total,
+            pendentes: savedDevolucaoData.pendentes,
+            concluidas: savedDevolucaoData.concluidas,
+          });
+          setProcessedItems(
+            items.map((item) => ({
+              id: item.os,
+              os: item.os,
+              cliente: item.cliente || "Cliente não informado",
+              produto: item.produto || "Produto não informado",
+              motivo: item.motivo || "Motivo não informado",
+              status: item.status,
+              data_devolucao: item.dataDevolucao
+                ? formatDateToBR(item.dataDevolucao)
+                : "",
+              data_resolucao: item.dataResolucao
+                ? formatDateToBR(item.dataResolucao)
+                : "",
+              responsavel: item.responsavel || "Não informado",
+              valor: item.valor || 0,
+              observacoes: item.observacoes || "",
+              rawData: item.rawData,
+            }))
+          );
+        }
       }
     } catch (error) {
       } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [savedData]);
 
   const loadUploadHistory = useCallback(async () => {
     try {
-      const history = await getDevolucaoUploadHistory();
-      setUploadHistory(history);
+      if (uploadHistoryData) {
+        setUploadHistory(uploadHistoryData);
+      }
     } catch (error) {
       }
-  }, []);
+  }, [uploadHistoryData]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -291,36 +300,36 @@ export function useReturnsData() {
     setSaveStatus("saving");
 
     try {
-      const devolucaoDataToSave: DevolucaoData = {
+      const devolucaoDataToSave = {
         total: devolucaoData.total,
         pendentes: devolucaoData.pendentes,
         concluidas: devolucaoData.concluidas,
       };
 
-      const itemsToSave: DevolucaoItem[] = processedItems.map((item) => ({
+      const itemsToSave = processedItems.map((item) => ({
         os: item.os,
         cliente: item.cliente,
         produto: item.produto,
         motivo: item.motivo,
         status: item.status,
-        data_devolucao: item.data_devolucao
+        dataDevolucao: item.data_devolucao
           ? parseDateBRtoISO(item.data_devolucao)
           : undefined,
-        data_resolucao: item.data_resolucao
+        dataResolucao: item.data_resolucao
           ? parseDateBRtoISO(item.data_resolucao)
           : undefined,
         responsavel: item.responsavel,
         valor: item.valor,
         observacoes: item.observacoes,
-        raw_data: item.rawData,
+        rawData: item.rawData,
       }));
 
-      const result = await saveDevolucaoData(
-        devolucaoDataToSave,
-        itemsToSave,
+      const result = await saveDevolucaoMutation({
+        devolucaoData: devolucaoDataToSave,
+        items: itemsToSave,
         fileName,
-        "Paloma"
-      );
+        uploadedBy: "Paloma"
+      });
 
       if (result.success) {
         setSaveStatus("saved");
@@ -345,14 +354,14 @@ export function useReturnsData() {
         setSaveStatus("idle");
       }, 3000);
     }
-  }, [devolucaoData, processedItems, fileName, loadUploadHistory]);
+  }, [devolucaoData, processedItems, fileName, loadUploadHistory, saveDevolucaoMutation]);
 
   const handleClearData = useCallback(async () => {
     if (
       confirm("Tem certeza que deseja limpar todos os dados de devoluções?")
     ) {
       try {
-        await clearAllDevolucaoData();
+        await clearDataMutation();
         setDevolucaoData({
           total: 0,
           pendentes: 0,

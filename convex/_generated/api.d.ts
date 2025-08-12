@@ -13,11 +13,14 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
+import type * as dashboard from "../dashboard.js";
 import type * as diagnose_login from "../diagnose_login.js";
 import type * as events from "../events.js";
 import type * as notes from "../notes.js";
+import type * as returnsMovements from "../returnsMovements.js";
 import type * as todos from "../todos.js";
 import type * as users from "../users.js";
 
@@ -30,11 +33,14 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  analytics: typeof analytics;
   auth: typeof auth;
   chat: typeof chat;
+  dashboard: typeof dashboard;
   diagnose_login: typeof diagnose_login;
   events: typeof events;
   notes: typeof notes;
+  returnsMovements: typeof returnsMovements;
   todos: typeof todos;
   users: typeof users;
 }>;

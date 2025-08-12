@@ -16,7 +16,7 @@ import { ResponsavelFilter } from "./responsavel-filter";
 import { DepartamentoInfo } from "./departamento-info";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useAuth } from "@/hooks/use-auth";
-import { getDashboardItemsByCategory } from "@/lib/dashboard-supabase-client";
+import { useDashboardItemsByCategory } from "@/lib/convex-dashboard-client";
 import Image from "next/image";
 import { useNotificationsCenter } from "@/hooks/use-notifications-center";
 import { useAdmin } from "@/hooks/use-admin";
@@ -379,25 +379,67 @@ export function ConsultingDashboard() {
               items = [];
           }
         } else {
-          // Sem filtro: usar dados do banco
+          // Sem filtro: usar dados do dashboard local
+          const allItems = processedItems || [];
           switch (modalType) {
             case "total":
-              items = await getDashboardItemsByCategory("total");
+              items = allItems;
               break;
             case "aprovacao":
-              items = await getDashboardItemsByCategory("aprovacao");
+              items = allItems.filter((item: any) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("aguardando") ||
+                  status.includes("pendente") ||
+                  status.includes("aprovação") ||
+                  status.includes("aprovacao")
+                );
+              });
               break;
             case "analises":
-              items = await getDashboardItemsByCategory("analises");
+              items = allItems.filter((item: any) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("análise") ||
+                  status.includes("analise") ||
+                  status.includes("revisão") ||
+                  status.includes("revisao")
+                );
+              });
               break;
             case "orcamentos":
-              items = await getDashboardItemsByCategory("orcamentos");
+              items = allItems.filter((item: any) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("orçamento") ||
+                  status.includes("orcamento") ||
+                  status.includes("cotação") ||
+                  status.includes("cotacao")
+                );
+              });
               break;
             case "execucao":
-              items = await getDashboardItemsByCategory("execucao");
+              items = allItems.filter((item: any) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("execução") ||
+                  status.includes("execucao") ||
+                  status.includes("andamento") ||
+                  status.includes("progresso")
+                );
+              });
               break;
             case "pronto":
-              items = await getDashboardItemsByCategory("pronto");
+              items = allItems.filter((item: any) => {
+                const status = item.status.toLowerCase();
+                return (
+                  status.includes("pronto") ||
+                  status.includes("concluído") ||
+                  status.includes("concluido") ||
+                  status.includes("finalizado") ||
+                  status.includes("entregue")
+                );
+              });
               break;
             default:
               items = [];
