@@ -59,7 +59,19 @@ export function useDashboardItemsByCategory(category: string) {
 
 // Hook para obter itens por responsável
 export function useDashboardItemsByResponsavel(responsavel: string) {
-  return useQuery(api.dashboard.getDashboardItemsByResponsavel, { responsavel });
+  return useQuery(api.dashboard.getDashboardItemsByResponsavel, {
+    responsavel,
+  });
+}
+
+// NOVO: Hook para obter clientes únicos
+export function useUniqueClientes() {
+  return useQuery(api.dashboard.getUniqueClientes);
+}
+
+// NOVO: Hook para obter itens por cliente (busca parcial)
+export function useDashboardItemsByCliente(cliente: string) {
+  return useQuery(api.dashboard.getDashboardItemsByCliente, { cliente });
 }
 
 // Hook para salvar dados do dashboard
@@ -74,8 +86,8 @@ export function useClearDashboardData() {
 
 // Função para salvar dados do dashboard (para compatibilidade com código existente)
 export async function saveDashboardData(
-  dashboardData: Omit<DashboardData, '_id' | 'createdAt' | 'updatedAt'>,
-  items: Omit<DashboardItem, '_id' | 'createdAt' | 'updatedAt'>[],
+  dashboardData: Omit<DashboardData, "_id" | "createdAt" | "updatedAt">,
+  items: Omit<DashboardItem, "_id" | "createdAt" | "updatedAt">[],
   fileName: string,
   uploadedBy?: string
 ) {

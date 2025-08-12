@@ -54,15 +54,17 @@ export const saveDashboardData = mutation({
       devolucoes: v.number(),
       movimentacoes: v.number(),
     }),
-    items: v.array(v.object({
-      os: v.string(),
-      titulo: v.optional(v.string()),
-      cliente: v.optional(v.string()),
-      responsavel: v.optional(v.string()),
-      status: v.string(),
-      dataRegistro: v.optional(v.string()),
-      rawData: v.optional(v.any()),
-    })),
+    items: v.array(
+      v.object({
+        os: v.string(),
+        titulo: v.optional(v.string()),
+        cliente: v.optional(v.string()),
+        responsavel: v.optional(v.string()),
+        status: v.string(),
+        dataRegistro: v.optional(v.string()),
+        rawData: v.optional(v.any()),
+      })
+    ),
     fileName: v.string(),
     uploadedBy: v.optional(v.string()),
   },
@@ -122,7 +124,10 @@ export const saveDashboardData = mutation({
       }
 
       // Atualiza status do upload
-      await ctx.db.patch(uploadRecord, { status: "completed", updatedAt: Date.now() });
+      await ctx.db.patch(uploadRecord, {
+        status: "completed",
+        updatedAt: Date.now(),
+      });
 
       return { success: true, uploadId: uploadRecord };
     } catch (error: any) {
@@ -140,7 +145,7 @@ export const loadDashboardData = query({
         .query("dashboardData")
         .order("desc")
         .take(1);
-      
+
       const dashboardData = dashboardDataList[0] || null;
 
       // ----- itens individuais -----
@@ -215,44 +220,49 @@ export const getDashboardItemsByCategory = query({
         case "total":
           break;
         case "aprovacao":
-          items = items.filter(item => 
-            item.status.toLowerCase().includes("aguardando") ||
-            item.status.toLowerCase().includes("pendente") ||
-            item.status.toLowerCase().includes("aprovação") ||
-            item.status.toLowerCase().includes("aprovacao")
+          items = items.filter(
+            (item) =>
+              item.status.toLowerCase().includes("aguardando") ||
+              item.status.toLowerCase().includes("pendente") ||
+              item.status.toLowerCase().includes("aprovação") ||
+              item.status.toLowerCase().includes("aprovacao")
           );
           break;
         case "analises":
-          items = items.filter(item => 
-            item.status.toLowerCase().includes("análise") ||
-            item.status.toLowerCase().includes("analise") ||
-            item.status.toLowerCase().includes("revisão") ||
-            item.status.toLowerCase().includes("revisao")
+          items = items.filter(
+            (item) =>
+              item.status.toLowerCase().includes("análise") ||
+              item.status.toLowerCase().includes("analise") ||
+              item.status.toLowerCase().includes("revisão") ||
+              item.status.toLowerCase().includes("revisao")
           );
           break;
         case "orcamentos":
-          items = items.filter(item => 
-            item.status.toLowerCase().includes("orçamento") ||
-            item.status.toLowerCase().includes("orcamento") ||
-            item.status.toLowerCase().includes("cotação") ||
-            item.status.toLowerCase().includes("cotacao")
+          items = items.filter(
+            (item) =>
+              item.status.toLowerCase().includes("orçamento") ||
+              item.status.toLowerCase().includes("orcamento") ||
+              item.status.toLowerCase().includes("cotação") ||
+              item.status.toLowerCase().includes("cotacao")
           );
           break;
         case "execucao":
-          items = items.filter(item => 
-            item.status.toLowerCase().includes("execução") ||
-            item.status.toLowerCase().includes("execucao") ||
-            item.status.toLowerCase().includes("andamento") ||
-            item.status.toLowerCase().includes("progresso")
+          items = items.filter(
+            (item) =>
+              item.status.toLowerCase().includes("execução") ||
+              item.status.toLowerCase().includes("execucao") ||
+              item.status.toLowerCase().includes("andamento") ||
+              item.status.toLowerCase().includes("progresso")
           );
           break;
         case "pronto":
-          items = items.filter(item => 
-            item.status.toLowerCase().includes("pronto") ||
-            item.status.toLowerCase().includes("concluído") ||
-            item.status.toLowerCase().includes("concluido") ||
-            item.status.toLowerCase().includes("finalizado") ||
-            item.status.toLowerCase().includes("entregue")
+          items = items.filter(
+            (item) =>
+              item.status.toLowerCase().includes("pronto") ||
+              item.status.toLowerCase().includes("concluído") ||
+              item.status.toLowerCase().includes("concluido") ||
+              item.status.toLowerCase().includes("finalizado") ||
+              item.status.toLowerCase().includes("entregue")
           );
           break;
         default:
@@ -304,10 +314,50 @@ export const getDashboardItemsByResponsavel = query({
     try {
       const items = await ctx.db
         .query("dashboardItens")
-        .withIndex("by_responsavel", (q) => q.eq("responsavel", args.responsavel))
+        .withIndex("by_responsavel", (q) =>
+          q.eq("responsavel", args.responsavel)
+        )
         .collect();
 
       return items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } catch (error) {
+      return [];
+    }
+  },
+});
+
+// NOVO: Lista de clientes únicos para auto-completar/busca
+export const getUniqueClientes = query({
+  handler: async (ctx) => {
+    try {
+      const allItems = await ctx.db.query("dashboardItens").collect();
+      const uniqueClientes = Array.from(
+        new Set(
+          allItems
+            .map((item) => (item.cliente || "").toString().trim())
+            .filter((cliente) => cliente && cliente !== "Cliente não informado")
+        )
+      ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+      return uniqueClientes;
+    } catch (error) {
+      return [];
+    }
+  },
+});
+
+// NOVO: Itens do dashboard por cliente (filtro case-insensitive, parcial)
+export const getDashboardItemsByCliente = query({
+  args: { cliente: v.string() },
+  handler: async (ctx, args) => {
+    try {
+      const search = (args.cliente || "").toLowerCase().trim();
+      if (!search) return [];
+      const items = await ctx.db.query("dashboardItens").collect();
+      const filtered = items.filter((item) =>
+        (item.cliente || "").toLowerCase().includes(search)
+      );
+      // Ordena por data de criação desc
+      return filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     } catch (error) {
       return [];
     }

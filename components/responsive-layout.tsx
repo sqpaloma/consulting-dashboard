@@ -53,6 +53,12 @@ const baseMenuItems = [
     label: "Calendário",
     href: "/calendar",
   },
+  // NOVO: Follow-up por Cliente
+  {
+    icon: BookOpen,
+    label: "Follow-up",
+    href: "/follow-up",
+  },
 
   {
     icon: BookOpen,
