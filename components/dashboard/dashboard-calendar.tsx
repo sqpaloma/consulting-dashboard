@@ -267,6 +267,10 @@ export function DashboardCalendar({
   const today = new Date().getDate();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+  const now = new Date();
+  const isViewingPastMonth =
+    currentYear < now.getFullYear() ||
+    (currentYear === now.getFullYear() && currentMonth < now.getMonth());
 
   const getMonthName = (month: number) => {
     const months = [
@@ -339,6 +343,11 @@ export function DashboardCalendar({
     setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
   };
 
+  const goToToday = () => {
+    const todayDate = new Date();
+    setCurrentDate(new Date(todayDate.getFullYear(), todayDate.getMonth(), 1));
+  };
+
   return (
     <Card className="bg-white h-full flex flex-col">
       <CardHeader className="pb-1">
@@ -350,6 +359,16 @@ export function DashboardCalendar({
               <div className="ml-2 animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
             )}
           </CardTitle>
+          {isViewingPastMonth && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToToday}
+              className="h-7 px-2 text-xs"
+            >
+              Hoje
+            </Button>
+          )}
         </div>
         <div className="flex items-center justify-between mt-1">
           <Button
