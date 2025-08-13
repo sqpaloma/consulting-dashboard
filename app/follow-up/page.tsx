@@ -129,6 +129,7 @@ function extractDeadline(item: DashboardItemLike): Date | null {
 
 function extractOrcamento(item: DashboardItemLike): string | null {
   const raw = (item as any).raw_data ?? item.rawData;
+  const osValue = (extractOS(item) || "").toString().trim();
   const keys = [
     "orcamento",
     "orçamento",
@@ -136,16 +137,40 @@ function extractOrcamento(item: DashboardItemLike): string | null {
     "numero orc",
     "num orc",
     "orc",
+    "titulo",
+    "title",
   ];
+  const normalize = (v: any) =>
+    v == null
+      ? ""
+      : v
+          .toString()
+          .trim()
+          .replace(/^\"+|\"+$/g, "");
+  const pickNumber = (s: string): string | null => {
+    if (!s) return null;
+    const nums = s.match(/\d{3,}/g) || [];
+    for (const n of nums) {
+      if (osValue && n === osValue) continue; // evita repetir OS
+      return n;
+    }
+    return null;
+  };
   const checkObj = (obj: Record<string, any>) => {
+    // 1) prioriza chaves relacionadas a orçamento
     for (const k of Object.keys(obj)) {
       const lk = k.toLowerCase();
       if (keys.some((p) => lk.includes(p) || lk === p)) {
-        const v = obj[k];
-        if (v == null) continue;
-        const s = v.toString().trim();
-        if (s) return s;
+        const s = normalize(obj[k]);
+        const num = pickNumber(s);
+        if (num) return num;
       }
+    }
+    // 2) fallback: tenta qualquer campo textual
+    for (const k of Object.keys(obj)) {
+      const s = normalize(obj[k]);
+      const num = pickNumber(s);
+      if (num) return num;
     }
     return null;
   };
@@ -160,11 +185,9 @@ function extractOrcamento(item: DashboardItemLike): string | null {
           const v = checkObj(val as Record<string, any>);
           if (v) return v;
         } else if (typeof val === "string") {
-          const low = val.toLowerCase();
-          if (low.includes("orc") || low.includes("orç")) {
-            const m = val.match(/\d{3,}/);
-            if (m?.[0]) return m[0];
-          }
+          const s = normalize(val);
+          const num = pickNumber(s);
+          if (num) return num;
         }
       }
     }
@@ -246,14 +269,22 @@ export default function FollowUpPage() {
   const [filter, setFilter] = useState<ItemFilter>(null);
   const [draggingName, setDraggingName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const desktopBoxRef = useRef<HTMLDivElement | null>(null);
+  const mobileBoxRef = useRef<HTMLDivElement | null>(null);
+  const desktopListRef = useRef<HTMLDivElement | null>(null);
+  const mobileListRef = useRef<HTMLDivElement | null>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   // Auto-complete
   const uniqueClientes = useUniqueClientes() || [];
   const suggestions = useMemo(() => {
     const q = query.toLowerCase().trim();
     const remaining = uniqueClientes.filter((c) => !tabs.includes(c));
-    if (!q) return remaining.slice(0, 10);
-    return remaining.filter((c) => c.toLowerCase().includes(q)).slice(0, 10);
+    const list = !q
+      ? remaining
+      : remaining.filter((c) => c.toLowerCase().includes(q));
+    return list.slice(0, 100);
   }, [query, uniqueClientes, tabs]);
 
   // Load saved tabs per user
@@ -290,6 +321,20 @@ export default function FollowUpPage() {
       localStorage.setItem(key, JSON.stringify(tabs));
     } catch {}
   }, [tabs, user?.userId]);
+
+  // Fechar sugestões ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const node = e.target as Node;
+      const insideDesktop = desktopBoxRef.current?.contains(node) ?? false;
+      const insideMobile = mobileBoxRef.current?.contains(node) ?? false;
+      if (!insideDesktop && !insideMobile) {
+        setIsSuggestionsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const removeClienteTab = (name: string) => {
     setTabs((prev) => {
@@ -350,6 +395,8 @@ export default function FollowUpPage() {
     addClienteTab(name);
     setQuery("");
     inputRef.current?.blur();
+    setIsSuggestionsOpen(false);
+    setHighlightedIndex(-1);
   };
 
   const handleAddCliente = () => {
@@ -358,6 +405,56 @@ export default function FollowUpPage() {
     addClienteTab(val);
     setQuery("");
     inputRef.current?.blur();
+    setIsSuggestionsOpen(false);
+    setHighlightedIndex(-1);
+  };
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    const list = desktopListRef.current || mobileListRef.current;
+    if (!list) return;
+    if (highlightedIndex < 0) return;
+    const child = list.querySelectorAll('[role="option"]')[
+      highlightedIndex
+    ] as HTMLElement;
+    if (child && typeof child.scrollIntoView === "function") {
+      child.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightedIndex]);
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (!isSuggestionsOpen) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        setIsSuggestionsOpen(true);
+        e.preventDefault();
+      } else if (e.key === "Escape") {
+        setIsSuggestionsOpen(false);
+        setHighlightedIndex(-1);
+        return;
+      }
+    }
+    if (!suggestions.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => {
+        const next = prev + 1;
+        return next >= suggestions.length ? 0 : next;
+      });
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => {
+        const next = prev - 1;
+        return next < 0 ? suggestions.length - 1 : next;
+      });
+    } else if (e.key === "Enter") {
+      if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+        e.preventDefault();
+        handleSelectSuggestion(suggestions[highlightedIndex]);
+      }
+    } else if (e.key === "Escape") {
+      setIsSuggestionsOpen(false);
+      setHighlightedIndex(-1);
+    }
   };
 
   const sortedItems = useMemo(() => {
@@ -432,7 +529,7 @@ export default function FollowUpPage() {
     if (filter === "onTime") return { label: "No prazo", color: "#BBDEFB" };
     if (filter === "overdue") return { label: "Atrasados", color: "#FFCDD2" };
     if (filter === "dueSoon")
-      return { label: "Vão atrasar (≤ 5 dias)", color: "#FFF9C4" };
+      return { label: " Essa semana (≤ 5 dias)", color: "#FFF9C4" };
     return null;
   }, [filter]);
 
@@ -442,24 +539,38 @@ export default function FollowUpPage() {
       subtitle="Acompanhe por cliente"
       titleRight={
         <div className="hidden xl:flex items-center gap-2">
-          <div className="relative">
+          <div className="relative" ref={desktopBoxRef}>
             <Input
               placeholder="Buscar Cliente"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-8 w-64 text-sm pl-3 pr-3"
               ref={inputRef}
+              onFocus={() => setIsSuggestionsOpen(true)}
+              onKeyDown={handleKeyDown}
             />
-            {query && suggestions.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow">
-                {suggestions.map((name) => (
-                  <button
+            {isSuggestionsOpen && suggestions.length > 0 && (
+              <div
+                ref={desktopListRef}
+                role="listbox"
+                className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow max-h-64 overflow-y-auto"
+              >
+                {suggestions.map((name, idx) => (
+                  <div
                     key={name}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
+                    role="option"
+                    aria-selected={highlightedIndex === idx}
+                    className={`w-full text-left px-3 py-2 text-sm cursor-pointer ${
+                      highlightedIndex === idx
+                        ? "bg-gray-100"
+                        : "hover:bg-gray-50"
+                    }`}
+                    onMouseEnter={() => setHighlightedIndex(idx)}
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSelectSuggestion(name)}
                   >
                     {name}
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -485,24 +596,38 @@ export default function FollowUpPage() {
           {/* Busca (mobile/tablet) */}
           <div className="xl:hidden">
             <div className="flex gap-2 items-center">
-              <div className="relative flex-1">
+              <div className="relative flex-1" ref={mobileBoxRef}>
                 <Input
                   placeholder="Digite o nome do cliente"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="pl-3 pr-3"
                   ref={inputRef}
+                  onFocus={() => setIsSuggestionsOpen(true)}
+                  onKeyDown={handleKeyDown}
                 />
-                {query && suggestions.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow">
-                    {suggestions.map((name) => (
-                      <button
+                {isSuggestionsOpen && suggestions.length > 0 && (
+                  <div
+                    ref={mobileListRef}
+                    role="listbox"
+                    className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow max-h-64 overflow-y-auto"
+                  >
+                    {suggestions.map((name, idx) => (
+                      <div
                         key={name}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                        role="option"
+                        aria-selected={highlightedIndex === idx}
+                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer ${
+                          highlightedIndex === idx
+                            ? "bg-gray-100"
+                            : "hover:bg-gray-50"
+                        }`}
+                        onMouseEnter={() => setHighlightedIndex(idx)}
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleSelectSuggestion(name)}
                       >
                         {name}
-                      </button>
+                      </div>
                     ))}
                   </div>
                 )}

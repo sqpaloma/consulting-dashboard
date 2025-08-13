@@ -257,7 +257,7 @@ export function ConsultingDashboard() {
           notifiedOverdueRef.current.add(item.id);
         }
       } else if (date && date >= today && date <= tomorrow) {
-        // Vão atrasar (prazo hoje ou amanhã)
+        // Essa semana (prazo hoje ou amanhã)
         if (!notifiedOverdueRef.current.has(item.id)) {
           add({
             type: "calendar",
