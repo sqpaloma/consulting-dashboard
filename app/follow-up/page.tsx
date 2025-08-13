@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, X } from "lucide-react";
+import { Search, X, MoreHorizontal } from "lucide-react";
 import {
   useDashboardItemsByCliente,
   useUniqueClientes,
@@ -25,6 +25,26 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import * as XLSX from "xlsx";
 
 interface DashboardItemLike {
   _id?: string;
@@ -262,6 +282,7 @@ type ItemFilter = "onTime" | "overdue" | "dueSoon" | null;
 
 export default function FollowUpPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [query, setQuery] = useState("");
   const [tabs, setTabs] = useState<string[]>([]);
@@ -270,6 +291,7 @@ export default function FollowUpPage() {
   const [draggingName, setDraggingName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const desktopBoxRef = useRef<HTMLDivElement | null>(null);
   const mobileBoxRef = useRef<HTMLDivElement | null>(null);
   const desktopListRef = useRef<HTMLDivElement | null>(null);
@@ -360,8 +382,9 @@ export default function FollowUpPage() {
   };
 
   // Items for active client
-  const items: DashboardItemLike[] =
-    useDashboardItemsByCliente(activeTab || "") || [];
+  const rawItems = useDashboardItemsByCliente(activeTab || "");
+  const items: DashboardItemLike[] = rawItems || [];
+  const isLoadingItems = rawItems === undefined;
 
   // Counters
   const { onTime, overdue, dueSoon } = useMemo(() => {
@@ -491,8 +514,10 @@ export default function FollowUpPage() {
   };
 
   const filteredSortedItems = useMemo(() => {
-    if (!filter) return sortedItems;
-    return sortedItems.filter((it) => categorizeItem(it) === filter);
+    const normalize = (s: string | undefined) => (s || "").toLowerCase().trim();
+    let arr = sortedItems;
+    if (filter) return arr.filter((it) => categorizeItem(it) === filter);
+    return arr;
   }, [sortedItems, filter]);
 
   const statusChartData = useMemo(() => {
@@ -525,6 +550,88 @@ export default function FollowUpPage() {
     return arr.slice(0, 10); // top 10
   }, [items]);
 
+  const uniqueStatuses = useMemo(
+    () => statusChartData.map((d) => d.name),
+    [statusChartData]
+  );
+  const uniqueResponsaveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of items) {
+      const r = (it.responsavel || "").toString().trim();
+      if (r) set.add(r);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [items]);
+
+  // quick filters removed by user request
+
+  const copyToClipboard = async (label: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({ title: `${label} copiado`, description: value });
+    } catch {
+      toast({ title: `Não foi possível copiar ${label}` });
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (!filteredSortedItems.length) {
+      toast({ title: "Nada para exportar" });
+      return;
+    }
+    const rows = filteredSortedItems.map((it) => {
+      const dl = extractDeadline(it);
+      return {
+        responsavel: it.responsavel || "",
+        os: extractOS(it) || "",
+        orcamento: extractOrcamento(it) || "",
+        status: it.status || "",
+        prazo: dl ? dl.toISOString().slice(0, 10) : "",
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "FollowUp");
+    const filename = `followup_${(activeTab || "cliente").replace(/\s+/g, "_")}.csv`;
+    XLSX.writeFile(wb, filename, { bookType: "csv" as any });
+    toast({ title: "CSV gerado", description: filename });
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ orientation: "l" });
+      doc.setFontSize(12);
+      doc.text(`Follow-up - ${activeTab}`, 10, 10);
+      let y = 20;
+      doc.setFontSize(9);
+      doc.text("Responsável", 10, y);
+      doc.text("OS", 60, y);
+      doc.text("Orçamento", 90, y);
+      doc.text("Status", 130, y);
+      doc.text("Prazo", 200, y);
+      y += 6;
+      filteredSortedItems.slice(0, 300).forEach((it) => {
+        const dl = extractDeadline(it);
+        doc.text((it.responsavel || "").toString(), 10, y);
+        doc.text((extractOS(it) || "").toString(), 60, y);
+        doc.text((extractOrcamento(it) || "").toString(), 90, y);
+        doc.text((it.status || "").toString().slice(0, 60), 130, y);
+        doc.text(dl ? dl.toLocaleDateString("pt-BR") : "", 200, y);
+        y += 6;
+        if (y > 190) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+      const filename = `followup_${(activeTab || "cliente").replace(/\s+/g, "_")}.pdf`;
+      doc.save(filename);
+      toast({ title: "PDF gerado", description: filename });
+    } catch (e) {
+      toast({ title: "Falha ao gerar PDF" });
+    }
+  };
+
   const filterMeta = useMemo(() => {
     if (filter === "onTime") return { label: "No prazo", color: "#BBDEFB" };
     if (filter === "overdue") return { label: "Atrasados", color: "#FFCDD2" };
@@ -536,7 +643,7 @@ export default function FollowUpPage() {
   return (
     <ResponsiveLayout
       title="Follow-up"
-      subtitle="Acompanhe por cliente"
+      subtitle=""
       titleRight={
         <div className="hidden xl:flex items-center gap-2">
           <div className="relative" ref={desktopBoxRef}>
@@ -544,7 +651,7 @@ export default function FollowUpPage() {
               placeholder="Buscar Cliente"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="h-8 w-64 text-sm pl-3 pr-3"
+              className="h-8 w-64 text-sm pl-3 pr-3 bg-white/80"
               ref={inputRef}
               onFocus={() => setIsSuggestionsOpen(true)}
               onKeyDown={handleKeyDown}
@@ -579,7 +686,8 @@ export default function FollowUpPage() {
             size="sm"
             onClick={handleAddCliente}
             disabled={!query.trim()}
-            className="h-8"
+            variant="outline"
+            className="h-8 bg-white text-blue-600 hover:bg-blue-50"
           >
             Adicionar cliente
           </Button>
@@ -588,9 +696,31 @@ export default function FollowUpPage() {
     >
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" /> Clientes
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" /> Acompanhar por cliente
+            </CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label="Mais opções"
+                  className="h-8 w-8 p-0"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  Exportar CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF}>
+                  Exportar PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Busca (mobile/tablet) */}
@@ -601,7 +731,7 @@ export default function FollowUpPage() {
                   placeholder="Digite o nome do cliente"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="pl-3 pr-3"
+                  className="pl-3 pr-3 bg-white/80"
                   ref={inputRef}
                   onFocus={() => setIsSuggestionsOpen(true)}
                   onKeyDown={handleKeyDown}
@@ -632,7 +762,12 @@ export default function FollowUpPage() {
                   </div>
                 )}
               </div>
-              <Button onClick={handleAddCliente} disabled={!query.trim()}>
+              <Button
+                onClick={handleAddCliente}
+                disabled={!query.trim()}
+                variant="outline"
+                className="bg-white text-blue-600 hover:bg-blue-50"
+              >
                 Adicionar cliente
               </Button>
             </div>
@@ -756,6 +891,8 @@ export default function FollowUpPage() {
                       </div>
                     </div>
 
+                    {/* filtros rápidos removidos */}
+
                     {/* Filtro ativo */}
                     {filterMeta && (
                       <div
@@ -777,7 +914,7 @@ export default function FollowUpPage() {
 
                     {/* Lista de itens */}
                     <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm">
+                      <table className="min-w-full text-sm" aria-live="polite">
                         <thead>
                           <tr className="text-left text-xs text-gray-600 border-b">
                             <th className="py-2 pr-4">Responsável</th>
@@ -787,7 +924,27 @@ export default function FollowUpPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredSortedItems.length === 0 ? (
+                          {isLoadingItems ? (
+                            Array.from({ length: 8 }).map((_, i) => (
+                              <tr
+                                key={`skeleton-${i}`}
+                                className="border-b animate-pulse"
+                              >
+                                <td className="py-3 pr-4">
+                                  <div className="h-3 w-24 bg-gray-200 rounded" />
+                                </td>
+                                <td className="py-3 pr-4">
+                                  <div className="h-3 w-40 bg-gray-200 rounded" />
+                                </td>
+                                <td className="py-3 pr-4">
+                                  <div className="h-3 w-28 bg-gray-200 rounded" />
+                                </td>
+                                <td className="py-3 pr-4">
+                                  <div className="h-3 w-24 bg-gray-200 rounded" />
+                                </td>
+                              </tr>
+                            ))
+                          ) : filteredSortedItems.length === 0 ? (
                             <tr>
                               <td
                                 colSpan={4}
@@ -804,21 +961,53 @@ export default function FollowUpPage() {
                                 : "";
                               const orc = extractOrcamento(it) || "";
                               const osStr = extractOS(it) || "-";
+                              const cat = categorizeItem(it);
                               return (
                                 <tr
                                   key={String(it._id) + String(it.os)}
-                                  className="border-b hover:bg-muted/40"
+                                  className={`border-b hover:bg-muted/40 ${cat === "overdue" ? "bg-red-50" : ""}`}
                                 >
                                   <td className="py-2 pr-4">
                                     {it.responsavel || "-"}
                                   </td>
                                   <td className="py-2 pr-4">
-                                    {osStr}
-                                    {orc && (
-                                      <span className="text-xs text-muted-foreground ml-2">
-                                        • {orc}
-                                      </span>
-                                    )}
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span
+                                            className="cursor-pointer hover:underline"
+                                            onClick={() =>
+                                              copyToClipboard("OS", osStr)
+                                            }
+                                          >
+                                            {osStr}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          Copiar OS
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      {orc && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span
+                                              className="text-xs text-muted-foreground ml-2 cursor-pointer hover:underline"
+                                              onClick={() =>
+                                                copyToClipboard(
+                                                  "Orçamento",
+                                                  orc
+                                                )
+                                              }
+                                            >
+                                              • {orc}
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            Copiar Orçamento
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      )}
+                                    </TooltipProvider>
                                   </td>
                                   <td className="py-2 pr-4">
                                     {it.status || "-"}
@@ -919,6 +1108,28 @@ export default function FollowUpPage() {
           </Tabs>
         </CardContent>
       </Card>
+      <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+        <SheetContent side="right" className="w-[360px] sm:w-[420px]">
+          <SheetHeader>
+            <SheetTitle>Filtros</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 space-y-3 text-sm">
+            <div className="text-muted-foreground">
+              Opções futuras de filtros podem vir aqui (Status, Responsável,
+              Prazo, etc.).
+            </div>
+            <div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFilter(null)}
+              >
+                Limpar filtro de prazo
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </ResponsiveLayout>
   );
 }
