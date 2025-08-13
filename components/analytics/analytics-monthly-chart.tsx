@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import {
   RESPONSAVEIS,
   DEPARTAMENTOS,
@@ -33,6 +33,18 @@ export function AnalyticsMonthlyChart({
   >(null);
   const [viewMode, setViewMode] = useState<"valor" | "quantidade">("valor");
   const [isComparison, setIsComparison] = useState<boolean>(false);
+
+  // Virtualization state
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
+  
+  // Chart item dimensions
+  const ITEM_WIDTH_MOBILE = 80;
+  const ITEM_WIDTH_DESKTOP = 120;
+  const COMPARISON_WIDTH_MOBILE = 120;
+  const COMPARISON_WIDTH_DESKTOP = 160;
+  const BUFFER_SIZE = 3;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -307,11 +319,59 @@ export function AnalyticsMonthlyChart({
       : String(value);
   };
 
+  // Virtualization calculations
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+  const currentItemWidth = isComparison 
+    ? (isDesktop ? COMPARISON_WIDTH_DESKTOP : COMPARISON_WIDTH_MOBILE)
+    : (isDesktop ? ITEM_WIDTH_DESKTOP : ITEM_WIDTH_MOBILE);
+
+  const activeData = isComparison ? comparisonData : chartData;
+
+  const visibleRange = useMemo(() => {
+    if (containerWidth === 0) return { start: 0, end: activeData.length };
+    
+    const visibleCount = Math.ceil(containerWidth / currentItemWidth);
+    const startIndex = Math.max(0, Math.floor(scrollLeft / currentItemWidth) - BUFFER_SIZE);
+    const endIndex = Math.min(activeData.length, startIndex + visibleCount + (BUFFER_SIZE * 2));
+    
+    return { start: startIndex, end: endIndex };
+  }, [scrollLeft, containerWidth, currentItemWidth, activeData.length]);
+
+  const visibleData = useMemo(() => {
+    return activeData.slice(visibleRange.start, visibleRange.end);
+  }, [activeData, visibleRange.start, visibleRange.end]);
+
+  const totalWidth = activeData.length * currentItemWidth;
+  const offsetLeft = visibleRange.start * currentItemWidth;
+
+  // Handle scroll with throttling for better performance  
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const scrollLeftValue = e.currentTarget.scrollLeft;
+    // Simple throttling - only update if difference is significant
+    if (Math.abs(scrollLeftValue - scrollLeft) > 15) {
+      setScrollLeft(scrollLeftValue);
+    }
+  }, [scrollLeft]);
+
+  // Update container width on resize
+  useEffect(() => {
+    const updateWidth = () => {
+      if (scrollContainerRef.current) {
+        setContainerWidth(scrollContainerRef.current.clientWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
   return (
     <Card className="bg-white">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl text-gray-800">
+        <div className="flex flex-col space-y-4">
+          {/* Title */}
+          <CardTitle className="text-lg md:text-xl text-gray-800">
             {getMetricLabel()} por Mês
             {selectedDepartamento && (
               <span className="text-sm font-normal text-gray-600 ml-2">
@@ -321,148 +381,154 @@ export function AnalyticsMonthlyChart({
             )}
           </CardTitle>
 
-          {/* Controls */}
-          <div className="flex items-center space-x-4">
-            {/* Departamento filter (desktop) */}
-            <div className="hidden md:flex items-center space-x-2">
-              <label className="text-sm text-gray-600 font-medium">
-                Departamento:
-              </label>
-              <Select
-                value={selectedDepartamento || "todos"}
-                onValueChange={(value) =>
-                  setSelectedDepartamento(value === "todos" ? null : value)
-                }
-              >
-                <SelectTrigger className="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <SelectValue placeholder="Todos os departamentos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">
-                    <div className="flex items-center space-x-2">
-                      <Building className="h-4 w-4 text-gray-500" />
-                      <span>Todos os departamentos</span>
-                    </div>
-                  </SelectItem>
-                  {DEPARTAMENTOS.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
+          {/* Controls - Mobile First */}
+          <div className="flex flex-col space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+            {/* Left side controls */}
+            <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+              {/* Departamento filter */}
+              <div className="flex items-center space-x-2">
+                <label className="text-xs md:text-sm text-gray-600 font-medium whitespace-nowrap">
+                  Departamento:
+                </label>
+                <Select
+                  value={selectedDepartamento || "todos"}
+                  onValueChange={(value) =>
+                    setSelectedDepartamento(value === "todos" ? null : value)
+                  }
+                >
+                  <SelectTrigger className="w-40 md:w-48 px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">
                       <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium">{dept.nome}</span>
+                        <Building className="h-4 w-4 text-gray-500" />
+                        <span>Todos</span>
                       </div>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Year filter (disabled when comparing) */}
-            {availableYears.length > 0 && (
-              <div className="flex items-center space-x-2">
-                <label className="text-sm text-gray-600 font-medium">
-                  Ano:
-                </label>
-                <select
-                  value={selectedYear || ""}
-                  onChange={(e) =>
-                    setSelectedYear(
-                      e.target.value ? parseInt(e.target.value) : null
-                    )
-                  }
-                  className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    isComparison ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  disabled={isComparison}
-                >
-                  {availableYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+                    {DEPARTAMENTOS.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        <div className="flex items-center space-x-2">
+                          <User className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium">{dept.nome}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
 
-            {/* Valor vs Quantidade toggle */}
-            <div className="relative bg-gray-200 rounded-lg p-1 flex">
-              <button
-                onClick={() => setViewMode("valor")}
-                className={`relative px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                  viewMode === "valor"
-                    ? "text-blue-700 bg-white shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                Valores
-              </button>
-              <button
-                onClick={() => setViewMode("quantidade")}
-                className={`relative px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                  viewMode === "quantidade"
-                    ? "text-blue-700 bg-white shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                Quantidade
-              </button>
+              {/* Year filter */}
+              {availableYears.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  <label className="text-xs md:text-sm text-gray-600 font-medium whitespace-nowrap">
+                    Ano:
+                  </label>
+                  <select
+                    value={selectedYear || ""}
+                    onChange={(e) =>
+                      setSelectedYear(
+                        e.target.value ? parseInt(e.target.value) : null
+                      )
+                    }
+                    className={`px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      isComparison ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                    disabled={isComparison}
+                  >
+                    {availableYears.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
-            {/* Metric tabs */}
-            <div className="relative bg-gray-200 rounded-lg p-1 flex">
-              <button
-                onClick={() => {
-                  setSelectedMetric("orcamento");
-                }}
-                className={`relative px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                  selectedMetric === "orcamento"
-                    ? "text-blue-700 bg-white shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                Orçamento
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedMetric("faturamento");
-                }}
-                className={`relative px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                  selectedMetric === "faturamento"
-                    ? "text-blue-700 bg-white shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                Faturamento
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedMetric("conversao");
-                }}
-                className={`relative px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                  selectedMetric === "conversao"
-                    ? "text-blue-700 bg-white shadow-sm"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                Conversão
-              </button>
-            </div>
-
-            {/* Per-metric comparison toggle (only if multiple years) */}
-            {availableYears.length > 1 && (
+            {/* Right side controls */}
+            <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-3">
+              {/* Valor vs Quantidade toggle */}
               <div className="relative bg-gray-200 rounded-lg p-1 flex">
                 <button
-                  onClick={() => setIsComparison((prev) => !prev)}
-                  className={`relative px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                    isComparison
+                  onClick={() => setViewMode("valor")}
+                  className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
+                    viewMode === "valor"
                       ? "text-blue-700 bg-white shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
                   }`}
-                  title="Comparar anos para a métrica atual"
                 >
-                  Comparar anos
+                  Valores
+                </button>
+                <button
+                  onClick={() => setViewMode("quantidade")}
+                  className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
+                    viewMode === "quantidade"
+                      ? "text-blue-700 bg-white shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Quantidade
                 </button>
               </div>
-            )}
+
+              {/* Metric tabs */}
+              <div className="relative bg-gray-200 rounded-lg p-1 flex">
+                <button
+                  onClick={() => {
+                    setSelectedMetric("orcamento");
+                  }}
+                  className={`relative px-1.5 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
+                    selectedMetric === "orcamento"
+                      ? "text-blue-700 bg-white shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Orçamento
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedMetric("faturamento");
+                  }}
+                  className={`relative px-1.5 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
+                    selectedMetric === "faturamento"
+                      ? "text-blue-700 bg-white shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Faturamento
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedMetric("conversao");
+                  }}
+                  className={`relative px-1.5 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
+                    selectedMetric === "conversao"
+                      ? "text-blue-700 bg-white shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Conversão
+                </button>
+              </div>
+
+              {/* Comparison toggle */}
+              {availableYears.length > 1 && (
+                <div className="relative bg-gray-200 rounded-lg p-1 flex">
+                  <button
+                    onClick={() => setIsComparison((prev) => !prev)}
+                    className={`relative px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all duration-200 ${
+                      isComparison
+                        ? "text-blue-700 bg-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                    title="Comparar anos para a métrica atual"
+                  >
+                    Comparar
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -470,16 +536,33 @@ export function AnalyticsMonthlyChart({
         <div className="h-80">
           {isComparison && comparisonData.length > 0 && maxValue > 0 ? (
             <div className="h-full flex flex-col">
-              <div className="flex-1 overflow-x-auto pb-8">
-                <div
-                  className="flex items-end justify-start space-x-8 min-w-max px-4"
-                  style={{ minWidth: `${comparisonData.length * 160}px` }}
+              <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                onScroll={handleScroll}
+                style={{ 
+                  scrollbarWidth: 'thin',
+                  scrollBehavior: 'smooth'
+                }}
+              >
+                <div 
+                  className="relative h-full px-2 md:px-4"
+                  style={{ width: `${totalWidth + 32}px` }}
                 >
-                  {comparisonData.map((month, monthIndex) => (
-                    <div
-                      key={monthIndex}
-                      className="flex flex-col items-center space-y-2 flex-shrink-0"
-                    >
+                  <div
+                    className="flex items-end justify-start space-x-4 md:space-x-8 h-full absolute"
+                    style={{ 
+                      left: `${offsetLeft}px`,
+                      width: `${(visibleRange.end - visibleRange.start) * currentItemWidth}px`
+                    }}
+                  >
+                    {visibleData.map((month, relativeIndex) => {
+                      const monthIndex = visibleRange.start + relativeIndex;
+                      return (
+                        <div
+                          key={monthIndex}
+                          className="flex flex-col items-center space-y-2 flex-shrink-0"
+                        >
                       <div className="flex items-end space-x-3">
                         {availableYears.map((year, yearIndex) => {
                           const yearData = month.years[year];
@@ -510,11 +593,11 @@ export function AnalyticsMonthlyChart({
                               key={year}
                               className="flex flex-col items-center space-y-1"
                             >
-                              <div className="text-xs text-gray-600 font-medium text-center w-16">
+                              <div className="text-xs text-gray-600 font-medium text-center w-12 md:w-16">
                                 {displayValue}
                               </div>
                               <div
-                                className="w-10 rounded-t transition-all duration-500 hover:opacity-80 border border-gray-400"
+                                className="w-8 md:w-10 rounded-t transition-all duration-500 hover:opacity-80 border border-gray-400"
                                 style={{
                                   height: `${Math.max(height, 12)}px`,
                                   backgroundColor:
@@ -522,55 +605,89 @@ export function AnalyticsMonthlyChart({
                                 }}
                                 title={`${month.mesNome} ${year}: ${displayValue}`}
                               ></div>
-                              <div className="text-xs text-gray-500 font-medium text-center w-10">
+                              <div className="text-xs text-gray-500 font-medium text-center w-8 md:w-10">
                                 {year}
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                      <div className="text-xs text-gray-700 font-medium text-center mt-2">
-                        {month.mesNome}
-                      </div>
+                          <div className="text-xs text-gray-700 font-medium text-center mt-2">
+                            {month.mesNome}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Scroll indicator */}
+                  {comparisonData.length > 5 && (
+                    <div className="absolute bottom-0 right-4 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm">
+                      {visibleRange.start + 1}-{Math.min(visibleRange.end, comparisonData.length)} de {comparisonData.length}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
           ) : chartData.length > 0 && maxValue > 0 ? (
             <div className="h-full flex flex-col">
-              <div className="flex-1 overflow-x-auto pb-8">
-                <div
-                  className="flex items-end justify-start space-x-12 min-w-max px-4"
-                  style={{ minWidth: `${chartData.length * 120}px` }}
+              <div 
+                ref={isComparison ? undefined : scrollContainerRef}
+                className="flex-1 overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                onScroll={isComparison ? undefined : handleScroll}
+                style={{ 
+                  scrollbarWidth: 'thin',
+                  scrollBehavior: 'smooth'
+                }}
+              >
+                <div 
+                  className="relative h-full px-2 md:px-4"
+                  style={{ width: `${isComparison ? 'auto' : totalWidth + 32}px` }}
                 >
-                  {chartData.map((month, index) => {
-                    const height =
-                      maxValue > 0 ? (month.value / maxValue) * 200 : 0;
-                    return (
-                      <div
-                        key={index}
-                        className="flex flex-col items-center space-y-2 flex-shrink-0"
-                      >
-                        <div className="text-xs text-gray-600 font-medium text-center w-18">
-                          {formatValue(month.value)}
-                        </div>
+                  <div
+                    className="flex items-end justify-start space-x-6 md:space-x-12 h-full absolute"
+                    style={isComparison ? {} : { 
+                      left: `${offsetLeft}px`,
+                      width: `${(visibleRange.end - visibleRange.start) * currentItemWidth}px`
+                    }}
+                  >
+                    {(isComparison ? chartData : visibleData).map((month, relativeIndex) => {
+                      const actualIndex = isComparison ? relativeIndex : visibleRange.start + relativeIndex;
+                      const height =
+                        maxValue > 0 ? (month.value / maxValue) * 200 : 0;
+                      return (
                         <div
-                          className={
-                            "w-12 rounded-t transition-all duration-500 hover:opacity-80 border border-blue-700"
-                          }
-                          style={{
-                            height: `${Math.max(height, 16)}px`,
-                            backgroundColor: "rgba(59, 130, 246, 0.7)",
-                          }}
-                          title={`${formatMonthLabel(month, chartData)}: ${formatValue(month.value)}`}
-                        ></div>
-                        <div className="text-xs text-gray-700 font-medium text-center w-18 leading-tight">
-                          {formatMonthLabel(month, chartData)}
+                          key={actualIndex}
+                          className="flex flex-col items-center space-y-2 flex-shrink-0"
+                          style={isComparison ? {} : { width: `${currentItemWidth - (isDesktop ? 48 : 24)}px` }}
+                        >
+                          <div className="text-xs text-gray-600 font-medium text-center w-16 md:w-18">
+                            {formatValue(month.value)}
+                          </div>
+                          <div
+                            className={
+                              "w-8 md:w-12 rounded-t transition-all duration-300 hover:opacity-80 border border-blue-700 cursor-pointer"
+                            }
+                            style={{
+                              height: `${Math.max(height, 16)}px`,
+                              backgroundColor: "rgba(59, 130, 246, 0.7)",
+                            }}
+                            title={`${formatMonthLabel(month, chartData)}: ${formatValue(month.value)}`}
+                          ></div>
+                          <div className="text-xs text-gray-700 font-medium text-center w-16 md:w-18 leading-tight">
+                            {formatMonthLabel(month, chartData)}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Scroll indicator for regular chart */}
+                  {!isComparison && chartData.length > 5 && (
+                    <div className="absolute bottom-0 right-4 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm">
+                      {visibleRange.start + 1}-{Math.min(visibleRange.end, chartData.length)} de {chartData.length}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
