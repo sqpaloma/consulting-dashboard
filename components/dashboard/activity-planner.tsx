@@ -399,7 +399,7 @@ export function ActivityPlanner({
       setSelectedUserId(null);
       setShareMessage("");
       if (redirectToChat) {
-        window.location.href = `/calendar?conv=${conversationId}`;
+        window.location.href = `/organize?conv=${conversationId}`;
       }
     } catch (e) {
       // noop

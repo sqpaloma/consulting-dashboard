@@ -33,7 +33,7 @@ export function ChatEmbedded() {
   const { add } = useNotificationsCenter();
 
   const searchParams = useSearchParams();
-  const convParam = searchParams.get("conv");
+  const convParam = searchParams?.get("conv");
 
   const [newMessage, setNewMessage] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -75,7 +75,7 @@ export function ChatEmbedded() {
     if (convParam) {
       setSelectedConversation(convParam as any);
       try {
-        window.history.replaceState({}, "", "/calendar");
+        window.history.replaceState({}, "", "/organize");
       } catch {}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

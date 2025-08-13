@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   Grid3X3,
-  Calendar,
+  MessageSquare,
   BarChart3,
   BookOpen,
   Settings,
@@ -50,9 +50,9 @@ const baseMenuItems = [
     href: "/",
   },
   {
-    icon: Calendar,
-    label: "Calendário",
-    href: "/calendar",
+    icon: MessageSquare,
+    label: "Organize",
+    href: "/organize",
   },
   // NOVO: Follow-up por Cliente
   {

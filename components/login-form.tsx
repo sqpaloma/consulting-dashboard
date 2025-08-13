@@ -27,8 +27,8 @@ export function LoginForm() {
         throw new Error(result.error);
       }
 
-      // Redirecionar para a página de chat
-      window.location.href = "/chat";
+      // Redirecionar para a aba de chat na página Organize-se
+      window.location.href = "/organize?tab=chat";
     } catch (err: any) {
       setError(err.message || "Erro ao fazer login");
     } finally {

@@ -106,7 +106,7 @@ export function ManualPage() {
                 <MessageSquare className="h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/calendar">
+            <Link href="/organize">
               <Button
                 variant="ghost"
                 size="icon"

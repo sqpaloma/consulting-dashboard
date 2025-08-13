@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import {
   Grid3X3,
-  Calendar,
+  MessageSquare,
   BarChart3,
   BookOpen,
   Settings,
@@ -85,13 +85,13 @@ export function Header({
             </Button>
           </Link>
           {/* Chat removido: ícone suprimido */}
-          <Link href="/calendar">
+          <Link href="/organize">
             <Button
               variant="ghost"
               size="icon"
               className="!text-white !hover:bg-blue-700"
             >
-              <Calendar className="h-5 w-5" />
+              <MessageSquare className="h-5 w-5" />
             </Button>
           </Link>
           {canSeeAnalytics && (

@@ -5,6 +5,8 @@ import { AuthLayout } from "@/components/auth/auth-layout";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NotificationsProvider } from "@/hooks/use-notifications-center";
+import { FloatingChat } from "@/components/chat/floating-chat";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Novak & Gouveia",
@@ -33,6 +35,9 @@ export default function RootLayout({
           <ConvexClientProvider>
             <NotificationsProvider>
               <AuthLayout>{children}</AuthLayout>
+              <Suspense>
+                <FloatingChat />
+              </Suspense>
               <Toaster richColors position="bottom-right" />
             </NotificationsProvider>
           </ConvexClientProvider>
