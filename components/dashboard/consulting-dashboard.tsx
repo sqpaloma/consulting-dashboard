@@ -1,23 +1,77 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useDeferredValue } from "react";
+import dynamic from "next/dynamic";
 
 import { ResponsiveLayout } from "@/components/responsive-layout";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { DashboardCalendar } from "./dashboard-calendar";
-import { DistributionPanel } from "./distribution-panel";
-import OverdueDistribution from "./overdue-distribution";
+// Componentes pesados carregados dinamicamente com placeholders visuais
+const DashboardCalendar = dynamic(
+  () => import("./dashboard-calendar").then((m) => m.DashboardCalendar),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[520px] animate-pulse rounded-lg bg-neutral-900/40" />
+    ),
+  }
+);
 
-import { ActivityPlanner } from "./activity-planner";
-import { DashboardModal } from "./dashboard-modal";
-import { ResponsavelFilter } from "./responsavel-filter";
-import { DepartamentoInfo } from "./departamento-info";
+const DistributionPanel = dynamic(
+  () => import("./distribution-panel").then((m) => m.DistributionPanel),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[256px] animate-pulse rounded-lg bg-neutral-900/40" />
+    ),
+  }
+);
+
+const OverdueDistribution = dynamic(() => import("./overdue-distribution"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[256px] animate-pulse rounded-lg bg-neutral-900/40" />
+  ),
+});
+
+const ActivityPlanner = dynamic(
+  () => import("./activity-planner").then((m) => m.ActivityPlanner),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[320px] animate-pulse rounded-lg bg-neutral-900/40" />
+    ),
+  }
+);
+
+const DashboardModal = dynamic(
+  () => import("./dashboard-modal").then((m) => m.DashboardModal),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[400px] animate-pulse rounded-lg bg-neutral-900/40" />
+    ),
+  }
+);
+
+const ResponsavelFilter = dynamic(
+  () => import("./responsavel-filter").then((m) => m.ResponsavelFilter),
+  { ssr: false }
+);
+
+const DepartamentoInfo = dynamic(
+  () => import("./departamento-info").then((m) => m.DepartamentoInfo),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[520px] animate-pulse rounded-lg bg-neutral-900/40" />
+    ),
+  }
+);
+
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useAuth } from "@/hooks/use-auth";
-import { useDashboardItemsByCategory } from "@/lib/convex-dashboard-client";
-import Image from "next/image";
 import { useNotificationsCenter } from "@/hooks/use-notifications-center";
 import { useAdmin } from "@/hooks/use-admin";
 
@@ -94,6 +148,9 @@ export function ConsultingDashboard() {
     isAdmin,
   ]);
 
+  // Deferir listas grandes para manter a UI responsiva
+  const deferredFilteredItems = useDeferredValue(filteredItems);
+
   // Função para fazer parse de diferentes formatos de data (copiada do calendário)
   const parseDate = (dateString: string): Date | null => {
     if (!dateString) return null;
@@ -135,49 +192,73 @@ export function ConsultingDashboard() {
     return null;
   };
 
-  // Recalcular métricas baseadas nos dados filtrados
-  const filteredDashboardData = React.useMemo(() => {
-    // Sempre calcular a partir dos itens para garantir consistência
-    const itemsToCalculate = filteredItems;
+  // Memo do due date por item para evitar recomputações
+  const itemIdToDueDate = React.useMemo(() => {
+    const map = new Map<string, Date | null>();
+    deferredFilteredItems.forEach((item) => {
+      let itemDate: Date | null = null;
+      if (item.data_registro && item.data_registro.includes("-")) {
+        const d = new Date(item.data_registro);
+        itemDate = isNaN(d.getTime()) ? null : d;
+      } else if (item.prazo) {
+        itemDate = parseDate(item.prazo);
+      } else if (item.data) {
+        itemDate = parseDate(item.data);
+      }
+      map.set(item.id, itemDate);
+    });
+    return map;
+  }, [deferredFilteredItems]);
 
-    const metrics = {
-      totalItens: itemsToCalculate.length,
-      aguardandoAprovacao: 0,
-      analises: 0,
-      orcamentos: 0,
-      emExecucao: 0,
-      pronto: 0,
+  // Agrupamento por status para reuso em métricas e modais
+  type Groups = {
+    total: any[];
+    aprovacao: any[];
+    analises: any[];
+    orcamentos: any[];
+    execucao: any[];
+    pronto: any[];
+  };
+
+  const buildGroups = (items: any[]): Groups => {
+    const groups: Groups = {
+      total: items,
+      aprovacao: [],
+      analises: [],
+      orcamentos: [],
+      execucao: [],
+      pronto: [],
     };
-
-    itemsToCalculate.forEach((item) => {
-      const status = item.status.toLowerCase();
+    items.forEach((item) => {
+      const status = (item.status || "").toLowerCase();
       if (
         status.includes("aguardando") ||
         status.includes("pendente") ||
-        status.includes("aprovação")
+        status.includes("aprovação") ||
+        status.includes("aprovacao")
       ) {
-        metrics.aguardandoAprovacao++;
+        groups.aprovacao.push(item);
       } else if (
         status.includes("análise") ||
         status.includes("analise") ||
         status.includes("revisão") ||
         status.includes("revisao")
       ) {
-        metrics.analises++;
+        groups.analises.push(item);
       } else if (
         status.includes("orçamento") ||
         status.includes("orcamento") ||
         status.includes("cotação") ||
         status.includes("cotacao")
       ) {
-        metrics.orcamentos++;
+        groups.orcamentos.push(item);
       } else if (
         status.includes("execução") ||
         status.includes("execucao") ||
         status.includes("andamento") ||
         status.includes("progresso")
       ) {
-        metrics.emExecucao++;
+        groups.execucao.push(item);
       } else if (
         status.includes("pronto") ||
         status.includes("concluído") ||
@@ -186,42 +267,48 @@ export function ConsultingDashboard() {
         status.includes("entregue") ||
         status.includes("completo")
       ) {
-        metrics.pronto++;
+        groups.pronto.push(item);
       }
     });
+    return groups;
+  };
 
-    return metrics;
-  }, [filteredItems]);
+  const groupedFiltered = React.useMemo(
+    () => buildGroups(deferredFilteredItems),
+    [deferredFilteredItems]
+  );
+  const groupedAll = React.useMemo(
+    () => buildGroups(processedItems || []),
+    [processedItems]
+  );
+
+  // Recalcular métricas baseadas nos dados filtrados
+  const filteredDashboardData = React.useMemo(() => {
+    return {
+      totalItens: groupedFiltered.total.length,
+      aguardandoAprovacao: groupedFiltered.aprovacao.length,
+      analises: groupedFiltered.analises.length,
+      orcamentos: groupedFiltered.orcamentos.length,
+      emExecucao: groupedFiltered.execucao.length,
+      pronto: groupedFiltered.pronto.length,
+    };
+  }, [groupedFiltered]);
 
   // Calcular itens atrasados baseado na lógica do calendário
   const overdueItems = React.useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const overdueItems: any[] = [];
-
-    filteredItems.forEach((item) => {
-      let itemDate: Date | null = null;
-
-      // Tenta extrair a data do prazo
-      if (item.data_registro && item.data_registro.includes("-")) {
-        itemDate = new Date(item.data_registro);
-        if (isNaN(itemDate.getTime())) {
-          itemDate = null;
-        }
-      } else if (item.prazo) {
-        itemDate = parseDate(item.prazo);
-      } else if (item.data) {
-        itemDate = parseDate(item.data);
-      }
-
+    const overdue: any[] = [];
+    deferredFilteredItems.forEach((item) => {
+      const itemDate = itemIdToDueDate.get(item.id) ?? null;
       if (itemDate && itemDate < today) {
-        overdueItems.push(item);
+        overdue.push(item);
       }
     });
 
-    return overdueItems;
-  }, [filteredItems]);
+    return overdue;
+  }, [deferredFilteredItems, itemIdToDueDate]);
 
   // Notificações: atrasados e aguardando aprovação
   const notifiedOverdueRef = useRef<Set<string>>(new Set());
@@ -233,17 +320,9 @@ export function ConsultingDashboard() {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    filteredItems.forEach((item) => {
-      // Determinar data do item
-      let date: Date | null = null;
-      if (item.data_registro && item.data_registro.includes("-")) {
-        const d = new Date(item.data_registro);
-        date = isNaN(d.getTime()) ? null : d;
-      } else if (item.prazo) {
-        date = parseDate(item.prazo);
-      } else if (item.data) {
-        date = parseDate(item.data);
-      }
+    deferredFilteredItems.forEach((item) => {
+      // Determinar data do item via memo
+      const date = itemIdToDueDate.get(item.id) ?? null;
 
       // Atrasados
       if (date && date < today) {
@@ -257,7 +336,7 @@ export function ConsultingDashboard() {
           notifiedOverdueRef.current.add(item.id);
         }
       } else if (date && date >= today && date <= tomorrow) {
-        // Essa semana (prazo hoje ou amanhã)
+        // Prazo hoje ou amanhã
         if (!notifiedOverdueRef.current.has(item.id)) {
           add({
             type: "calendar",
@@ -286,7 +365,7 @@ export function ConsultingDashboard() {
         notifiedApprovalRef.current.add(item.id);
       }
     });
-  }, [filteredItems, add, parseDate]);
+  }, [deferredFilteredItems, add, itemIdToDueDate]);
 
   useEffect(() => {
     loadSavedData();
@@ -312,138 +391,31 @@ export function ConsultingDashboard() {
       items = data;
     } else {
       try {
-        // Consultores (ou quando há filtro manual) usam os dados já filtrados
-        if (shouldForceOwn || filteredByResponsavel) {
-          switch (modalType) {
-            case "total":
-              items = filteredItems;
-              break;
-            case "aprovacao":
-              items = filteredItems.filter((item) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("aguardando") ||
-                  status.includes("pendente") ||
-                  status.includes("aprovação") ||
-                  status.includes("aprovacao")
-                );
-              });
-              break;
-            case "analises":
-              items = filteredItems.filter((item) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("análise") ||
-                  status.includes("analise") ||
-                  status.includes("revisão") ||
-                  status.includes("revisao")
-                );
-              });
-              break;
-            case "orcamentos":
-              items = filteredItems.filter((item) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("orçamento") ||
-                  status.includes("orcamento") ||
-                  status.includes("cotação") ||
-                  status.includes("cotacao")
-                );
-              });
-              break;
-            case "execucao":
-              items = filteredItems.filter((item) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("execução") ||
-                  status.includes("execucao") ||
-                  status.includes("andamento") ||
-                  status.includes("progresso")
-                );
-              });
-              break;
-            case "pronto":
-              items = filteredItems.filter((item) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("pronto") ||
-                  status.includes("concluído") ||
-                  status.includes("concluido") ||
-                  status.includes("finalizado") ||
-                  status.includes("entregue") ||
-                  status.includes("completo")
-                );
-              });
-              break;
-            default:
-              items = [];
-          }
-        } else {
-          // Sem filtro: usar dados do dashboard local
-          const allItems = processedItems || [];
-          switch (modalType) {
-            case "total":
-              items = allItems;
-              break;
-            case "aprovacao":
-              items = allItems.filter((item: any) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("aguardando") ||
-                  status.includes("pendente") ||
-                  status.includes("aprovação") ||
-                  status.includes("aprovacao")
-                );
-              });
-              break;
-            case "analises":
-              items = allItems.filter((item: any) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("análise") ||
-                  status.includes("analise") ||
-                  status.includes("revisão") ||
-                  status.includes("revisao")
-                );
-              });
-              break;
-            case "orcamentos":
-              items = allItems.filter((item: any) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("orçamento") ||
-                  status.includes("orcamento") ||
-                  status.includes("cotação") ||
-                  status.includes("cotacao")
-                );
-              });
-              break;
-            case "execucao":
-              items = allItems.filter((item: any) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("execução") ||
-                  status.includes("execucao") ||
-                  status.includes("andamento") ||
-                  status.includes("progresso")
-                );
-              });
-              break;
-            case "pronto":
-              items = allItems.filter((item: any) => {
-                const status = item.status.toLowerCase();
-                return (
-                  status.includes("pronto") ||
-                  status.includes("concluído") ||
-                  status.includes("concluido") ||
-                  status.includes("finalizado") ||
-                  status.includes("entregue")
-                );
-              });
-              break;
-            default:
-              items = [];
-          }
+        const groups =
+          shouldForceOwn || filteredByResponsavel
+            ? groupedFiltered
+            : groupedAll;
+        switch (modalType) {
+          case "total":
+            items = groups.total;
+            break;
+          case "aprovacao":
+            items = groups.aprovacao;
+            break;
+          case "analises":
+            items = groups.analises;
+            break;
+          case "orcamentos":
+            items = groups.orcamentos;
+            break;
+          case "execucao":
+            items = groups.execucao;
+            break;
+          case "pronto":
+            items = groups.pronto;
+            break;
+          default:
+            items = [];
         }
       } catch (error) {
         items = [];
@@ -489,12 +461,12 @@ export function ConsultingDashboard() {
         {/* Mobile layout: order -> Departamento -> Calendário -> Distribuições (sem execução) */}
         <div className="block lg:hidden md:hidden space-y-2">
           <DepartamentoInfo
-            processedItems={filteredItems}
+            processedItems={deferredFilteredItems}
             filteredByResponsavel={filteredByResponsavel}
           />
 
           <DashboardCalendar
-            processedItems={filteredItems}
+            processedItems={deferredFilteredItems}
             onDateClick={handleCalendarDateClick}
             filteredByResponsavel={filteredByResponsavel}
           />
@@ -513,13 +485,13 @@ export function ConsultingDashboard() {
         <div className="hidden md:grid xl:hidden grid-cols-2 gap-2">
           <div className="col-span-1">
             <DepartamentoInfo
-              processedItems={filteredItems}
+              processedItems={deferredFilteredItems}
               filteredByResponsavel={filteredByResponsavel}
             />
           </div>
           <div className="col-span-1">
             <DashboardCalendar
-              processedItems={filteredItems}
+              processedItems={deferredFilteredItems}
               onDateClick={handleCalendarDateClick}
               filteredByResponsavel={filteredByResponsavel}
             />
@@ -539,7 +511,7 @@ export function ConsultingDashboard() {
           {/* Seção esquerda: Informações do Departamento */}
           <div className="col-span-1 xl:col-span-2">
             <DepartamentoInfo
-              processedItems={filteredItems}
+              processedItems={deferredFilteredItems}
               filteredByResponsavel={filteredByResponsavel}
               className="h-[520px]"
             />
@@ -561,7 +533,7 @@ export function ConsultingDashboard() {
           {/* Seção direita: Calendário */}
           <div className="col-span-3 xl:col-span-3 xl:col-start-6">
             <DashboardCalendar
-              processedItems={filteredItems}
+              processedItems={deferredFilteredItems}
               onDateClick={handleCalendarDateClick}
               filteredByResponsavel={filteredByResponsavel}
             />
@@ -572,7 +544,7 @@ export function ConsultingDashboard() {
       {/* Atividades Diárias - Seção inferior */}
       <div className="mt-8">
         <ActivityPlanner
-          processedItems={filteredItems}
+          processedItems={deferredFilteredItems}
           filteredByResponsavel={filteredByResponsavel}
         />
       </div>

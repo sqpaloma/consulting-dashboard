@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { useMemo, useState } from "react";
 import jsPDF from "jspdf";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeList, ListChildComponentProps } from "react-window";
 
 interface DashboardModalProps {
   activeModal: string | null;
@@ -41,11 +43,11 @@ export function DashboardModal({
       if (match) {
         if (format.source.includes("yyyy")) {
           // Formato com ano completo
-          const [, day, month, year] = match;
+          const [, day, month, year] = match as any;
           return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
         } else {
           // Formato com ano abreviado
-          const [, day, month, year] = match;
+          const [, day, month, year] = match as any;
           const fullYear =
             parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
           return new Date(fullYear, parseInt(month) - 1, parseInt(day));
@@ -96,7 +98,7 @@ export function DashboardModal({
 
   // Função para obter a data de referência para ordenação
   const getItemDate = (item: any): Date => {
-    let date = null;
+    let date: Date | null = null;
 
     // Prioriza data_registro, depois prazo, depois data
     if (item.data_registro) {
@@ -226,6 +228,12 @@ export function DashboardModal({
     }
   };
 
+  // Exibe apenas 12 caracteres do cliente com reticências
+  const formatClientDisplay = (client?: string): string => {
+    const name = (client || "").toString().trim();
+    return name.length > 12 ? name.slice(0, 12) + "..." : name;
+  };
+
   const [isExporting, setIsExporting] = useState(false);
   const [showExportConfirm, setShowExportConfirm] = useState(false);
 
@@ -253,7 +261,9 @@ export function DashboardModal({
       doc.setFontSize(10);
       doc.text(`OS: ${item.os || item.id}`, 15, y + 5);
       doc.text(`Cliente: ${item.cliente}`, 15, y + 10);
-      doc.text(`Data: ${formatDisplayDate(item)}`, 15, y + 15);
+      if (activeModal !== "calendar") {
+        doc.text(`Data: ${formatDisplayDate(item)}`, 15, y + 15);
+      }
       doc.text(`Responsável: ${item.responsavel || "N/A"}`, 15, y + 20);
       doc.text(`Status: ${item.status}`, 15, y + 25);
       y += 35;
@@ -267,6 +277,91 @@ export function DashboardModal({
 
   const handleExportClick = () => {
     setShowExportConfirm(true);
+  };
+
+  // Renderer do item para react-window
+  const Row = ({ index, style }: ListChildComponentProps) => {
+    const item = sortedData[index];
+    return (
+      <div style={style} className="px-0">
+        <div
+          className={`rounded-lg px-2 py-0.5 mb-0 border transition-colors ${getBackgroundColor(
+            item
+          )}`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-800 mb-0">
+                {item.titulo}
+              </h3>
+              <div className="grid grid-cols-12 gap-0 text-sm text-gray-600 items-center">
+                <div className="col-span-2">
+                  <span className="font-medium">OS:</span>
+                  <div className="font-mono text-blue-600">
+                    {item.os || item.id}
+                  </div>
+                </div>
+                <div
+                  className={
+                    activeModal !== "calendar" ? "col-span-4" : "col-span-4"
+                  }
+                >
+                  <span className="font-medium">Cliente:</span>
+                  <div className="whitespace-nowrap" title={item.cliente}>
+                    {formatClientDisplay(item.cliente)}
+                  </div>
+                </div>
+                {activeModal !== "calendar" && (
+                  <div className="col-span-2">
+                    <span className="font-medium">Data:</span>
+                    <div>{formatDisplayDate(item)}</div>
+                  </div>
+                )}
+                <div
+                  className={
+                    activeModal !== "calendar" ? "col-span-2" : "col-span-3"
+                  }
+                >
+                  <span className="font-medium">Responsável:</span>
+                  <div className="whitespace-nowrap">
+                    {item.responsavel || "N/A"}
+                  </div>
+                </div>
+                <div
+                  className={
+                    activeModal !== "calendar" ? "col-span-2" : "col-span-3"
+                  }
+                >
+                  <span className="font-medium">Status:</span>
+                  <div>
+                    <span
+                      className={`px-1 py-0 rounded-full text-xs ${getStatusColor(item.status)} whitespace-nowrap`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="ml-1 self-start">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hover:bg-transparent px-1.5 py-0 h-auto text-sm"
+                onClick={() =>
+                  window.open(
+                    `https://app.novakgouveia.com.br/ordem-servico/order/${item.id}`,
+                    "_blank"
+                  )
+                }
+              >
+                Ver mais
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -300,82 +395,8 @@ export function DashboardModal({
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
-          <div className="space-y-4">
-            {sortedData.map((item, index) => (
-              <div
-                key={`modal-item-${item.id || item.os}-${index}`}
-                className={`rounded-lg p-4 border transition-colors ${getBackgroundColor(item)}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 mb-2">
-                      {item.titulo}
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-7 gap-4 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">OS:</span>
-                        <div className="font-mono text-blue-600">
-                          {item.os || item.id}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Cliente:</span>
-                        <div>{item.cliente}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Data:</span>
-                        <div>{formatDisplayDate(item)}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Responsável:</span>
-                        <div>{item.responsavel || "N/A"}</div>
-                      </div>
-                      {activeModal === "calendar" &&
-                        (item.prazo || item.data_registro) && (
-                          <div>
-                            <span className="font-medium">Prazo:</span>
-                            <div
-                              className={`font-semibold ${isItemOverdue(item) ? "text-red-600" : "text-green-600"}`}
-                            >
-                              {formatDisplayDate(item)}
-                            </div>
-                          </div>
-                        )}
-                      <div>
-                        <span className="font-medium">Status:</span>
-                        <div>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                              item.status
-                            )}`}
-                          >
-                            {item.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        window.open(
-                          `https://app.novakgouveia.com.br/ordem-servico/order/${item.id}`,
-                          "_blank"
-                        )
-                      }
-                    >
-                      Ver Detalhes
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {sortedData.length === 0 && (
+        <div className="p-6">
+          {sortedData.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <svg
@@ -394,27 +415,28 @@ export function DashboardModal({
               </div>
               <p className="text-gray-500">Nenhum item encontrado</p>
             </div>
+          ) : (
+            <div style={{ height: "60vh" }} className="overflow-hidden">
+              <AutoSizer>
+                {({ height, width }) => {
+                  // Altura estimada do card + espaçamento
+                  const baseItemSize = width < 640 ? 92 : 82; // mobile x desktop
+                  const itemSize = baseItemSize;
+                  return (
+                    <FixedSizeList
+                      height={height}
+                      width={width}
+                      itemCount={sortedData.length}
+                      itemSize={itemSize}
+                      overscanCount={6}
+                    >
+                      {Row}
+                    </FixedSizeList>
+                  );
+                }}
+              </AutoSizer>
+            </div>
           )}
-        </div>
-
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Total: {sortedData.length} itens
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => setActiveModal(null)}>
-                Fechar
-              </Button>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleExportClick}
-                disabled={isExporting}
-              >
-                {isExporting ? "Exportando..." : "Exportar Lista"}
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
 
