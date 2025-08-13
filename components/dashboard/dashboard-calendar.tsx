@@ -366,7 +366,8 @@ export function DashboardCalendar({
               onClick={goToToday}
               className="h-7 px-2 text-xs"
             >
-              Hoje
+              {" "}
+              ▷▷{" "}
             </Button>
           )}
         </div>
