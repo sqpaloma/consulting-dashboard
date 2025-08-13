@@ -785,9 +785,7 @@ export default function FollowUpPage() {
                   <TabsTrigger
                     key={name}
                     value={name}
-                    className={`group relative max-w-[200px] pr-6 truncate ${
-                      draggingName === name ? "opacity-60" : ""
-                    }`}
+                    className={`group relative max-w-[200px] pr-6 truncate rounded-full transition-colors bg-white text-blue-600 hover:bg-blue-50 data-[state=active]:bg-[#2563EB] data-[state=active]:text-white data-[state=active]:shadow ${draggingName === name ? "opacity-60" : ""}`}
                     title={name}
                     draggable
                     onDragStart={(e) => {
