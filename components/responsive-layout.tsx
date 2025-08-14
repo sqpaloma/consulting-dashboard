@@ -41,6 +41,7 @@ interface ResponsiveLayoutProps {
   showBack?: boolean;
   backHref?: string;
   titleRight?: React.ReactNode; // NOVO: conteúdo à direita do título
+  fullWidth?: boolean; // NOVO: usar largura total no desktop
 }
 
 const baseMenuItems = [
@@ -92,6 +93,7 @@ export function ResponsiveLayout({
   showBack = false,
   backHref = "/",
   titleRight,
+  fullWidth = false,
 }: ResponsiveLayoutProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
@@ -234,7 +236,7 @@ export function ResponsiveLayout({
 
           <SidebarInset className="flex-1 bg-transparent">
             <div className="p-4">
-              <div className="max-w-7xl mx-auto space-y-6">
+              <div className={fullWidth ? "w-full space-y-6" : "max-w-7xl mx-auto space-y-6"}>
                 {/* Header simplificado para mobile/tablet - hamburger + logo */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -281,7 +283,11 @@ export function ResponsiveLayout({
   // Desktop and large screens layout
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800">
-      <div className="max-w-7xl mx-auto space-y-6 p-4">
+      <div
+        className={
+          fullWidth ? "w-full space-y-6 p-4" : "max-w-7xl mx-auto space-y-6 p-4"
+        }
+      >
         <Header
           title={title}
           subtitle={subtitle}

@@ -430,7 +430,7 @@ export function ConsultingDashboard() {
     !forceOwnByEmail;
 
   return (
-    <ResponsiveLayout>
+    <ResponsiveLayout fullWidth={true}>
       {/* Título com nome do usuário */}
       <div className="mt-6 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
