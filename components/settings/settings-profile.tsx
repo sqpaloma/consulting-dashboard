@@ -36,12 +36,14 @@ interface SettingsProfileProps {
   userSettings: UserSettings;
   onSettingChange: (category: string, setting: string, value: any) => void;
   userId?: Id<"users">;
+  isLoading?: boolean;
 }
 
 export function SettingsProfile({
   userSettings,
   onSettingChange,
   userId,
+  isLoading = false,
 }: SettingsProfileProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -186,7 +188,7 @@ export function SettingsProfile({
   };
 
   return (
-    <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+    <Card className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl">
       <CardHeader>
         <CardTitle className="text-white flex items-center">
           <User className="h-5 w-5 mr-2" />
@@ -268,6 +270,7 @@ export function SettingsProfile({
               }
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
               placeholder="Seu nome completo"
+              disabled={isLoading}
             />
           </div>
 
@@ -284,6 +287,7 @@ export function SettingsProfile({
               }
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
               placeholder="seu@email.com"
+              disabled={isLoading}
             />
           </div>
 
@@ -299,6 +303,7 @@ export function SettingsProfile({
               }
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
               placeholder="+55 (11) 99999-9999"
+              disabled={isLoading}
             />
           </div>
 
@@ -314,6 +319,7 @@ export function SettingsProfile({
               }
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
               placeholder="Seu cargo"
+              disabled={isLoading}
             />
           </div>
 
@@ -326,6 +332,7 @@ export function SettingsProfile({
               onValueChange={(value) =>
                 onSettingChange("profile", "department", value)
               }
+              disabled={!isAdmin || isLoading}
             >
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue />
@@ -337,6 +344,11 @@ export function SettingsProfile({
                 <SelectItem value="Financeiro">Financeiro</SelectItem>
               </SelectContent>
             </Select>
+            {!isAdmin && (
+              <p className="text-xs text-gray-300">
+                Apenas administradores podem alterar o departamento.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -351,6 +363,7 @@ export function SettingsProfile({
               }
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
               placeholder="Cidade, Estado"
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -390,11 +403,13 @@ export function SettingsProfile({
           </div>
         )}
 
+        <Separator className="bg-white/20" />
+
         {/* Save Profile Button */}
         <Button
           className="bg-blue-600 hover:bg-blue-700 text-white"
           onClick={handleSaveProfile}
-          disabled={isSaving}
+          disabled={isLoading || isSaving}
         >
           <Save className="h-4 w-4 mr-2" />
           {isSaving

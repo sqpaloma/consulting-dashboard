@@ -8,15 +8,22 @@ import { api } from "@/convex/_generated/api";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 
 export function CalendarCombined() {
-  const notes = useQuery(api.notes.getNotes);
+  const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Query com userId do usuário logado - use "skip" if not logged in
+  const notes = useQuery(
+    api.notes.getNotes, 
+    user?.userId ? { userId: user.userId } : "skip"
+  );
   const createNote = useMutation(api.notes.createNote);
   const updateNote = useMutation(api.notes.updateNote);
   const deleteNote = useMutation(api.notes.deleteNote);
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const initialTab =
     (searchParams?.get("tab") as "kanban" | "chat" | "notes") || "kanban";
   const [tab, setTab] = React.useState<"kanban" | "chat" | "notes">(initialTab);
@@ -26,6 +33,11 @@ export function CalendarCombined() {
     setTab(urlTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // Se não está logado, não renderizar
+  if (!user || !user.userId) {
+    return <div>Carregando...</div>;
+  }
 
   const onTabChange = (value: string) => {
     const next = (value as any) || "kanban";
@@ -61,9 +73,9 @@ export function CalendarCombined() {
         <TabsContent value="notes" className="mt-2">
           <NotesSection
             notes={notes || []}
-            onCreateNote={(data) => createNote(data)}
-            onUpdateNote={(id, data) => updateNote({ id: id as any, ...data })}
-            onDeleteNote={(id) => deleteNote({ id: id as any })}
+            onCreateNote={(data) => createNote({ ...data, userId: user.userId })}
+            onUpdateNote={(id, data) => updateNote({ id: id as any, ...data, userId: user.userId })}
+            onDeleteNote={(id) => deleteNote({ id: id as any, userId: user.userId })}
           />
         </TabsContent>
       </Tabs>

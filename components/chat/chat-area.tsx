@@ -14,12 +14,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 
+interface AttachedFile {
+  file: File;
+  id: string;
+  type: 'image' | 'file';
+  url: string;
+}
+
 interface ChatAreaProps {
   selectedConversationData: any;
   messages: any[];
   newMessage: string;
   setNewMessage: (message: string | ((prev: string) => string)) => void;
   onSendMessage: () => void;
+  onSendAttachment: (files: AttachedFile[], message?: string) => void;
   onDeleteMessage: (id: string) => void;
   onDeleteConversation: (id: string) => void;
   onCreateTodoFromMessage: (messageId: string, content: string) => void;
@@ -32,6 +40,7 @@ export function ChatArea({
   newMessage,
   setNewMessage,
   onSendMessage,
+  onSendAttachment,
   onDeleteMessage,
   onDeleteConversation,
   onCreateTodoFromMessage,
@@ -150,6 +159,7 @@ export function ChatArea({
         newMessage={newMessage}
         setNewMessage={setNewMessage}
         onSendMessage={onSendMessage}
+        onSendAttachment={onSendAttachment}
         onKeyPress={handleKeyPress}
       />
     </Card>

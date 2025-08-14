@@ -16,8 +16,8 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { AdminProtection } from "@/components/admin-protection";
 
 function SettingsPageContent() {
-  const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab");
+  const params = useSearchParams();
+  const tabParam = params ? params.get("tab") : null;
   const [defaultTab, setDefaultTab] = useState<string>("profile");
 
   // Usar hook do Convex para dados do usuário
@@ -40,23 +40,26 @@ function SettingsPageContent() {
     projectUpdates: true,
     weeklyReports: false,
 
-    // Privacy
+    // Privacy (mantido no tipo, mas não usado na UI)
     profileVisibility: "public",
     dataSharing: false,
     analyticsTracking: true,
 
-    // Appearance
+    // Appearance (mantido no tipo, mas não usado na UI)
     theme: "dark",
     language: "pt-BR",
     timezone: "America/Sao_Paulo",
     dateFormat: "DD/MM/YYYY",
     timeFormat: "24h",
 
-    // System
+    // System (mantido no tipo, mas não usado na UI)
     autoSave: true,
     backupFrequency: "daily",
     sessionTimeout: "30min",
   });
+
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Convex mutations
   const createOrUpdateUser = useMutation(api.users.createOrUpdateUser);
@@ -84,31 +87,34 @@ function SettingsPageContent() {
         calendarReminders: settings.calendarReminders,
         projectUpdates: settings.projectUpdates,
         weeklyReports: settings.weeklyReports,
-        // Privacy
+        // Privacy (valores permanecem para compatibilidade de tipo)
         profileVisibility: settings.profileVisibility,
         dataSharing: settings.dataSharing,
         analyticsTracking: settings.analyticsTracking,
-        // Appearance
+        // Appearance (valores permanecem para compatibilidade de tipo)
         theme: settings.theme,
         language: settings.language,
         timezone: settings.timezone,
         dateFormat: settings.dateFormat,
         timeFormat: settings.timeFormat,
-        // System
+        // System (valores permanecem para compatibilidade de tipo)
         autoSave: settings.autoSave,
         backupFrequency: settings.backupFrequency,
         sessionTimeout: settings.sessionTimeout,
       }));
+      setIsDirty(false);
     }
   }, [user, settings]);
 
   const handleSettingChange = (key: keyof UserSettings, value: any) => {
     setUserSettings((prev) => ({ ...prev, [key]: value }));
+    setIsDirty(true);
   };
 
   const handleSave = async () => {
     if (!user) return;
     try {
+      setIsSaving(true);
       await createOrUpdateUser({
         name: userSettings.name,
         email: userSettings.email,
@@ -122,11 +128,13 @@ function SettingsPageContent() {
 
       await updateUserSettings({
         userId: user._id,
+        // Notificações
         emailNotifications: userSettings.emailNotifications,
         pushNotifications: userSettings.pushNotifications,
         calendarReminders: userSettings.calendarReminders,
         projectUpdates: userSettings.projectUpdates,
         weeklyReports: userSettings.weeklyReports,
+        // Mantemos os demais campos por compatibilidade com schema existente
         profileVisibility: userSettings.profileVisibility,
         dataSharing: userSettings.dataSharing,
         analyticsTracking: userSettings.analyticsTracking,
@@ -141,8 +149,11 @@ function SettingsPageContent() {
       });
 
       toast.success("Configurações atualizadas com sucesso");
+      setIsDirty(false);
     } catch (error) {
       toast.error("Erro ao salvar configurações");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -153,10 +164,12 @@ function SettingsPageContent() {
         onSettingChange={handleSettingChange}
         defaultTab={defaultTab}
         userId={user?._id}
+        isLoading={isLoading}
       />
       <div className="flex justify-end mt-4">
-        <Button onClick={handleSave}>
-          <Save className="h-4 w-4 mr-2" /> Salvar Alterações
+        <Button onClick={handleSave} disabled={!isDirty || isSaving}>
+          <Save className="h-4 w-4 mr-2" />{" "}
+          {isSaving ? "Salvando..." : "Salvar Alterações"}
         </Button>
       </div>
     </ResponsiveLayout>
@@ -165,7 +178,15 @@ function SettingsPageContent() {
 
 export default function SettingsPage() {
   return (
-    <AdminProtection allowedRoles={["admin"]}>
+    <AdminProtection
+      allowedRoles={[
+        "consultor",
+        "qualidade_pcp",
+        "gerente",
+        "diretor",
+        "admin",
+      ]}
+    >
       <Suspense
         fallback={
           <ResponsiveLayout title="Configurações">

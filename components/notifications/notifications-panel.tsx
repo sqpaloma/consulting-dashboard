@@ -148,7 +148,7 @@ export function NotificationsPanel({ children }: NotificationsPanelProps) {
                               <div className="flex items-center mt-1 text-xs text-gray-500">
                                 <Clock className="h-3 w-3 mr-1 shrink-0" />
                                 <span className="truncate">
-                                  {notification.timestamp}
+                                  {notification.actualTime} • {notification.timestamp}
                                 </span>
                               </div>
                             </div>

@@ -87,16 +87,18 @@ export default defineSchema({
     scheduledDate: v.optional(v.string()), // formato: YYYY-MM-DD
     responsible: v.optional(v.string()), // nome do responsável
     category: v.optional(v.string()),
+    userId: v.optional(v.id("users")), // NOVO: isolamento por usuário (optional for backward compatibility)
     createdAt: v.number(),
     updatedAt: v.number(),
-  }),
+  }).index("by_user", ["userId"]),
 
   notes: defineTable({
     title: v.string(),
     content: v.string(),
+    userId: v.optional(v.id("users")), // NOVO: isolamento por usuário (optional for backward compatibility)
     createdAt: v.number(),
     updatedAt: v.number(),
-  }),
+  }).index("by_user", ["userId"]),
 
   // Tabela de conversas
   conversations: defineTable({
@@ -131,6 +133,15 @@ export default defineSchema({
     senderId: v.id("users"),
     content: v.string(),
     messageType: v.string(), // "text", "image", "file", "system"
+    // Attachment fields
+    attachments: v.optional(v.array(v.object({
+      id: v.string(),
+      fileName: v.string(),
+      fileSize: v.number(),
+      mimeType: v.string(),
+      storageId: v.optional(v.id("_storage")), // Convex file storage ID
+      url: v.optional(v.string()), // Fallback URL for external storage
+    }))),
     isEdited: v.boolean(),
     editedAt: v.optional(v.number()),
     isDeleted: v.boolean(),

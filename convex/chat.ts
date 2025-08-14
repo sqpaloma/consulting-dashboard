@@ -141,6 +141,25 @@ export const getConversationMessages = query({
     const messagesWithSenders = await Promise.all(
       messages.map(async (message) => {
         const sender = await ctx.db.get(message.senderId);
+        
+        // Process attachments with URLs
+        let attachments = message.attachments;
+        if (attachments) {
+          attachments = await Promise.all(
+            attachments.map(async (attachment) => {
+              let url = attachment.url;
+              if (attachment.storageId && !url) {
+                const storageUrl = await ctx.storage.getUrl(attachment.storageId);
+                url = storageUrl || undefined;
+              }
+              return {
+                ...attachment,
+                url: url || undefined,
+              };
+            })
+          );
+        }
+
         return {
           id: message._id,
           content: message.content,
@@ -148,6 +167,7 @@ export const getConversationMessages = query({
           senderName: sender?.name || "Usuário",
           senderAvatar: sender?.avatarUrl || "/placeholder.svg",
           messageType: message.messageType,
+          attachments,
           isEdited: message.isEdited,
           editedAt: message.editedAt,
           isOwn: message.senderId === args.userId,
@@ -172,6 +192,14 @@ export const sendMessage = mutation({
     senderId: v.id("users"),
     content: v.string(),
     messageType: v.optional(v.string()),
+    attachments: v.optional(v.array(v.object({
+      id: v.string(),
+      fileName: v.string(),
+      fileSize: v.number(),
+      mimeType: v.string(),
+      storageId: v.optional(v.id("_storage")),
+      url: v.optional(v.string()),
+    }))),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -196,20 +224,47 @@ export const sendMessage = mutation({
       senderId: args.senderId,
       content: args.content,
       messageType,
+      attachments: args.attachments,
       isEdited: false,
       isDeleted: false,
       createdAt: now,
       updatedAt: now,
     });
 
+    // Determinar a última mensagem para a conversa
+    let lastMessage = args.content;
+    if (args.attachments && args.attachments.length > 0) {
+      if (args.content.trim()) {
+        lastMessage = `${args.content} (com ${args.attachments.length} anexo${args.attachments.length > 1 ? 's' : ''})`;
+      } else {
+        lastMessage = `Enviou ${args.attachments.length} anexo${args.attachments.length > 1 ? 's' : ''}`;
+      }
+    }
+
     // Atualizar conversa com a última mensagem
     await ctx.db.patch(args.conversationId, {
-      lastMessage: args.content,
+      lastMessage,
       lastMessageAt: now,
       updatedAt: now,
     });
 
     return messageId;
+  },
+});
+
+// Upload file for messages
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+// Get file URL by storage ID
+export const getFileUrl = query({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
   },
 });
 

@@ -91,7 +91,7 @@ export function ChatEmbedded() {
   const searchResults = useSearchUsers(searchQuery, currentUser?.id, 10);
 
   // Hooks para operações de chat
-  const { sendMessage, createDirectConversation, markAsRead } = useChat(
+  const { sendMessage, sendAttachment, createDirectConversation, markAsRead } = useChat(
     currentUser?.id
   );
 
@@ -136,6 +136,36 @@ export function ChatEmbedded() {
           type: "system",
           title: "Erro",
           message: "Erro ao enviar mensagem",
+          urgent: false,
+        });
+      }
+    }
+  };
+
+  interface AttachedFile {
+    file: File;
+    id: string;
+    type: 'image' | 'file';
+    url: string;
+  }
+
+  const handleSendAttachment = async (files: AttachedFile[], message?: string) => {
+    if (selectedConversation && currentUser?.id) {
+      try {
+        await sendAttachment(selectedConversation, files, message);
+        setNewMessage("");
+        add({
+          type: "message",
+          title: "Arquivo enviado",
+          message: `${files.length} arquivo${files.length > 1 ? 's' : ''} enviado${files.length > 1 ? 's' : ''}`,
+          urgent: false,
+        });
+      } catch (error) {
+        console.error('Error sending attachment:', error);
+        add({
+          type: "system",
+          title: "Erro",
+          message: "Erro ao enviar arquivo",
           urgent: false,
         });
       }
@@ -272,6 +302,7 @@ export function ChatEmbedded() {
           newMessage={newMessage}
           setNewMessage={setNewMessage}
           onSendMessage={handleSendMessage}
+          onSendAttachment={handleSendAttachment}
           onDeleteMessage={(id: string) =>
             setDeleteConfirmation({ type: "message", id, show: true })
           }

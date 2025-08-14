@@ -57,9 +57,30 @@ export function MessageList({
               <MessageItem
                 message={message}
                 onDelete={() => onDeleteMessage(message.id)}
-                onCreateTodo={() =>
-                  onCreateTodoFromMessage(message.id, message.content)
-                }
+                onCreateTodo={() => {
+                  // Create meaningful content for different message types
+                  let todoContent = message.content || '';
+                  
+                  // If there are attachments, describe them
+                  if (message.attachments && message.attachments.length > 0) {
+                    const attachmentInfo = message.attachments.map((attachment: any) => 
+                      `📎 ${attachment.fileName}`
+                    ).join('\n');
+                    
+                    if (todoContent) {
+                      todoContent = `${todoContent}\n\nAnexos:\n${attachmentInfo}`;
+                    } else {
+                      todoContent = `Mensagem com anexos:\n${attachmentInfo}`;
+                    }
+                  }
+                  
+                  // If still no content (e.g., only emojis), create a generic message
+                  if (!todoContent.trim()) {
+                    todoContent = 'Mensagem do chat (sem texto)';
+                  }
+                  
+                  onCreateTodoFromMessage(message.id, todoContent);
+                }}
               />
             </div>
           </div>

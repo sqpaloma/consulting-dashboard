@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { useCurrentUser } from "@/hooks/use-chat";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ export function TodoModal({
   onSuccess,
   onError,
 }: TodoModalProps) {
+  const currentUser = useCurrentUser();
   const [todoForm, setTodoForm] = useState({
     title: "",
     description: "",
@@ -44,11 +46,19 @@ export function TodoModal({
 
   useEffect(() => {
     if (selectedMessage) {
+      const content = selectedMessage.content || '';
+      
+      // Create a meaningful title
+      let title = '';
+      if (content.length > 0) {
+        title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
+      } else {
+        title = 'Tarefa do Chat';
+      }
+
       setTodoForm({
-        title:
-          selectedMessage.content.slice(0, 50) +
-          (selectedMessage.content.length > 50 ? "..." : ""),
-        description: selectedMessage.content,
+        title,
+        description: content,
         priority: "medium",
         dueDate: "",
         category: "Chat",
@@ -62,6 +72,11 @@ export function TodoModal({
       return;
     }
 
+    if (!currentUser?.id) {
+      onError();
+      return;
+    }
+
     try {
       await createTodo({
         title: todoForm.title,
@@ -69,6 +84,7 @@ export function TodoModal({
         priority: todoForm.priority,
         dueDate: todoForm.dueDate || undefined,
         category: todoForm.category || undefined,
+        userId: currentUser.id,
       });
 
       onSuccess();

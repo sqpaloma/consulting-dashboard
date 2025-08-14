@@ -145,15 +145,12 @@ export function ResponsiveLayout({
           },
         ]
       : []),
-    ...(isAdmin
-      ? [
-          {
-            icon: Settings,
-            label: "Configurações",
-            href: "/settings",
-          },
-        ]
-      : []),
+    // Settings visível para todos
+    {
+      icon: Settings,
+      label: "Configurações",
+      href: "/settings",
+    },
   ];
 
   // Use the mobile-friendly sidebar layout on mobile and tablets
@@ -195,7 +192,7 @@ export function ResponsiveLayout({
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         asChild
-                        className={`!text-white !hover:bg-white/10 ${
+                        className={`!text-white !hover:bg:white/10 ${
                           pathname === item.href
                             ? "!bg-white/10 !hover:bg-white/10"
                             : ""
@@ -259,6 +256,7 @@ export function ResponsiveLayout({
                         priority
                       />
                     </div>
+                    {/* Nome da empresa */}
                     <div className="flex items-center space-x-1">
                       <span className="text-2xl font-bold text-white">
                         novak
@@ -270,16 +268,7 @@ export function ResponsiveLayout({
                   </div>
                 </div>
 
-                {/* Title Section */}
-                <div className="space-y-2">
-                  <h1 className="text-4xl font-bold text-white">{title}</h1>
-                  {subtitle && (
-                    <h2 className="text-3xl font-light text-gray-100">
-                      {subtitle}
-                    </h2>
-                  )}
-                </div>
-
+                {/* Conteúdo da página */}
                 {children}
               </div>
             </div>
@@ -289,10 +278,10 @@ export function ResponsiveLayout({
     );
   }
 
-  // Desktop layout
+  // Desktop and large screens layout
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800 px-12 py-6">
-      <div className="max-w-none mx-auto space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-800">
+      <div className="max-w-7xl mx-auto space-y-6 p-4">
         <Header
           title={title}
           subtitle={subtitle}
@@ -300,6 +289,8 @@ export function ResponsiveLayout({
           backHref={backHref}
           actions={titleRight}
         />
+
+        {/* Main content */}
         {children}
       </div>
     </div>

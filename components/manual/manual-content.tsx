@@ -5,6 +5,8 @@ import { ObjetivoContent } from "./content/objetivo-content";
 import { OrganizacaoContent } from "./content/organizacao-content";
 import { AtendimentoContent } from "./content/atendimento-content";
 import { ProcessosContent } from "./content/processos-content";
+import { TerceirosContent } from "./content/terceiros-content";
+import { SistemaContent } from "./content/sistema-content";
 import { NormasContent } from "./content/normas-content";
 import { MelhoriasContent } from "./content/melhorias-content";
 import { AnexosContent } from "./content/anexos-content";
@@ -32,6 +34,10 @@ export function ManualContent({
         return <AtendimentoContent />;
       case "processos":
         return <ProcessosContent onStepByStepClick={onStepByStepClick} />;
+      case "terceiros":
+        return <TerceirosContent />;
+      case "sistema":
+        return <SistemaContent />;
       case "normas":
         return <NormasContent />;
       case "melhorias":

@@ -1,21 +1,24 @@
+"use client";
+
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { useAuth } from "@/hooks/use-auth";
 
 // Hook para gerenciar o usuário atual
 export function useCurrentUser() {
-  // Por enquanto, vamos usar um email fixo para demonstração
-  // Em produção, você pegaria isso do sistema de autenticação
-  const currentUserEmail = "paloma.silva@novakgouveia.com";
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const email = authUser?.email;
 
-  const userData = useQuery(api.users.getUserByEmail, {
-    email: currentUserEmail,
-  });
+  const userData = useQuery(
+    api.users.getUserByEmail,
+    email ? { email } : "skip"
+  );
 
   return {
     user: userData?.user,
     settings: userData?.settings,
-    isLoading: userData === undefined,
+    isLoading: authLoading || userData === undefined,
   };
 }
 

@@ -48,8 +48,15 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
 
   const { user } = useAuth();
 
-  const todos = useQuery(api.todos.getTodos);
-  const notes = useQuery(api.notes.getNotes);
+  // Query com userId do usuário logado - use "skip" if not logged in
+  const todos = useQuery(
+    api.todos.getTodos, 
+    user?.userId ? { userId: user.userId } : "skip"
+  );
+  const notes = useQuery(
+    api.notes.getNotes, 
+    user?.userId ? { userId: user.userId } : "skip"
+  );
 
   const createTodo = useMutation(api.todos.createTodo);
   const updateTodo = useMutation(api.todos.updateTodo);
@@ -68,13 +75,18 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
 
   const visibleTodos = useMemo(() => {
     const all = todos || [];
-    if (!shouldForceOwn || !userFirstName) return all;
+    if (!shouldForceOwn || !userFirstName || !user) return all;
     return all.filter((t: any) => {
       const { responsible } = extractInfoFromDescription(t.description || "");
       const target = (responsible || "").toString().toLowerCase();
       return target.includes(userFirstName);
     });
-  }, [todos, shouldForceOwn, userFirstName]);
+  }, [todos, shouldForceOwn, userFirstName, user]);
+
+  // Se não está logado, não renderizar
+  if (!user || !user.userId) {
+    return <div>Carregando...</div>;
+  }
 
   const { pendingTodos, inProgressTodos, completedTodos } =
     filterTodosByStatus(visibleTodos);
@@ -113,6 +125,7 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
       title: todoData.title,
       description: fullDescription || undefined,
       priority: "medium",
+      userId: user.userId,
     });
   };
 
@@ -134,6 +147,7 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
       id: editingTodo._id as any,
       title: todoData.title,
       description: fullDescription || undefined,
+      userId: user.userId,
     });
   };
 
@@ -150,11 +164,12 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
       id: todoId as any,
       description: newDescription || undefined,
       completed: isCompleted,
+      userId: user.userId,
     });
   };
 
   const handleDeleteTodo = async (todoId: string) => {
-    await deleteTodo({ id: todoId as any });
+    await deleteTodo({ id: todoId as any, userId: user.userId });
   };
 
   const handleEditTodo = (todo: any) => {
@@ -170,7 +185,7 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
   };
 
   const handleCreateNote = (noteData: { title: string; content: string }) => {
-    createNote(noteData);
+    createNote({ ...noteData, userId: user.userId });
   };
 
   const handleUpdateNote = (
@@ -180,11 +195,12 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
     updateNote({
       id: id as any,
       ...noteData,
+      userId: user.userId,
     });
   };
 
   const handleDeleteNote = (id: string) => {
-    deleteNote({ id: id as any });
+    deleteNote({ id: id as any, userId: user.userId });
   };
 
   const handleClearCompleted = async () => {
@@ -230,6 +246,7 @@ export function KanbanMain({ showNotes = true }: KanbanMainProps) {
           id: activeTodo._id as any,
           description: newDescription || undefined,
           completed: isCompleted,
+          userId: user.userId,
         });
       }
     }

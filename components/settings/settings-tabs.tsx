@@ -3,21 +3,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SettingsProfile } from "./settings-profile";
 import { SettingsNotifications } from "./settings-notifications";
-import { SettingsPrivacy } from "./settings-privacy";
-import { SettingsAppearance } from "./settings-appearance";
-import { SettingsSystem } from "./settings-system";
 import { SettingsDataManagement } from "./settings-data-management";
 
 import { Id } from "@/convex/_generated/dataModel";
-import {
-  Bell,
-  Database,
-  FileSpreadsheet,
-  Palette,
-  Shield,
-  User,
-  Users,
-} from "lucide-react";
+import { useAdmin } from "@/hooks/use-admin";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Bell, FileSpreadsheet, User, Users } from "lucide-react";
 import { SettingsUserManagement } from "./settings-user-management";
 
 export interface UserSettings {
@@ -57,11 +48,10 @@ export interface UserSettings {
 
 interface SettingsTabsProps {
   userSettings: UserSettings;
-  onSettingChange:
-    | ((category: string, setting: string, value: any) => void)
-    | ((key: keyof UserSettings, value: any) => void);
+  onSettingChange: (key: keyof UserSettings, value: any) => void;
   defaultTab?: string;
   userId?: Id<"users">;
+  isLoading?: boolean;
 }
 
 export function SettingsTabs({
@@ -69,104 +59,92 @@ export function SettingsTabs({
   onSettingChange,
   defaultTab = "profile",
   userId,
+  isLoading = false,
 }: SettingsTabsProps) {
+  const { isAdmin } = useAdmin();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+
+  const allowedTabs = isAdmin
+    ? ["profile", "notifications", "data", "users"]
+    : ["profile", "notifications"];
+
+  const initialTab = allowedTabs.includes(defaultTab) ? defaultTab : "profile";
+
+  const adaptOnChange = (_category: string, setting: string, value: any) => {
+    onSettingChange(setting as keyof UserSettings, value);
+  };
+
+  const onTabChange = (value: string) => {
+    const search = new URLSearchParams(params?.toString());
+    search.set("tab", value);
+    router.replace(`${pathname}?${search.toString()}`);
+  };
+
+  const listBase =
+    "grid w-full bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-1";
+  const triggerBase =
+    "text-white/80 hover:text-white data-[state=active]:text-white data-[state=active]:bg-white/20 rounded-lg transition-colors";
+
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-7 bg-white/10 backdrop-blur-sm">
-        <TabsTrigger
-          value="profile"
-          className="text-white data-[state=active]:bg-gray-50"
-        >
+    <Tabs
+      defaultValue={initialTab}
+      onValueChange={onTabChange}
+      className="w-full"
+    >
+      <TabsList
+        className={`${listBase} ${isAdmin ? "grid-cols-4" : "grid-cols-2"}`}
+      >
+        <TabsTrigger value="profile" className={triggerBase}>
           <User className="h-4 w-4 mr-2" />
           Perfil
         </TabsTrigger>
-        <TabsTrigger
-          value="notifications"
-          className="text-white data-[state=active]:bg-gray-50"
-        >
+        <TabsTrigger value="notifications" className={triggerBase}>
           <Bell className="h-4 w-4 mr-2" />
           Notificações
         </TabsTrigger>
-        <TabsTrigger
-          value="privacy"
-          className="text-white data-[state=active]:bg-gray-50"
-        >
-          <Shield className="h-4 w-4 mr-2" />
-          Privacidade
-        </TabsTrigger>
-        <TabsTrigger
-          value="appearance"
-          className="text-white data-[state=active]:bg-gray-50"
-        >
-          <Palette className="h-4 w-4 mr-2" />
-          Aparência
-        </TabsTrigger>
-        <TabsTrigger
-          value="data"
-          className="text-white data-[state=active]:bg-gray-50"
-        >
-          <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Dados
-        </TabsTrigger>
-        <TabsTrigger
-          value="system"
-          className="text-white data-[state=active]:bg-gray-50"
-        >
-          <Database className="h-4 w-4 mr-2" />
-          Sistema
-        </TabsTrigger>
-        <TabsTrigger
-          value="users"
-          className="text-white data-[state=active]:bg-gray-50"
-        >
-          <Users className="h-4 w-4 mr-2" />
-          Usuários
-        </TabsTrigger>
+        {isAdmin && (
+          <TabsTrigger value="data" className={triggerBase}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Dados
+          </TabsTrigger>
+        )}
+        {isAdmin && (
+          <TabsTrigger value="users" className={triggerBase}>
+            <Users className="h-4 w-4 mr-2" />
+            Usuários
+          </TabsTrigger>
+        )}
       </TabsList>
 
       <TabsContent value="profile" className="space-y-6">
         <SettingsProfile
           userSettings={userSettings}
-          onSettingChange={onSettingChange as any}
+          onSettingChange={adaptOnChange}
           userId={userId}
+          isLoading={isLoading}
         />
       </TabsContent>
 
       <TabsContent value="notifications" className="space-y-6">
         <SettingsNotifications
           userSettings={userSettings}
-          onSettingChange={onSettingChange as any}
+          onSettingChange={adaptOnChange}
         />
       </TabsContent>
 
-      <TabsContent value="privacy" className="space-y-6">
-        <SettingsPrivacy
-          userSettings={userSettings}
-          onSettingChange={onSettingChange as any}
-        />
-      </TabsContent>
+      {isAdmin && (
+        <TabsContent value="data" className="space-y-6">
+          <SettingsDataManagement />
+        </TabsContent>
+      )}
 
-      <TabsContent value="appearance" className="space-y-6">
-        <SettingsAppearance
-          userSettings={userSettings}
-          onSettingChange={onSettingChange as any}
-        />
-      </TabsContent>
-
-      <TabsContent value="data" className="space-y-6">
-        <SettingsDataManagement />
-      </TabsContent>
-
-      <TabsContent value="system" className="space-y-6">
-        <SettingsSystem
-          userSettings={userSettings}
-          onSettingChange={onSettingChange as any}
-        />
-      </TabsContent>
-
-      <TabsContent value="users" className="space-y-6">
-        <SettingsUserManagement />
-      </TabsContent>
+      {isAdmin && (
+        <TabsContent value="users" className="space-y-6">
+          <SettingsUserManagement />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

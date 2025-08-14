@@ -168,21 +168,137 @@ export function ProcessosContent({ onStepByStepClick }: ProcessosContentProps) {
         </p>
       </div>
 
+      {/* Programação */}
+      <div id="programacao">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          3.6. Programação
+        </h3>
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Toda sexta-feira, o consultor deve realizar a programação de montagem e orçamento por meio do aplicativo, em conjunto com o setor de PCP.
+          </p>
+          <div className="border border-gray-200 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 mb-2">Procedimentos:</h4>
+            <ul className="text-gray-700 space-y-2 ml-4">
+              <li>• Apresentar programação ao gerente</li>
+              <li>• Elaborar plano de ação para itens em atraso</li>
+              <li>• Detalhar medidas para regularizar situações</li>
+              <li>• Evitar novos atrasos no processo</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Acompanhamento */}
+      <div id="acompanhamento">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          3.7. Acompanhamento
+        </h3>
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            O consultor é responsável por monitorar a execução de todos os componentes, garantindo que o processo ocorra conforme o planejado.
+          </p>
+          <div className="border border-gray-200 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 mb-2">Verificações necessárias:</h4>
+            <ul className="text-gray-700 space-y-2 ml-4">
+              <li>• Verificar se componentes foram devidamente separados</li>
+              <li>• Confirmar chegada de peças do estoque ou fornecedor</li>
+              <li>• Identificar eventuais atrasos na usinagem</li>
+              <li>• Avaliar necessidade de realocação de mecânico</li>
+              <li>• Ajustar programação de montagem e testes</li>
+            </ul>
+          </div>
+          <p className="text-gray-700">
+            Acompanhamento por meio dos Relatórios de Execução (Relatório 2 – Anexos) e Relatório de Usinagem, fornecido pelo PCP, gerados toda sexta-feira.
+          </p>
+        </div>
+      </div>
+
       {/* Auditoria */}
       <div id="auditoria">
         <h3 className="text-lg font-semibold text-gray-800 mb-3">
           3.9. Auditoria
         </h3>
-        <p className="text-gray-700">
-          Nesses casos, o consultor deve seguir o processo de auditoria conforme
-          descrito no
-          <button
-            onClick={() => onStepByStepClick("auditoria-processo")}
-            className="text-blue-600 hover:text-blue-800 underline ml-1"
-          >
-            (Passo-a-Passo – Anexos)
-          </button>
-        </p>
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Quando há sobras de peças de kits, conjuntos ou componentes novos utilizados apenas para retirada de peças específicas.
+          </p>
+          <div className="border border-gray-200 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 mb-2">Processo de auditoria:</h4>
+            <ol className="text-gray-700 space-y-2 ml-4">
+              <li>1. Identificar a peça e verificar cadastro no sistema</li>
+              <li>2. Se não cadastrada, enviar informações ao setor de compras</li>
+              <li>3. Realizar lançamento na Central de Compras (TOP 22)</li>
+              <li>4. Imprimir duas cópias do processo</li>
+              <li>5. Levar à expedição junto com as peças</li>
+              <li>6. Deixar ficha de auditoria visível</li>
+            </ol>
+          </div>
+          <p className="text-gray-700">
+            Processo conforme descrito no
+            <button
+              onClick={() => onStepByStepClick("auditoria-processo")}
+              className="text-blue-600 hover:text-blue-800 underline ml-1"
+            >
+              (Passo-a-Passo – Anexos)
+            </button>
+          </p>
+        </div>
+      </div>
+
+      {/* Análise de Garantia */}
+      <div id="garantia">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          3.10. Análise de Garantia
+        </h3>
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Quando um cliente relata problemas com componente entregue, inicia-se o processo de análise de garantia.
+          </p>
+          <div className="border border-gray-200 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 mb-2">Política de Garantia:</h4>
+            <ul className="text-gray-700 space-y-2 ml-4">
+              <li>• Garantia de 3 meses válida exclusivamente em bancada</li>
+              <li>• Solicitar reenvio do componente para análise</li>
+              <li>• Formulário de garantia deve ser preenchido</li>
+              <li>• Processo tem prioridade na oficina com acompanhamento do PCP</li>
+            </ul>
+          </div>
+          
+          <div className="border-l-4 border-blue-300 pl-4">
+            <h4 className="font-semibold text-gray-800 mb-2">Análise Técnica e Laudo:</h4>
+            <p className="text-gray-700 text-sm mb-2">
+              O componente é encaminhado ao mecânico para desmontagem e registro fotográfico das peças.
+            </p>
+            <ul className="text-gray-700 text-sm space-y-1 ml-4">
+              <li>• Imagens enviadas ao setor de qualidade para laudo técnico</li>
+              <li>• Se peças em boas condições: teste em bancada filmado</li>
+              <li>• Se sem falhas: laudo informa que garantia não procede</li>
+              <li>• Se identificada necessidade de substituição: processo segue como orçamento comum</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Pós-vendas */}
+      <div id="posvendas">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+          3.11. Pós-vendas
+        </h3>
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Assim que o componente for finalizado e estiver pronto para envio, o consultor deve encaminhar a pesquisa de satisfação ao cliente.
+          </p>
+          <div className="border border-gray-200 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 mb-2">Procedimentos:</h4>
+            <ul className="text-gray-700 space-y-2 ml-4">
+              <li>• Encaminhar pesquisa de satisfação (Link 2 – Anexos)</li>
+              <li>• Reclamações de clientes estratégicos: encaminhar ao setor Pós-venda</li>
+              <li>• Falhas recorrentes: encaminhar ao setor de Engenharia</li>
+              <li>• Investigar causas técnicas e operacionais com encarregado da produção</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

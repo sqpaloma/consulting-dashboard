@@ -3,7 +3,8 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -69,6 +70,7 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile();
     const [openMobile, setOpenMobile] = React.useState(false);
+    const pathname = usePathname();
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -111,6 +113,13 @@ const SidebarProvider = React.forwardRef<
       window.addEventListener("keydown", handleKeyDown);
       return () => window.removeEventListener("keydown", handleKeyDown);
     }, [toggleSidebar]);
+
+    // Close mobile sidebar when route changes
+    React.useEffect(() => {
+      if (isMobile && openMobile) {
+        setOpenMobile(false);
+      }
+    }, [pathname]);
 
     // We add a state so that we can do data-state="expanded" or "collapsed".
     // This makes it easier to style the sidebar with Tailwind classes.
@@ -194,31 +203,44 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-          <SheetContent
-            data-sidebar="sidebar"
-            data-mobile="true"
-            className="w-[--sidebar-width] bg-gradient-to-br from-blue-900 to-blue-800 p-0 text-sidebar-foreground [&>button]:hidden !border-0 !border-r-0 !border-l-0 !border-t-0 !border-b-0"
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
-            side={side}
-          >
-            <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
-            <div className="flex h-full w-full flex-col border-0">
-              {children}
+        <div ref={ref} {...props}>
+          {openMobile ? (
+            <div 
+              className="fixed inset-0 z-50 bg-transparent backdrop-blur-sm"
+              onClick={() => setOpenMobile(false)}
+            >
+              <div 
+                data-sidebar="sidebar"
+                data-mobile="true"
+                className="fixed inset-y-0 left-0 z-50 h-full w-[--sidebar-width] bg-gradient-to-br from-blue-900 to-blue-800 p-0 text-sidebar-foreground shadow-lg"
+                style={
+                  {
+                    "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+                  } as React.CSSProperties
+                }
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex h-full w-full flex-col">
+                  <button
+                    onClick={() => setOpenMobile(false)}
+                    className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-white z-10"
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Close</span>
+                  </button>
+                  {children}
+                </div>
+              </div>
             </div>
-          </SheetContent>
-        </Sheet>
+          ) : null}
+        </div>
       );
     }
 
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground"
+        className="group peer hidden lg:block text-sidebar-foreground"
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
@@ -237,7 +259,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex border-0",
+            "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear lg:flex border-0",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",

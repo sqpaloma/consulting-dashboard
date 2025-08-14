@@ -65,6 +65,7 @@ export function useSearchUsers(
 // Hook para operações de chat
 export function useChat(userId: Id<"users"> | undefined) {
   const sendMessage = useMutation(api.chat.sendMessage);
+  const generateUploadUrl = useMutation(api.chat.generateUploadUrl);
   const createDirectConversation = useMutation(
     api.chat.createDirectConversation
   );
@@ -87,6 +88,57 @@ export function useChat(userId: Id<"users"> | undefined) {
       });
     },
     [sendMessage, userId]
+  );
+
+  // Upload and send files
+  const handleSendAttachment = useCallback(
+    async (
+      conversationId: Id<"conversations">,
+      files: { file: File; id: string; type: 'image' | 'file' }[],
+      message?: string
+    ) => {
+      if (!userId) return;
+
+      try {
+        // Upload files to storage
+        const attachments = await Promise.all(
+          files.map(async ({ file, id, type }) => {
+            const uploadUrl = await generateUploadUrl();
+            
+            const result = await fetch(uploadUrl, {
+              method: "POST",
+              headers: { "Content-Type": file.type },
+              body: file,
+            });
+
+            const { storageId } = await result.json();
+
+            return {
+              id,
+              fileName: file.name,
+              fileSize: file.size,
+              mimeType: file.type,
+              storageId,
+            };
+          })
+        );
+
+        // Send message with attachments
+        const messageType = attachments.some(a => a.mimeType.startsWith('image/')) ? 'image' : 'file';
+
+        return await sendMessage({
+          conversationId,
+          senderId: userId,
+          content: message || '',
+          messageType,
+          attachments,
+        });
+      } catch (error) {
+        console.error('Error uploading files:', error);
+        throw error;
+      }
+    },
+    [sendMessage, generateUploadUrl, userId]
   );
 
   // Criar conversa direta
@@ -117,6 +169,7 @@ export function useChat(userId: Id<"users"> | undefined) {
 
   return {
     sendMessage: handleSendMessage,
+    sendAttachment: handleSendAttachment,
     createDirectConversation: handleCreateDirectConversation,
     markAsRead: handleMarkAsRead,
   };
