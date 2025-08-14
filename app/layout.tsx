@@ -5,7 +5,6 @@ import { AuthLayout } from "@/components/auth/auth-layout";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NotificationsProvider } from "@/hooks/use-notifications-center";
-import { FloatingChat } from "@/components/chat/floating-chat";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
@@ -36,7 +35,7 @@ export default function RootLayout({
             <NotificationsProvider>
               <AuthLayout>{children}</AuthLayout>
               <Suspense>
-                <FloatingChat />
+                {/* FloatingChat removido temporariamente para investigar erro de runtime */}
               </Suspense>
               <Toaster richColors position="bottom-right" />
             </NotificationsProvider>

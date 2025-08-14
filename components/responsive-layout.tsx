@@ -192,7 +192,7 @@ export function ResponsiveLayout({
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         asChild
-                        className={`!text-white !hover:bg:white/10 ${
+                        className={`!text-white !hover:bg-white/10 ${
                           pathname === item.href
                             ? "!bg-white/10 !hover:bg-white/10"
                             : ""
