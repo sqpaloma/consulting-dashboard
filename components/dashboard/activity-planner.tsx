@@ -233,6 +233,7 @@ export function ActivityPlanner({
         "MARCELINO",
         "LEANDRO",
         "RODRIGO N",
+        "LUISMIGUEL",
       ],
       marcelo: [
         "ALZIRO",

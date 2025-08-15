@@ -13,7 +13,7 @@ const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
   "paloma-hidraulicos": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
   "paloma-engrenagens": ["VAGNER", "FABIO F", "NIVALDO"],
   "lucas-bomba": ["ALEXANDRE", "ALEXSANDRO", "ROBERTO P", "KAUA", "MARCELINO"],
-  "lucas-comandos": ["LEANDRO", "RODRIGO N"],
+  "lucas-comandos": ["LEANDRO", "RODRIGO N", "LUISMIGUEL"],
   marcelo: [
     "ALZIRO",
     "G SIMAO",

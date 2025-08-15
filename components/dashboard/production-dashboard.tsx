@@ -105,7 +105,7 @@ export function ProductionDashboard() {
     {
       id: "setor5",
       nome: "Setor 5 - Comando e Valvulas de Grande Porte",
-      executantes: ["L Miguel", "Leandro", "Rodrigo N"],
+      executantes: ["L Miguel", "Leandro", "Rodrigo N", "Luismiguel"],
     },
   ];
 

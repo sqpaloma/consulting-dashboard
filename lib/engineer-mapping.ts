@@ -23,6 +23,7 @@ export function mapEngineerResponsible(nome: string): string {
     "MARCELINO",
     "LEANDRO",
     "RODRIGO N",
+    "LUISMIGUEL",
   ];
 
   const marceloTeam = [
@@ -111,6 +112,7 @@ export function isEngineerMapped(nome: string): boolean {
     "MARCELINO",
     "LEANDRO",
     "RODRIGO N",
+    "LUISMIGUEL",
   ];
 
   const marceloTeam = [
@@ -181,6 +183,7 @@ export function getAllMappedNames(): string[] {
     "MARCELINO",
     "LEANDRO",
     "RODRIGO N",
+    "LUISMIGUEL",
     // Equipe MARCELO
     "ALZIRO",
     "G SIMAO",

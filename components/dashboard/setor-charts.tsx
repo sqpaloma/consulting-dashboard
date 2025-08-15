@@ -67,6 +67,7 @@ const montagensData = {
     { name: "L Miguel", value: 24, color: "#3B82F6" },
     { name: "Leandro", value: 28, color: "#1D4ED8" },
     { name: "Rodrigo N", value: 22, color: "#1E40AF" },
+    { name: "Luismiguel", value: 18, color: "#1E40AF" },
   ],
 };
 
@@ -102,6 +103,7 @@ const desmontagensData = {
     { name: "L Miguel", value: 22, color: "#10B981" },
     { name: "Leandro", value: 25, color: "#059669" },
     { name: "Rodrigo N", value: 20, color: "#047857" },
+    { name: "Luismiguel", value: 15, color: "#047857" },
   ],
 };
 
@@ -192,6 +194,7 @@ const setores = [
       "L MIGUEL",
       "LEANDRO",
       "RODRIGO N",
+      "LUISMIGUEL",
     ],
   },
 ];
