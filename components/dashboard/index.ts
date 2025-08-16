@@ -5,4 +5,3 @@ export { DashboardCalendar } from "./dashboard-calendar";
 export { OverdueItemsCard as DashboardProjects } from "./dashboard-projects";
 export { ActivityPlanner } from "./activity-planner";
 export { DashboardModal } from "./dashboard-modal";
-export { ProductionDashboard } from "./production-dashboard";

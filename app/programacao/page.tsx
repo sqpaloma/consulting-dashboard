@@ -7,174 +7,18 @@ import { useDashboardData } from "@/lib/convex-dashboard-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsavelFilter } from "@/components/dashboard/responsavel-filter";
 import { useAdmin } from "@/hooks/use-admin";
-
-// Helpers locais (times por consultor + extração de mecânico dos itens)
-const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
-  "paloma-hidraulicos": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
-  "paloma-engrenagens": ["VAGNER", "FABIO F", "NIVALDO"],
-  "lucas-bomba": ["ALEXANDRE", "ALEXSANDRO", "ROBERTO P", "KAUA", "MARCELINO"],
-  "lucas-comandos": ["LEANDRO", "RODRIGO N", "LUISMIGUEL"],
-  marcelo: [
-    "ALZIRO",
-    "G SIMAO",
-    "HENRIQUE",
-    "NICOLAS C",
-    "DANIEL",
-    "RONALD",
-    "VINICIUS",
-    "DANIEL G",
-  ],
-  carlinhos: ["SHEINE"],
-};
-
-function getTeamForConsultant(name?: string | null): string[] {
-  const n = (name || "").toLowerCase();
-  if (!n) return [];
-  if (n.includes("paloma")) {
-    return [
-      ...TEAMS_BY_CONSULTANT["paloma-hidraulicos"],
-      ...TEAMS_BY_CONSULTANT["paloma-engrenagens"],
-    ];
-  }
-  if (n.includes("lucas")) {
-    return [
-      ...TEAMS_BY_CONSULTANT["lucas-bomba"],
-      ...TEAMS_BY_CONSULTANT["lucas-comandos"],
-    ];
-  }
-  if (n.includes("marcelo")) return TEAMS_BY_CONSULTANT.marcelo;
-  if (n.includes("carlinhos")) return TEAMS_BY_CONSULTANT.carlinhos;
-  return [];
-}
-
-function getDepartmentsForConsultant(
-  name?: string | null
-): { key: string; label: string }[] {
-  const n = (name || "").toLowerCase();
-  if (!n) return [];
-  if (n.includes("paloma")) {
-    return [
-      { key: "paloma-hidraulicos", label: "Hidráulicos" },
-      { key: "paloma-engrenagens", label: "Engrenagens" },
-    ];
-  }
-  if (n.includes("lucas")) {
-    return [
-      { key: "lucas-bomba", label: "Bomba" },
-      { key: "lucas-comandos", label: "Comandos" },
-    ];
-  }
-  return [];
-}
-
-function extractMechanicFromItem(item: any, team: string[]): string | null {
-  if (!item || !Array.isArray(item.rawData)) return null;
-  const teamSet = new Set(team.map((t) => t.toUpperCase().trim()));
-
-  for (const val of item.rawData) {
-    if (val && typeof val === "object") {
-      const possibleFields = [
-        "executante",
-        "mecanico",
-        "mecânico",
-        "responsavel_execucao",
-        "executor",
-      ];
-      for (const f of possibleFields) {
-        const v = (val as any)[f];
-        if (typeof v === "string" && v.trim()) {
-          const up = v.toUpperCase().trim();
-          if (teamSet.has(up)) return up;
-        }
-      }
-      for (const k of Object.keys(val)) {
-        const v = (val as any)[k];
-        if (typeof v === "string" && v.trim()) {
-          const up = v.toUpperCase().trim();
-          if (teamSet.has(up)) return up;
-        }
-      }
-    } else if (typeof val === "string") {
-      const up = val.toUpperCase().trim();
-      if (teamSet.has(up)) return up;
-    }
-  }
-  return null;
-}
-
-function formatPersonName(name: string): string {
-  return name
-    .toLowerCase()
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function isAnaliseStatus(status: string): boolean {
-  const s = (status || "").toLowerCase();
-  return s.includes("analise") || s.includes("análise") || s.includes("revis");
-}
-
-function isExecucaoStatus(status: string): boolean {
-  const s = (status || "").toLowerCase();
-  return s.includes("execu");
-}
-
-function parseDateLike(value?: string | null): Date | null {
-  if (!value || typeof value !== "string") return null;
-  const v = value.trim();
-  if (!v) return null;
-  const dm = v.match(/^([0-3]?\d)[\/\-]([0-1]?\d)[\/\-](\d{2,4})$/);
-  if (dm) {
-    const d = parseInt(dm[1], 10);
-    const m = parseInt(dm[2], 10) - 1;
-    const y = parseInt(dm[3].length === 2 ? `20${dm[3]}` : dm[3], 10);
-    const date = new Date(y, m, d);
-    return isNaN(date.getTime()) ? null : date;
-  }
-  const iso = new Date(v);
-  return isNaN(iso.getTime()) ? null : iso;
-}
-
-function getDueDate(activity: any): Date | null {
-  return (
-    parseDateLike(activity?.data) || parseDateLike(activity?.prazo) || null
-  );
-}
-
-function startOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function formatDueLabel(due: Date | null): {
-  label: string;
-  isOverdue: boolean;
-} {
-  if (!due) return { label: "Sem data", isOverdue: false };
-  const today = startOfDay(new Date());
-  const onlyDay = startOfDay(due);
-  const diffMs = onlyDay.getTime() - today.getTime();
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays < 0)
-    return { label: `Há ${Math.abs(diffDays)} dia(s)`, isOverdue: true };
-  if (diffDays === 0) return { label: "Hoje", isOverdue: false };
-  if (diffDays === 1) return { label: "Amanhã", isOverdue: false };
-  return { label: `Em ${diffDays} dia(s)`, isOverdue: false };
-}
-
-function getCardStyle(status: string): string {
-  const s = (status || "").toLowerCase();
-  if (isAnaliseStatus(s)) {
-    return "bg-yellow-50 border border-yellow-200 border-l-4 border-l-yellow-400";
-  }
-  if (isExecucaoStatus(s)) {
-    return "bg-emerald-50 border border-emerald-200 border-l-4 border-l-emerald-400";
-  }
-  return "bg-gray-50 border border-gray-200 border-l-4 border-l-gray-400";
-}
+import { MechanicColumn } from "@/components/programacao/mechanic-column";
+import { ProgramacaoFilters } from "@/components/programacao/programacao-filters";
+import {
+  TEAMS_BY_CONSULTANT,
+  getTeamForConsultant,
+  getDepartmentsForConsultant,
+  extractMechanicFromItem,
+  isAnaliseStatus,
+  isExecucaoStatus,
+  getDueDate,
+  startOfDay,
+} from "@/lib/programacao-utils";
 
 export default function ProgramacaoPage() {
   const dashboardData = useDashboardData();
@@ -402,45 +246,6 @@ export default function ProgramacaoPage() {
   const role = user?.role;
   const isManagerOrAbove = isAdmin || role === "gerente" || role === "diretor";
 
-  function StatusChip({ value }: { value: string }) {
-    const analise = isAnaliseStatus(value);
-    const exec = isExecucaoStatus(value);
-    const color = analise
-      ? "bg-yellow-100 text-yellow-800"
-      : exec
-        ? "bg-emerald-100 text-emerald-800"
-        : "bg-gray-100 text-gray-700";
-    const dot = analise
-      ? "bg-yellow-500"
-      : exec
-        ? "bg-emerald-500"
-        : "bg-gray-400";
-    return (
-      <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${color}`}
-      >
-        <span className={`inline-block w-1.5 h-1.5 rounded-full ${dot}`} />
-        {value}
-      </span>
-    );
-  }
-
-  function FilterChip({ id, label }: { id: string; label: string }) {
-    const active = statusFilter === id;
-    return (
-      <button
-        onClick={() => setStatusFilter(id)}
-        className={`px-2 py-1 rounded-md text-xs border transition-colors ${
-          active
-            ? "bg-indigo-600 text-white border-indigo-600"
-            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-        }`}
-      >
-        {label}
-      </button>
-    );
-  }
-
   return (
     <AdminProtection
       allowedRoles={["consultor", "gerente", "diretor", "admin"]}
@@ -467,66 +272,19 @@ export default function ProgramacaoPage() {
                       ? "Selecione um consultor para ver a programação"
                       : "Carregando sua programação..."}
                 </CardTitle>
-                {selectedConsultant &&
-                  departments.length > 1 &&
-                  isManagerOrAbove && (
-                    <div className="flex items-center">
-                      <label
-                        className="text-xs text-gray-600 mr-2"
-                        htmlFor="deptSelect"
-                      >
-                        Departamento:
-                      </label>
-                      <select
-                        id="deptSelect"
-                        className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700"
-                        value={selectedDepartment || ""}
-                        onChange={(e) =>
-                          setSelectedDepartment(e.target.value || null)
-                        }
-                      >
-                        <option value="">Todos</option>
-                        {departments.map((d) => (
-                          <option key={d.key} value={d.key}>
-                            {d.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
               </div>
               {selectedConsultant && (
-                <div className="mt-3 flex flex-wrap items-center gap-2 justify-end">
-                  <div className="flex items-center gap-2">
-                    <label
-                      className="text-xs text-gray-600"
-                      htmlFor="statusSelect"
-                    >
-                      Status:
-                    </label>
-                    <select
-                      id="statusSelect"
-                      className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <option value="all">Todos ({deptItems.length})</option>
-                      <option value="analise">Análise ({kpis.analise})</option>
-                      <option value="execucao">
-                        Em execução ({kpis.execucao})
-                      </option>
-                      <option value="atrasados">
-                        Atrasados ({kpis.atrasados})
-                      </option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter("all")}
-                      className="px-2 py-1 rounded-md text-xs border bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
-                    >
-                      Limpar
-                    </button>
-                  </div>
+                <div className="mt-3">
+                  <ProgramacaoFilters
+                    departments={departments}
+                    selectedDepartment={selectedDepartment}
+                    onDepartmentChange={setSelectedDepartment}
+                    statusFilter={statusFilter}
+                    onStatusFilterChange={setStatusFilter}
+                    kpis={kpis}
+                    totalItems={deptItems.length}
+                    showDepartmentFilter={departments.length > 1 && isManagerOrAbove}
+                  />
                 </div>
               )}
             </CardHeader>
@@ -542,110 +300,13 @@ export default function ProgramacaoPage() {
                     gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
                   }}
                 >
-                  {columns.map((colKey) => {
-                    const mec = colKey;
-                    const rawItems = itemsByMechanic[colKey] || [];
-                    const items = [...rawItems].sort((a, b) => {
-                      const da = getDueDate(a);
-                      const db = getDueDate(b);
-                      const ta = da ? startOfDay(da).getTime() : Infinity;
-                      const tb = db ? startOfDay(db).getTime() : Infinity;
-                      if (ta !== tb) return ta - tb; // data crescente
-                      const sa = a.status || "";
-                      const sb = b.status || "";
-                      const saScore = isAnaliseStatus(sa)
-                        ? 0
-                        : isExecucaoStatus(sa)
-                          ? 1
-                          : 2;
-                      const sbScore = isAnaliseStatus(sb)
-                        ? 0
-                        : isExecucaoStatus(sb)
-                          ? 1
-                          : 2;
-                      return saScore - sbScore;
-                    });
-                    return (
-                      <div
-                        key={colKey}
-                        className="flex flex-col bg-gray-50 rounded-md p-2 h-full overflow-hidden"
-                      >
-                        <div className="text-xs font-semibold mb-4 flex items-center justify-between text-gray-700 sticky top-0 z-10 bg-gray-50">
-                          <div
-                            className="flex-1 text-center"
-                            title={formatPersonName(mec)}
-                          >
-                            {formatPersonName(mec)}
-                          </div>
-                          <div className="bg-gray-200 text-gray-600 rounded-full px-2 py-1 text-xs min-w-[20px] text-center">
-                            {items.length}
-                          </div>
-                        </div>
-                        <div className="flex-1 min-h-0 overflow-auto">
-                          {items.length === 0 ? (
-                            <div className="text-xs text-gray-400 text-center py-6">
-                              Sem atividades
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {items.map((activity, idx) => {
-                                const due = getDueDate(activity);
-                                const { label: dueLabel, isOverdue } =
-                                  formatDueLabel(due);
-                                const titleFull =
-                                  activity.titulo || activity.os;
-                                const clientFull = activity.cliente;
-                                const cardStyle = isOverdue
-                                  ? "bg-red-50 border border-red-200 border-l-4 border-l-red-500"
-                                  : getCardStyle(activity.status);
-                                return (
-                                  <div key={idx} className="px-1">
-                                    <div
-                                      className={`p-2 rounded-md text-xs ${cardStyle}`}
-                                    >
-                                      <div className="min-w-0 flex-1">
-                                        <div className="flex items-center justify-between">
-                                          <span
-                                            className="font-medium text-gray-800 truncate"
-                                            title={titleFull}
-                                          >
-                                            {activity.titulo || activity.os}
-                                          </span>
-                                          <StatusChip value={activity.status} />
-                                        </div>
-                                        <div
-                                          className="mt-1 text-[11px] text-gray-600 truncate"
-                                          title={clientFull}
-                                        >
-                                          {activity.cliente}
-                                        </div>
-                                        <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
-                                          <span
-                                            className={
-                                              isOverdue
-                                                ? "text-red-600 font-medium"
-                                                : ""
-                                            }
-                                          >
-                                            {dueLabel}
-                                          </span>
-                                          <span>
-                                            {activity.data ||
-                                              activity.prazo ||
-                                              ""}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {columns.map((colKey) => (
+                    <MechanicColumn
+                      key={colKey}
+                      mechanic={colKey}
+                      items={itemsByMechanic[colKey] || []}
+                    />
+                  ))}
                 </div>
               )}
             </CardContent>
