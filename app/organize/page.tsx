@@ -1,3 +1,5 @@
+"use client";
+
 import { ResponsiveLayout } from "@/components/responsive-layout";
 
 import { ChatEmbedded } from "@/components/chat";

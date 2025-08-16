@@ -1,3 +1,5 @@
+"use client";
+
 import { ResponsiveLayout } from "@/components/responsive-layout";
 import { AdminProtection } from "@/components/admin-protection";
 import React, { useState } from "react";
