@@ -1,3 +1,5 @@
+"use client";
+
 import { AdminProtection } from "@/components/admin-protection";
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
@@ -72,7 +74,13 @@ export function AnalyticsPage() {
   const departmentMap: any = {
     vendas: {
       gerente: "Sobrinho",
-      colaboradores: ["Sobrinho", "Mamede", "Giovana", "Rafael Massa", "LENILTON"],
+      colaboradores: [
+        "Sobrinho",
+        "Mamede",
+        "Giovana",
+        "Rafael Massa",
+        "LENILTON",
+      ],
     },
     servicos: {
       gerente: "Giovanni",
