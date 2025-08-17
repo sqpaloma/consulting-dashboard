@@ -204,7 +204,7 @@ export function AnalyticsPage() {
   };
 
   return (
-    <ResponsiveLayout title="Análises">
+    <ResponsiveLayout title="Análises" fullWidth={true}>
       {/* Filters and Upload */}
       <AnalyticsUploadSection
         fileInputRef={fileInputRef}

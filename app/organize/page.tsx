@@ -96,6 +96,7 @@ export default function CalendarPage() {
     <ResponsiveLayout
       title="Organize-se"
       subtitle="Converse, anote e organize suas tarefas em um só lugar"
+      fullWidth={true}
     >
       <CalendarCombined />
     </ResponsiveLayout>

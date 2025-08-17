@@ -163,6 +163,7 @@ export default function FollowUpPage() {
     <ResponsiveLayout
       title="Follow-up"
       subtitle=""
+      fullWidth={true}
       titleRight={
         <div className="hidden xl:flex items-center gap-2">
           <ClientSearchInput

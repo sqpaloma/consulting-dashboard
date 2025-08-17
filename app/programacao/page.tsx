@@ -250,7 +250,7 @@ export default function ProgramacaoPage() {
     <AdminProtection
       allowedRoles={["consultor", "gerente", "diretor", "admin"]}
     >
-      <ResponsiveLayout>
+      <ResponsiveLayout fullWidth={true}>
         <div className="mt-6 sm:mt-4 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-white">Programação</h1>
           {isManagerOrAbove && (
@@ -262,7 +262,7 @@ export default function ProgramacaoPage() {
         </div>
 
         <div className="mt-4">
-          <Card className="bg-white h-[800px] flex flex-col">
+          <Card className="bg-white h-[800px] flex flex-col w-full">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base text-gray-800">

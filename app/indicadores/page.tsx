@@ -544,7 +544,7 @@ export default function IndicadoresPage() {
     <AdminProtection
       allowedRoles={["qualidade_pcp", "gerente", "diretor", "admin"]}
     >
-      <ResponsiveLayout title="Indicadores" subtitle="Dashboard de Produção">
+      <ResponsiveLayout title="Indicadores" subtitle="Dashboard de Produção" fullWidth={true}>
         <ProductionDashboard />
       </ResponsiveLayout>
     </AdminProtection>
