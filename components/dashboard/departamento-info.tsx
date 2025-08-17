@@ -675,14 +675,25 @@ export function DepartamentoInfo({
           style={{ height: "520px" }}
         >
           <CardHeader className="pb-3 flex-shrink-0">
-            <CardTitle className="text-lg flex items-center gap-2">
-              {responsavel.isGerente ? (
-                <Building className="h-5 w-5 text-amber-400" />
-              ) : (
-                <User className="h-5 w-5 text-blue-400" />
-              )}
-              {responsavel.nome}
-            </CardTitle>
+            <div className="flex w-full items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                {responsavel.isGerente ? (
+                  <Building className="h-5 w-5 text-amber-400" />
+                ) : (
+                  <User className="h-5 w-5 text-blue-400" />
+                )}
+                {responsavel.nome}
+              </CardTitle>
+              <Link href={`/programacao?consultor=${encodeURIComponent(responsavel.nome)}`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full border-blue-600 text-blue-700 hover:bg-blue-50"
+                >
+                  Programação
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden flex flex-col">
             <div className="flex-shrink-0 space-y-3">
