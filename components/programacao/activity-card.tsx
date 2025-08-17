@@ -1,5 +1,4 @@
 import { getDueDate, formatDueLabel, getCardStyle } from "@/lib/programacao-utils";
-import { StatusChip } from "./status-chip";
 
 interface ActivityCardProps {
   activity: any;
@@ -26,7 +25,6 @@ export function ActivityCard({ activity, index }: ActivityCardProps) {
             >
               {activity.titulo || activity.os}
             </span>
-            <StatusChip value={activity.status} />
           </div>
           <div
             className="mt-1 text-[11px] text-gray-600 truncate"
@@ -45,9 +43,15 @@ export function ActivityCard({ activity, index }: ActivityCardProps) {
               {dueLabel}
             </span>
             <span>
-              {activity.data ||
-                activity.prazo ||
-                ""}
+              {activity.data ? new Date(activity.data).toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+              }) : activity.prazo ? new Date(activity.prazo).toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+              }) : ""}
             </span>
           </div>
         </div>

@@ -1,3 +1,5 @@
+import { Calendar, CalendarDays } from "lucide-react";
+
 interface ProgramacaoFiltersProps {
   departments: { key: string; label: string }[];
   selectedDepartment: string | null;
@@ -7,6 +9,10 @@ interface ProgramacaoFiltersProps {
   kpis: { analise: number; execucao: number; atrasados: number };
   totalItems: number;
   showDepartmentFilter: boolean;
+  dateFilter: string | null;
+  onDateFilterChange: (filter: string | null) => void;
+  todayCount: number;
+  weekCount: number;
 }
 
 export function ProgramacaoFilters({
@@ -18,57 +24,82 @@ export function ProgramacaoFilters({
   kpis,
   totalItems,
   showDepartmentFilter,
+  dateFilter,
+  onDateFilterChange,
+  todayCount,
+  weekCount,
 }: ProgramacaoFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 justify-between">
-      {showDepartmentFilter && departments.length > 1 && (
-        <div className="flex items-center">
+      <div className="flex flex-col gap-2">
+        {showDepartmentFilter && departments.length > 1 && (
+          <div className="flex items-center">
+            <label
+              className="text-xs text-gray-600 mr-2"
+              htmlFor="deptSelect"
+            >
+              Departamento:
+            </label>
+            <select
+              id="deptSelect"
+              className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700"
+              value={selectedDepartment || ""}
+              onChange={(e) => onDepartmentChange(e.target.value || null)}
+            >
+              <option value="">Todos</option>
+              {departments.map((d) => (
+                <option key={d.key} value={d.key}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-1">
           <label
-            className="text-xs text-gray-600 mr-2"
-            htmlFor="deptSelect"
+            className="text-xs text-gray-600"
+            htmlFor="statusSelect"
           >
-            Departamento:
+            Status:
           </label>
           <select
-            id="deptSelect"
+            id="statusSelect"
             className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700"
-            value={selectedDepartment || ""}
-            onChange={(e) => onDepartmentChange(e.target.value || null)}
+            value={statusFilter}
+            onChange={(e) => onStatusFilterChange(e.target.value)}
           >
-            <option value="">Todos</option>
-            {departments.map((d) => (
-              <option key={d.key} value={d.key}>
-                {d.label}
-              </option>
-            ))}
+            <option value="execucao">Em execução ({kpis.execucao})</option>
+            <option value="atrasados">Atrasados ({kpis.atrasados})</option>
           </select>
         </div>
-      )}
+      </div>
       
-      <div className="flex items-center gap-2">
-        <label
-          className="text-xs text-gray-600"
-          htmlFor="statusSelect"
-        >
-          Status:
-        </label>
-        <select
-          id="statusSelect"
-          className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700"
-          value={statusFilter}
-          onChange={(e) => onStatusFilterChange(e.target.value)}
-        >
-          <option value="all">Todos ({totalItems})</option>
-          <option value="analise">Análise ({kpis.analise})</option>
-          <option value="execucao">Em execução ({kpis.execucao})</option>
-          <option value="atrasados">Atrasados ({kpis.atrasados})</option>
-        </select>
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-gray-600">Data:</span>
         <button
           type="button"
-          onClick={() => onStatusFilterChange("all")}
-          className="px-2 py-1 rounded-md text-xs border bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
+          onClick={() => onDateFilterChange(dateFilter === "today" ? null : "today")}
+          className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs border transition-colors ${
+            dateFilter === "today"
+              ? "bg-blue-600 text-white border-blue-600"
+              : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
+          }`}
         >
-          Limpar
+          <Calendar className="w-3 h-3" />
+          Hoje ({todayCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => onDateFilterChange(dateFilter === "week" ? null : "week")}
+          className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs border transition-colors ${
+            dateFilter === "week"
+              ? "bg-green-600 text-white border-green-600"
+              : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
+          }`}
+        >
+          <CalendarDays className="w-3 h-3" />
+          Esta Semana ({weekCount})
         </button>
       </div>
     </div>

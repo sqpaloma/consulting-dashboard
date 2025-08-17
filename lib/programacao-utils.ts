@@ -165,3 +165,47 @@ export function getCardStyle(status: string): string {
   }
   return "bg-gray-50 border border-gray-200 border-l-4 border-l-gray-400";
 }
+
+export function getStartOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day;
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function getEndOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + 6;
+  d.setDate(diff);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+export function getTodayItems(items: any[]): any[] {
+  const today = startOfDay(new Date());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  return items.filter((item) => {
+    const dueDate = getDueDate(item);
+    if (!dueDate) return false;
+    const itemDate = startOfDay(dueDate);
+    return itemDate.getTime() === today.getTime();
+  });
+}
+
+export function getThisWeekItems(items: any[]): any[] {
+  const today = new Date();
+  const startWeek = getStartOfWeek(today);
+  const endWeek = getEndOfWeek(today);
+  
+  return items.filter((item) => {
+    const dueDate = getDueDate(item);
+    if (!dueDate) return false;
+    const itemDate = dueDate.getTime();
+    return itemDate >= startWeek.getTime() && itemDate <= endWeek.getTime();
+  });
+}

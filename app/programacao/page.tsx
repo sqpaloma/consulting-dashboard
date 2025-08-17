@@ -18,6 +18,8 @@ import {
   isExecucaoStatus,
   getDueDate,
   startOfDay,
+  getTodayItems,
+  getThisWeekItems,
 } from "@/lib/programacao-utils";
 
 export default function ProgramacaoPage() {
@@ -28,14 +30,15 @@ export default function ProgramacaoPage() {
   );
   const [statusFilter, setStatusFilter] = useState<string>(
     typeof window !== "undefined"
-      ? localStorage.getItem("programacao:statusFilter") || "analise"
-      : "analise"
+      ? localStorage.getItem("programacao:statusFilter") || "execucao"
+      : "execucao"
   );
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
     null
   );
   const [databaseItems, setDatabaseItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [dateFilter, setDateFilter] = useState<string | null>(null);
 
   // Restaurar consultor salvo
   useEffect(() => {
@@ -56,8 +59,8 @@ export default function ProgramacaoPage() {
 
   // Sanitiza filtro salvo para os permitidos
   useEffect(() => {
-    const allowed = new Set(["all", "analise", "execucao", "atrasados"]);
-    if (!allowed.has(statusFilter)) setStatusFilter("analise");
+    const allowed = new Set(["execucao", "atrasados"]);
+    if (!allowed.has(statusFilter)) setStatusFilter("execucao");
     if (statusFilter === "execução") setStatusFilter("execucao");
   }, []);
 
@@ -191,22 +194,32 @@ export default function ProgramacaoPage() {
     return { analise, execucao, atrasados };
   }, [deptItems]);
 
-  // Aplicar filtro ativo (analise | execucao | atrasados)
+  // Aplicar filtro ativo (analise | execucao | atrasados) e filtro de data
   const visibleItems = useMemo(() => {
-    if (statusFilter === "all") return deptItems;
+    let filtered = deptItems;
+
+    // Aplicar filtro de status
     if (statusFilter === "analise")
-      return deptItems.filter((i) => isAnaliseStatus(i.status));
-    if (statusFilter === "execucao")
-      return deptItems.filter((i) => isExecucaoStatus(i.status));
-    if (statusFilter === "atrasados")
-      return deptItems.filter((i) => {
+      filtered = filtered.filter((i) => isAnaliseStatus(i.status));
+    else if (statusFilter === "execucao")
+      filtered = filtered.filter((i) => isExecucaoStatus(i.status));
+    else if (statusFilter === "atrasados")
+      filtered = filtered.filter((i) => {
         const d = getDueDate(i);
         return d
           ? startOfDay(d).getTime() < startOfDay(new Date()).getTime()
           : false;
       });
-    return deptItems;
-  }, [deptItems, statusFilter]);
+
+    // Aplicar filtro de data
+    if (dateFilter === "today") {
+      filtered = getTodayItems(filtered);
+    } else if (dateFilter === "week") {
+      filtered = getThisWeekItems(filtered);
+    }
+
+    return filtered;
+  }, [deptItems, statusFilter, dateFilter]);
 
   // Se usuário não for gerente/admin, garantir que não há seleção de departamento persistida
   useEffect(() => {
@@ -233,13 +246,19 @@ export default function ProgramacaoPage() {
   }, [visibleItems, selectedConsultant, team]);
 
   const columns = useMemo(() => {
-    return [...team].sort((a, b) => {
-      const ca = (itemsByMechanic[a] || []).length;
-      const cb = (itemsByMechanic[b] || []).length;
-      if (cb !== ca) return cb - ca;
-      return a.localeCompare(b);
-    });
+    return [...team]
+      .filter((mechanic) => (itemsByMechanic[mechanic] || []).length > 0)
+      .sort((a, b) => {
+        const ca = (itemsByMechanic[a] || []).length;
+        const cb = (itemsByMechanic[b] || []).length;
+        if (cb !== ca) return cb - ca;
+        return a.localeCompare(b);
+      });
   }, [team, itemsByMechanic]);
+
+  // Items for today and this week (for counts)
+  const todayItems = useMemo(() => getTodayItems(deptItems), [deptItems]);
+  const thisWeekItems = useMemo(() => getThisWeekItems(deptItems), [deptItems]);
 
   const columnCount = Math.max(columns.length, 1);
 
@@ -267,7 +286,7 @@ export default function ProgramacaoPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base text-gray-800">
                   {selectedConsultant
-                    ? `Consultor: ${selectedConsultant}`
+                    ? ""
                     : isManagerOrAbove
                       ? "Selecione um consultor para ver a programação"
                       : "Carregando sua programação..."}
@@ -284,6 +303,10 @@ export default function ProgramacaoPage() {
                     kpis={kpis}
                     totalItems={deptItems.length}
                     showDepartmentFilter={departments.length > 1 && isManagerOrAbove}
+                    dateFilter={dateFilter}
+                    onDateFilterChange={setDateFilter}
+                    todayCount={todayItems.length}
+                    weekCount={thisWeekItems.length}
                   />
                 </div>
               )}
