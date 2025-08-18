@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, X, Building } from "lucide-react";
+import { X } from "lucide-react";
 import {
   useUniqueResponsaveis,
   useDashboardData,
@@ -129,35 +129,15 @@ export function ResponsavelFilter({
         onValueChange={handleFilterByResponsavel}
         disabled={isLoading}
       >
-        <SelectTrigger className="w-64 h-10 text-sm bg-white/10 border-white/20 text-white placeholder:text-white/70 hover:bg-white/20 transition-colors">
-          <User className="h-4 w-4 mr-2" />
+        <SelectTrigger className="w-64 h-10 text-sm border-white/30 text-white placeholder:text-white/80 hover:bg-white/30 transition-colors bg-white/20">
           <SelectValue placeholder="Filtrar por..." />
         </SelectTrigger>
         <SelectContent className="max-h-48 overflow-y-auto">
-          {responsaveis.map((responsavel) => {
-            const responsavelInfo = RESPONSAVEIS.find(r => r.nome.toLowerCase() === responsavel.toLowerCase());
-            const departamento = getDepartamentoByResponsavel(responsavel);
-            
-            return (
-              <SelectItem key={responsavel} value={responsavel}>
-                <div className="flex items-center space-x-2">
-                  {responsavelInfo?.isGerente ? (
-                    <Building className="h-4 w-4 text-amber-600" />
-                  ) : (
-                    <User className="h-4 w-4 text-blue-600" />
-                  )}
-                  <div className="flex flex-col">
-                    <span className="font-medium">{responsavel}</span>
-                    {responsavelInfo && (
-                      <span className="text-xs text-gray-500">
-                        {responsavelInfo.isGerente ? 'Gerente' : departamento?.nome || responsavelInfo.departamento}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </SelectItem>
-            );
-          })}
+          {responsaveis.map((responsavel) => (
+            <SelectItem key={responsavel} value={responsavel}>
+              {responsavel}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
