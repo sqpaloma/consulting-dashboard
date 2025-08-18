@@ -80,14 +80,8 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
   return (
     <Card className="bg-white h-full flex flex-col overflow-hidden">
       <CardHeader className="pb-1">
-        <CardTitle className="text-sm text-gray-800 flex items-center">
-          <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+        <CardTitle className="text-sm text-gray-800">
           Painel de Distribuição
-          <div className="ml-auto flex space-x-1">
-            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-row">

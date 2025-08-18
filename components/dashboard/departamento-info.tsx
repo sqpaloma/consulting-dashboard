@@ -676,15 +676,20 @@ export function DepartamentoInfo({
         >
           <CardHeader className="pb-3 flex-shrink-0">
             <div className="flex w-full items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-lg flex items-center gap-3">
                 {responsavel.isGerente ? (
                   <Building className="h-5 w-5 text-amber-400" />
                 ) : (
                   <User className="h-5 w-5 text-blue-400" />
                 )}
                 {responsavel.nome}
+                <span className="text-lg font-bold text-blue-600">
+                  {totalItens}
+                </span>
               </CardTitle>
-              <Link href={`/programacao?consultor=${encodeURIComponent(responsavel.nome)}`}>
+              <Link
+                href={`/programacao?consultor=${encodeURIComponent(responsavel.nome)}`}
+              >
                 <Button
                   size="sm"
                   variant="outline"
@@ -697,45 +702,31 @@ export function DepartamentoInfo({
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden flex flex-col">
             <div className="flex-shrink-0 space-y-3">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">
-                  {responsavel.isGerente ? "Posição" : "Departamento"}:
-                </p>
-                <p className="font-medium text-gray-900">
-                  {responsavel.isGerente
-                    ? "Gerente Geral"
-                    : departamento?.nome || responsavel.departamento}
-                </p>
-              </div>
-
-              {departamento && !responsavel.isGerente && (
+              {responsavel.isGerente && (
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Descrição:</p>
-                  <p className="text-sm text-gray-700">
-                    {departamento.descricao}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Posição:</p>
+                  <p className="font-medium text-gray-900">Gerente Geral</p>
                 </div>
               )}
-
-              <div className="pt-2 border-t border-gray-200">
-                <div className="flex items-center justify-center">
-                  <p className="text-xs text-gray-600 mr-2">Total de Itens:</p>
-                  <p className="text-lg font-bold text-blue-600">
-                    {totalItens}
-                  </p>
-                </div>
-              </div>
             </div>
 
             {!responsavel.isGerente && teamList.length > 0 && (
               <div className="flex-1 pt-2 overflow-hidden">
-                <Accordion type="single" collapsible className="w-full h-full">
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="w-full h-full"
+                  defaultValue="team"
+                >
                   <AccordionItem value="team" className="h-full">
                     <AccordionTrigger className="text-sm no-underline hover:no-underline [&[data-state=open]]:no-underline">
-                      Ver mecânicos do time
+                      Time
                     </AccordionTrigger>
-                    <AccordionContent className="h-full overflow-hidden">
-                      <div className="h-full overflow-y-auto">
+                    <AccordionContent className="overflow-hidden">
+                      <div
+                        style={{ maxHeight: "300px" }}
+                        className="overflow-y-auto"
+                      >
                         {responsavel.nome.toLowerCase().includes("paloma") ? (
                           <div className="space-y-4">
                             <DepartmentSection
