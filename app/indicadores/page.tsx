@@ -27,11 +27,7 @@ import {
   Filter,
   Download,
   Trash2,
-  RefreshCw,
-  CheckCircle,
-  AlertCircle,
   Loader2,
-  Database,
   MoreHorizontal,
 } from "lucide-react";
 import {
@@ -102,12 +98,6 @@ export function ProductionDashboard() {
     apontamentos: [],
   });
 
-  const [persistedInfo, setPersistedInfo] = useState<{
-    uploadedAt: string;
-    filesCount: number;
-    totalRecords: number;
-  } | null>(null);
-
   // Dados dos setores (memoizado para performance)
   const setores = useMemo(
     () => [
@@ -165,21 +155,7 @@ export function ProductionDashboard() {
           setFilters(parsedData.filters);
           setDataLoaded(true);
 
-          const totalRecords = Object.values(parsedData.processedData).reduce(
-            (acc, arr) => acc + arr.length,
-            0
-          );
-
-          setPersistedInfo({
-            uploadedAt: parsedData.uploadedAt,
-            filesCount: Object.values(parsedData.filesInfo).filter(Boolean)
-              .length,
-            totalRecords,
-          });
-
-          toast.success("Dados carregados", {
-            description: `${totalRecords} registros carregados do armazenamento local`,
-          });
+          // Dados carregados silenciosamente sem notificação
         }
       } catch (error) {
         console.error("Erro ao carregar dados salvos:", error);
@@ -277,7 +253,6 @@ export function ProductionDashboard() {
   const processSheetData = useCallback((data: any[], type: string) => {
     if (data.length < 2) return [];
 
-    const headers = data[0];
     const rows = data.slice(1);
 
     const processedRows = rows
@@ -353,7 +328,6 @@ export function ProductionDashboard() {
         totalProcessed += testesAprovadosData.length;
       }
 
-
       newProcessedData.apontamentos = [
         ...newProcessedData.montagens,
         ...newProcessedData.desmontagens,
@@ -363,15 +337,8 @@ export function ProductionDashboard() {
       setProcessedData(newProcessedData);
       setDataLoaded(true);
 
-      const filesCount = Object.values(uploadData).filter(Boolean).length;
-      setPersistedInfo({
-        uploadedAt: new Date().toISOString(),
-        filesCount,
-        totalRecords: totalProcessed,
-      });
-
       toast.success("Dados processados com sucesso!", {
-        description: `${totalProcessed} registros processados de ${filesCount} arquivo(s)`,
+        description: `${totalProcessed} registros processados de ${uploadedFilesCount} arquivo(s)`,
       });
     } catch (error) {
       console.error("Erro ao processar dados:", error);
@@ -475,7 +442,6 @@ export function ProductionDashboard() {
         testesAprovados: null,
       });
       setDataLoaded(false);
-      setPersistedInfo(null);
 
       toast.success("Dados limpos", {
         description: "Todos os dados foram removidos com sucesso",
@@ -551,18 +517,19 @@ export function ProductionDashboard() {
                 </div>
               ))}
             </div>
-            
+
             {hasUploadedFiles && (
               <div className="text-xs text-gray-500 text-center">
                 {uploadedFilesCount} arquivo(s) selecionado(s)
               </div>
             )}
-            
+
             <Button
               onClick={handleProcessData}
               disabled={!hasUploadedFiles || isProcessing}
               size="sm"
-              className="w-full mt-4"
+              variant="outline"
+              className="w-full mt-4 text-blue-700 border-blue-400 hover:bg-blue-50"
             >
               {isProcessing ? (
                 <>
@@ -596,7 +563,10 @@ export function ProductionDashboard() {
                       <Download className="h-3 w-3 mr-2" />
                       Exportar Excel
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleClearData} className="text-red-600">
+                    <DropdownMenuItem
+                      onClick={handleClearData}
+                      className="text-red-600"
+                    >
                       <Trash2 className="h-3 w-3 mr-2" />
                       Limpar Dados
                     </DropdownMenuItem>
@@ -624,9 +594,7 @@ export function ProductionDashboard() {
 
             <Select
               value={filters.executante}
-              onValueChange={(value) =>
-                handleFilterChange("executante", value)
-              }
+              onValueChange={(value) => handleFilterChange("executante", value)}
               disabled={!filters.setor}
             >
               <SelectTrigger className="h-9">
@@ -640,7 +608,6 @@ export function ProductionDashboard() {
                 ))}
               </SelectContent>
             </Select>
-
           </CardContent>
         </Card>
       </div>
@@ -652,19 +619,19 @@ export function ProductionDashboard() {
             <TabsList className="grid w-full grid-cols-3 h-14 bg-gray-50 rounded-none">
               <TabsTrigger
                 value="producao"
-                className="h-12 text-sm font-medium"
+                className="h-12 text-sm font-medium data-[state=inactive]:text-blue-600"
               >
                 Produção
               </TabsTrigger>
               <TabsTrigger
                 value="eficiencia"
-                className="h-12 text-sm font-medium"
+                className="h-12 text-sm font-medium data-[state=inactive]:text-blue-600"
               >
                 Eficiência
               </TabsTrigger>
               <TabsTrigger
                 value="apontamentos"
-                className="h-12 text-sm font-medium"
+                className="h-12 text-sm font-medium data-[state=inactive]:text-blue-600"
               >
                 Apontamentos
               </TabsTrigger>
