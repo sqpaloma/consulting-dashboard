@@ -315,4 +315,44 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }),
+
+  // ===== TABELAS DE INDICADORES =====
+  indicadoresSession: defineTable({
+    sessionId: v.string(),
+    filters: v.object({
+      executante: v.string(),
+      setor: v.string(),
+      orcamento: v.string(),
+    }),
+    filesInfo: v.object({
+      desmontagens: v.optional(v.object({
+        name: v.string(),
+        size: v.number(),
+        lastModified: v.number(),
+      })),
+      montagens: v.optional(v.object({
+        name: v.string(),
+        size: v.number(),
+        lastModified: v.number(),
+      })),
+      testesAprovados: v.optional(v.object({
+        name: v.string(),
+        size: v.number(),
+        lastModified: v.number(),
+      })),
+    }),
+    uploadedBy: v.string(),
+    uploadedAt: v.string(),
+    totalRecords: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  indicadoresData: defineTable({
+    sessionId: v.string(),
+    dataType: v.string(), // "montagens", "desmontagens", "testes"
+    data: v.array(v.any()),
+    chunkIndex: v.number(),
+    createdAt: v.number(),
+  }).index("by_session", ["sessionId"]).index("by_session_type", ["sessionId", "dataType"]),
 });

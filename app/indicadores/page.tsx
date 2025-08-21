@@ -3,6 +3,8 @@
 import { ResponsiveLayout } from "@/components/responsive-layout";
 import { AdminProtection } from "@/components/admin-protection";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +41,7 @@ import {
 import { SetorCharts } from "@/components/dashboard/setor-charts";
 import { EfficiencyCharts } from "@/components/dashboard/efficiency-charts";
 import { ApontamentosCharts } from "@/components/dashboard/apontamentos-charts";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { toast } from "sonner";
 
 // Interfaces duplicadas removidas
@@ -74,9 +77,21 @@ interface PersistedData {
   };
 }
 
-const STORAGE_KEY = "indicadores_data";
 
 export function ProductionDashboard() {
+  // Hooks do Convex
+  const indicadoresSession = useQuery(api.indicadores.getIndicadoresSession);
+  const indicadoresData = useQuery(
+    api.indicadores.getIndicadoresData,
+    indicadoresSession?.sessionId 
+      ? { sessionId: indicadoresSession.sessionId }
+      : "skip"
+  );
+  const saveIndicadores = useMutation(api.indicadores.saveIndicadores);
+  const clearIndicadores = useMutation(api.indicadores.clearIndicadores);
+  
+  // Hook para obter usuário atual
+  const { user } = useCurrentUser();
   const [uploadData, setUploadData] = useState<UploadData>({
     desmontagens: null,
     montagens: null,
@@ -144,71 +159,15 @@ export function ProductionDashboard() {
     []
   );
 
-  // Carrega dados salvos no localStorage ao inicializar
+  // Carrega dados salvos do Convex ao inicializar
   useEffect(() => {
-    const loadPersistedData = () => {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsedData: PersistedData = JSON.parse(saved);
-          setProcessedData(parsedData.processedData);
-          setFilters(parsedData.filters);
-          setDataLoaded(true);
-
-          // Dados carregados silenciosamente sem notificação
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dados salvos:", error);
-        toast.error("Erro ao carregar dados", {
-          description:
-            "Não foi possível carregar os dados salvos anteriormente",
-        });
-      }
-    };
-
-    loadPersistedData();
-  }, [toast]);
-
-  // Salva dados no localStorage sempre que processedData ou filters mudarem
-  useEffect(() => {
-    if (
-      dataLoaded &&
-      (processedData.montagens.length > 0 ||
-        processedData.desmontagens.length > 0 ||
-        processedData.testes.length > 0)
-    ) {
-      const dataToSave: PersistedData = {
-        processedData,
-        filters,
-        uploadedAt: new Date().toISOString(),
-        filesInfo: {
-          desmontagens: uploadData.desmontagens
-            ? {
-                name: uploadData.desmontagens.name,
-                size: uploadData.desmontagens.size,
-                lastModified: uploadData.desmontagens.lastModified,
-              }
-            : null,
-          montagens: uploadData.montagens
-            ? {
-                name: uploadData.montagens.name,
-                size: uploadData.montagens.size,
-                lastModified: uploadData.montagens.lastModified,
-              }
-            : null,
-          testesAprovados: uploadData.testesAprovados
-            ? {
-                name: uploadData.testesAprovados.name,
-                size: uploadData.testesAprovados.size,
-                lastModified: uploadData.testesAprovados.lastModified,
-              }
-            : null,
-        },
-      };
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    if (indicadoresSession && indicadoresData && typeof indicadoresData === 'object' && 'montagens' in indicadoresData) {
+      setProcessedData(indicadoresData as ProcessedData);
+      setFilters(indicadoresSession.filters);
+      setDataLoaded(true);
     }
-  }, [processedData, filters, dataLoaded, uploadData]);
+  }, [indicadoresSession, indicadoresData]);
+
 
   const handleFileUpload = useCallback(
     (type: keyof UploadData, file: File | null) => {
@@ -337,6 +296,38 @@ export function ProductionDashboard() {
       setProcessedData(newProcessedData);
       setDataLoaded(true);
 
+      // Salvar no Convex
+      if (user) {
+        await saveIndicadores({
+          processedData: newProcessedData,
+          filters,
+          filesInfo: {
+            desmontagens: uploadData.desmontagens
+              ? {
+                  name: uploadData.desmontagens.name,
+                  size: uploadData.desmontagens.size,
+                  lastModified: uploadData.desmontagens.lastModified,
+                }
+              : undefined,
+            montagens: uploadData.montagens
+              ? {
+                  name: uploadData.montagens.name,
+                  size: uploadData.montagens.size,
+                  lastModified: uploadData.montagens.lastModified,
+                }
+              : undefined,
+            testesAprovados: uploadData.testesAprovados
+              ? {
+                  name: uploadData.testesAprovados.name,
+                  size: uploadData.testesAprovados.size,
+                  lastModified: uploadData.testesAprovados.lastModified,
+                }
+              : undefined,
+          },
+          uploadedBy: user.name || user.email,
+        });
+      }
+
       toast.success("Dados processados com sucesso!", {
         description: `${totalProcessed} registros processados de ${uploadedFilesCount} arquivo(s)`,
       });
@@ -422,9 +413,9 @@ export function ProductionDashboard() {
   };
 
   // Função para limpar todos os dados
-  const handleClearData = () => {
+  const handleClearData = async () => {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      await clearIndicadores();
       setProcessedData({
         montagens: [],
         desmontagens: [],
@@ -576,6 +567,22 @@ export function ProductionDashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* Informação do último upload */}
+            {indicadoresSession && (
+              <div className="text-xs text-gray-500 mb-3 p-2 bg-blue-50 rounded">
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">Último upload:</span>
+                  <span>{indicadoresSession.uploadedBy}</span>
+                </div>
+                <div className="text-gray-400">
+                  {new Date(indicadoresSession.uploadedAt).toLocaleString('pt-BR')}
+                </div>
+                <div className="text-gray-400">
+                  {indicadoresSession.totalRecords} registros
+                </div>
+              </div>
+            )}
+            
             <Select
               value={filters.setor}
               onValueChange={(value) => handleFilterChange("setor", value)}
