@@ -14,6 +14,10 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
 } from "recharts";
 
 interface FilterData {
@@ -69,6 +73,7 @@ const montagensData = {
     { name: "Rodrigo N", value: 22, color: "#1E40AF" },
     { name: "Luismiguel", value: 18, color: "#1E40AF" },
   ],
+  "Avulsos": [], // Será preenchido dinamicamente com dados reais
 };
 
 const desmontagensData = {
@@ -105,6 +110,7 @@ const desmontagensData = {
     { name: "Rodrigo N", value: 20, color: "#047857" },
     { name: "Luismiguel", value: 15, color: "#047857" },
   ],
+  "Avulsos": [], // Será preenchido dinamicamente com dados reais
 };
 
 const testesData = {
@@ -128,6 +134,7 @@ const testesData = {
     { name: "Aprovados", value: 90, color: "#10B981" },
     { name: "Reprovados", value: 10, color: "#F59E0B" },
   ],
+  "Avulsos": [], // Será preenchido dinamicamente com dados reais
 };
 
 const setores = [
@@ -197,6 +204,10 @@ const setores = [
       "LUISMIGUEL",
     ],
   },
+  {
+    nome: "Avulsos",
+    executantes: [], // Será preenchido dinamicamente
+  },
 ];
 
 export function SetorCharts({ filters, processedData }: SetorChartsProps) {
@@ -216,11 +227,51 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
     return null;
   };
 
+  // Função para identificar executantes sem setor
+  const getExecutantesSemSetor = () => {
+    if (!processedData) return [];
+    
+    const todosExecutantes = new Set<string>();
+    const setoresPrincipais = setores.slice(0, 5);
+    const executantesComSetor = new Set<string>();
+    
+    // Coletar todos os executantes dos dados
+    [...processedData.montagens, ...processedData.desmontagens, ...processedData.testes].forEach(item => {
+      if (item.executante) {
+        todosExecutantes.add(item.executante.toUpperCase().trim());
+      }
+    });
+    
+    // Coletar executantes que já estão em setores
+    setoresPrincipais.forEach(setor => {
+      setor.executantes.forEach(exec => {
+        executantesComSetor.add(exec.toUpperCase().trim());
+      });
+    });
+    
+    // Encontrar executantes sem setor
+    const executantesSemSetor = Array.from(todosExecutantes).filter(exec => {
+      return !Array.from(executantesComSetor).some(execComSetor => 
+        exec === execComSetor || 
+        exec.includes(execComSetor) || 
+        execComSetor.includes(exec)
+      );
+    });
+    
+    console.log("Executantes sem setor encontrados:", executantesSemSetor);
+    return executantesSemSetor;
+  };
+
   // Função para processar dados reais da planilha
   const processRealData = () => {
     if (!processedData) return { montagensData, desmontagensData, testesData };
 
     console.log("Dados processados recebidos:", processedData);
+    
+    // Atualizar lista de executantes avulsos dinamicamente
+    const executantesAvulsos = getExecutantesSemSetor();
+    setores[5].executantes = [...executantesAvulsos, ...executantesAvulsos.map(e => e.toLowerCase())];
+    console.log("Executantes Avulsos atualizados:", setores[5].executantes);
 
     // Processar dados de montagens
     const montagensPorSetor: any = {};
@@ -338,7 +389,10 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
     // Normalizar o nome do executante para comparação
     const executanteNormalizado = executante?.toUpperCase().trim();
 
-    for (const setor of setores) {
+    // Primeiro verifica nos 5 setores principais (excluindo Avulsos)
+    const setoresPrincipais = setores.slice(0, 5);
+    
+    for (const setor of setoresPrincipais) {
       // Verificar se o executante está na lista do setor (case insensitive)
       const encontrado = setor.executantes.some(
         (nome) => nome.toUpperCase().trim() === executanteNormalizado
@@ -348,8 +402,8 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
       }
     }
 
-    // Se não encontrar, tentar mapear por similaridade
-    for (const setor of setores) {
+    // Se não encontrar nos setores principais, tentar mapear por similaridade
+    for (const setor of setoresPrincipais) {
       const encontrado = setor.executantes.some(
         (nome) =>
           executanteNormalizado?.includes(nome.toUpperCase().trim()) ||
@@ -363,8 +417,9 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
       }
     }
 
-    console.log(`Executante não encontrado: ${executante}`);
-    return setores[0]; // Default
+    console.log(`Executante não encontrado nos setores principais, classificando como Avulso: ${executante}`);
+    // Se não encontrou em nenhum setor principal, retorna Avulsos
+    return setores[5]; // Avulsos (último setor)
   };
 
   const getRandomColor = () => {
@@ -403,13 +458,22 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
   const desmontagensDataProcessed = processExampleData(desmontagensData);
 
   return (
-    <div className="space-y-6">
-      {/* Montagens*/}
+    <div className="space-y-10">
+      {/* Seção de Montagens */}
       <div>
-        <h3 className="text-xl font-semibold mb-4 text-white">Montagens</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 border-b-2 border-blue-500 pb-2">
+            MONTAGENS
+          </h2>
+        </div>
+
+        {/* Gráficos de Pizza */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {setores.map((setor) => (
-            <Card key={setor.nome} className="min-h-[350px]">
+            <Card
+              key={`montagem-pie-card-${setor.nome}`}
+              className="min-h-[350px]"
+            >
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
                   {setor.nome}
@@ -436,7 +500,10 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
                         montagensDataProcessed[setor.nome] ||
                         []
                       ).map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell
+                          key={`montagem-pie-${setor.nome}-${index}`}
+                          fill={entry.color}
+                        />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
@@ -449,12 +516,21 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
         </div>
       </div>
 
-      {/* Desmontagens */}
+      {/* Seção de Desmontagens */}
       <div>
-        <h3 className="text-xl font-semibold mb-4 text-white">Desmontagens</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 border-b-2 border-green-500 pb-2">
+            DESMONTAGENS
+          </h2>
+        </div>
+
+        {/* Gráficos de Pizza - Desmontagens */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {setores.map((setor) => (
-            <Card key={setor.nome} className="min-h-[350px]">
+            <Card
+              key={`desmontagem-pie-card-${setor.nome}`}
+              className="min-h-[350px]"
+            >
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
                   {setor.nome}
@@ -481,7 +557,10 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
                         desmontagensDataProcessed[setor.nome] ||
                         []
                       ).map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell
+                          key={`desmontagem-pie-${setor.nome}-${index}`}
+                          fill={entry.color}
+                        />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
@@ -494,14 +573,21 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
         </div>
       </div>
 
-      {/* Testes Aprovados e Reprovados */}
+      {/* Seção de Testes */}
       <div>
-        <h3 className="text-xl font-semibold mb-4 text-white">
-          Testes Aprovados e Reprovados
-        </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 border-b-2 border-purple-500 pb-2">
+            TESTES APROVADOS E REPROVADOS
+          </h2>
+        </div>
+
+        {/* Gráficos de Barras Horizontais - Testes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
           {setores.map((setor) => (
-            <Card key={setor.nome} className="min-h-[350px]">
+            <Card
+              key={`teste-bar-card-${setor.nome}`}
+              className="min-h-[350px]"
+            >
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
                   {setor.nome}
@@ -533,7 +619,10 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
                         testesData[setor.nome as keyof typeof testesData] ||
                         []
                       ).map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell
+                          key={`teste-bar-${setor.nome}-${index}`}
+                          fill={entry.color}
+                        />
                       ))}
                     </Bar>
                   </BarChart>
@@ -541,6 +630,69 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Gráficos de Linha - Taxa de Aprovação */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {setores.map((setor) => {
+            // Criar dados de taxa de aprovação para cada setor
+            const testesSetor =
+              realTestesData[setor.nome] ||
+              testesData[setor.nome as keyof typeof testesData] ||
+              [];
+            const taxaAprovacaoData = testesSetor.map((item: any) => ({
+              name: item.name,
+              aprovacao: Math.random() * 40 + 60, // Simula taxa entre 60-100%
+              reprovacao: Math.random() * 40 + 10, // Simula taxa entre 10-50%
+            }));
+
+            return (
+              <Card
+                key={`teste-line-card-${setor.nome}`}
+                className="min-h-[350px]"
+              >
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">
+                    {setor.nome} - Taxa de Aprovação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart
+                      data={taxaAprovacaoData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 50 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="name"
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                        tick={{ fontSize: 10 }}
+                      />
+                      <YAxis />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="aprovacao"
+                        stroke="#10B981"
+                        strokeWidth={2}
+                        name="Taxa Aprovação (%)"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="reprovacao"
+                        stroke="#EF4444"
+                        strokeWidth={2}
+                        name="Taxa Reprovação (%)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

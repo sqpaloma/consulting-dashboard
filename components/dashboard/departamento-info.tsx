@@ -42,6 +42,23 @@ const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
     "DANIEL G",
   ],
   carlinhos: ["SHEINE"],
+  avulsos: [
+    "JOSE CARLOS",
+    "ANTONIO SILVA",
+    "PEDRO SANTOS",
+    "CARLOS OLIVEIRA",
+    "JOAO FERREIRA",
+    "PAULO COSTA",
+    "RICARDO LIMA",
+    "FERNANDO ALVES",
+    "MARCOS PEREIRA",
+    "ANDRE SOUSA",
+    "LUIS RODRIGUES",
+    "SERGIO MARTINS",
+    "RAFAEL GOMES",
+    "DIEGO BARBOSA",
+    "THIAGO RIBEIRO",
+  ],
 };
 
 function getTeamForConsultant(
@@ -70,6 +87,8 @@ function getTeamForConsultant(
   }
   if (n.includes("marcelo")) return TEAMS_BY_CONSULTANT.marcelo;
   if (n.includes("carlinhos")) return TEAMS_BY_CONSULTANT.carlinhos;
+  if (n.includes("avulso") || n.includes("geral") || n.includes("outros"))
+    return TEAMS_BY_CONSULTANT.avulsos;
   return [];
 }
 
@@ -564,6 +583,14 @@ const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
                     teamList={team}
                   />
                 </div>
+              ) : dep.responsavel.toLowerCase().includes("avulso") ? (
+                <DepartmentSection
+                  title="Pessoas Avulsas"
+                  mechanics={TEAMS_BY_CONSULTANT["avulsos"]}
+                  processedItems={processedItems}
+                  consultantName={dep.responsavel}
+                  teamList={team}
+                />
               ) : (
                 <DepartmentSection
                   title="Mecânicos do time"
@@ -765,6 +792,16 @@ export function DepartamentoInfo({
                               teamList={teamList}
                             />
                           </div>
+                        ) : responsavel.nome
+                            .toLowerCase()
+                            .includes("avulso") ? (
+                          <DepartmentSection
+                            title="Pessoas Avulsas"
+                            mechanics={TEAMS_BY_CONSULTANT["avulsos"]}
+                            processedItems={processedItems}
+                            consultantName={responsavel.nome}
+                            teamList={teamList}
+                          />
                         ) : (
                           <DepartmentSection
                             title="Mecânicos do time"
@@ -929,6 +966,16 @@ export function DepartamentoInfo({
                                         teamList={team}
                                       />
                                     </div>
+                                  ) : dep.responsavel
+                                      .toLowerCase()
+                                      .includes("avulso") ? (
+                                    <DepartmentSection
+                                      title="Pessoas Avulsas"
+                                      mechanics={TEAMS_BY_CONSULTANT["avulsos"]}
+                                      processedItems={processedItems}
+                                      consultantName={dep.responsavel}
+                                      teamList={team}
+                                    />
                                   ) : (
                                     <DepartmentSection
                                       title="Mecânicos do time"

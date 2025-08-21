@@ -35,9 +35,16 @@ export const login = mutation({
     const isGiovanni =
       (user.email || "").toLowerCase() ===
       "giovanni.gamero@novakgouveia.com.br";
+    const isGabriel =
+      (user.email || "").toLowerCase() === "gabriel.novaes@novakgouveia.com.br";
+    const isPauloSergio =
+      (user.email || "").toLowerCase() === "paulo.sergio@novakgouveia.com.br";
+
     const derivedRole = isGiovanni
       ? "gerente"
-      : user.role || (user.isAdmin ? "admin" : "consultor");
+      : isGabriel || isPauloSergio
+        ? "qualidade_pcp"
+        : user.role || (user.isAdmin ? "admin" : "consultor");
 
     return {
       userId: user._id,
@@ -79,8 +86,18 @@ export const createInitialUser = mutation({
     // Definir papel e admin - Paloma é sempre admin
     const isPaloma = args.email === "paloma.silva@novakgouveia.com.br";
     const isGiovanni = args.email === "giovanni.gamero@novakgouveia.com.br";
+    const isGabriel = args.email === "gabriel.novaes@novakgouveia.com.br";
+    const isPauloSergio = args.email === "paulo.sergio@novakgouveia.com.br";
+
     const role =
-      args.role || (isPaloma ? "admin" : isGiovanni ? "gerente" : "consultor");
+      args.role ||
+      (isPaloma
+        ? "admin"
+        : isGiovanni
+          ? "gerente"
+          : isGabriel || isPauloSergio
+            ? "qualidade_pcp"
+            : "consultor");
     const isAdmin = isPaloma || role === "admin" || args.isAdmin || false;
 
     // Criar usuário
@@ -264,9 +281,18 @@ export const createUserByAdmin = mutation({
     // Definir papel e admin - Paloma é sempre admin
     const isPaloma = args.email === "paloma.silva@novakgouveia.com.br";
     const isGiovanni = args.email === "giovanni.gamero@novakgouveia.com.br";
+    const isGabriel = args.email === "gabriel.novaes@novakgouveia.com.br";
+    const isPauloSergio = args.email === "paulo.sergio@novakgouveia.com.br";
+
     const role =
       args.role ||
-      (args.isAdmin ? "admin" : isGiovanni ? "gerente" : "consultor");
+      (args.isAdmin
+        ? "admin"
+        : isGiovanni
+          ? "gerente"
+          : isGabriel || isPauloSergio
+            ? "qualidade_pcp"
+            : "consultor");
     const isAdmin = isPaloma || role === "admin" || args.isAdmin || false;
 
     // Criar usuário
@@ -464,5 +490,197 @@ export const setupAdmin = mutation({
         userId,
       };
     }
+  },
+});
+
+// Função para inicializar permissões padrão do role qualidade_pcp
+export const initializeQualidadePcpPermissions = mutation({
+  handler: async (ctx) => {
+    // Verificar se já existe permissão para qualidade_pcp
+    const existing = await ctx.db
+      .query("rolePermissions")
+      .withIndex("by_role", (q) => q.eq("role", "qualidade_pcp"))
+      .first();
+
+    if (!existing) {
+      // Criar permissões para qualidade_pcp
+      await ctx.db.insert("rolePermissions", {
+        role: "qualidade_pcp",
+        // Páginas
+        accessDashboard: true,
+        accessChat: true,
+        accessManual: true,
+        accessIndicadores: true, // Acesso à página de indicadores
+        accessAnalise: true,
+        accessSettings: false, // Sem acesso às configurações
+        // Regras de visualização
+        dashboardDataScope: "all", // Pode ver todos os dados
+        dashboardFilterVisible: true,
+        chatDataScope: "all",
+        // Metadados
+        updatedAt: Date.now(),
+      });
+
+      console.log("Permissões inicializadas para role qualidade_pcp");
+      return {
+        success: true,
+        message: "Permissões criadas para qualidade_pcp",
+      };
+    } else {
+      console.log("Permissões já existem para role qualidade_pcp");
+      return { success: false, message: "Permissões já existem" };
+    }
+  },
+});
+
+// Função para criar usuários Gabriel e Paulo Sergio com role qualidade_pcp
+export const createQualidadePcpUsers = mutation({
+  handler: async (ctx) => {
+    const users = [
+      {
+        name: "Gabriel Novaes",
+        email: "gabriel.novaes@novakgouveia.com.br",
+        password: "Gabriel@2024", // Senha temporária - deve ser alterada no primeiro login
+        position: "Analista de Qualidade e PCP",
+        department: "qualidade",
+        role: "qualidade_pcp",
+      },
+      {
+        name: "Paulo Sergio",
+        email: "paulo.sergio@novakgouveia.com.br",
+        password: "Paulo@2024", // Senha temporária - deve ser alterada no primeiro login
+        position: "Analista de Qualidade e PCP",
+        department: "qualidade",
+        role: "qualidade_pcp",
+      },
+    ];
+
+    const results = [];
+
+    for (const userData of users) {
+      // Verificar se o usuário já existe
+      const existingUser = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", userData.email))
+        .first();
+
+      if (existingUser) {
+        console.log(`Usuário ${userData.email} já existe`);
+        results.push({
+          email: userData.email,
+          status: "already_exists",
+          message: "Usuário já existe",
+        });
+        continue;
+      }
+
+      // Hash da senha
+      const hashedPassword = await hashPassword(userData.password);
+
+      // Criar usuário
+      const userId = await ctx.db.insert("users", {
+        name: userData.name,
+        email: userData.email,
+        position: userData.position,
+        department: userData.department,
+        hashedPassword,
+        isAdmin: false,
+        role: userData.role,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // Criar configurações padrão
+      await ctx.db.insert("userSettings", {
+        userId: userId,
+        emailNotifications: true,
+        pushNotifications: true,
+        calendarReminders: true,
+        projectUpdates: true,
+        weeklyReports: false,
+        profileVisibility: "public",
+        dataSharing: false,
+        analyticsTracking: true,
+        theme: "dark",
+        language: "pt-BR",
+        timezone: "America/Sao_Paulo",
+        dateFormat: "DD/MM/YYYY",
+        timeFormat: "24h",
+        autoSave: true,
+        backupFrequency: "daily",
+        sessionTimeout: "30min",
+        updatedAt: Date.now(),
+      });
+
+      console.log(`Usuário ${userData.email} criado com sucesso`);
+      results.push({
+        email: userData.email,
+        status: "created",
+        message: "Usuário criado com sucesso",
+        tempPassword: userData.password,
+      });
+    }
+
+    return {
+      success: true,
+      results: results,
+    };
+  },
+});
+
+// Função para atualizar o role dos usuários Gabriel e Paulo Sergio para qualidade_pcp
+export const updateQualidadePcpUsersRole = mutation({
+  handler: async (ctx) => {
+    const emails = [
+      "gabriel.novaes@novakgouveia.com.br",
+      "paulo.sergio@novakgouveia.com.br",
+    ];
+
+    const results = [];
+
+    for (const email of emails) {
+      // Buscar o usuário
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", email))
+        .first();
+
+      if (!user) {
+        results.push({
+          email: email,
+          status: "not_found",
+          message: "Usuário não encontrado",
+        });
+        continue;
+      }
+
+      // Atualizar o role se necessário
+      if (user.role !== "qualidade_pcp") {
+        await ctx.db.patch(user._id, {
+          role: "qualidade_pcp",
+          updatedAt: Date.now(),
+        });
+
+        console.log(`Role do usuário ${email} atualizado para qualidade_pcp`);
+        results.push({
+          email: email,
+          status: "updated",
+          message: `Role atualizado de ${user.role || "undefined"} para qualidade_pcp`,
+          previousRole: user.role,
+        });
+      } else {
+        console.log(`Usuário ${email} já possui role qualidade_pcp`);
+        results.push({
+          email: email,
+          status: "already_correct",
+          message: "Usuário já possui role qualidade_pcp",
+        });
+      }
+    }
+
+    return {
+      success: true,
+      results: results,
+    };
   },
 });
