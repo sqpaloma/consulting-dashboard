@@ -31,6 +31,7 @@ import {
   Trash2,
   Loader2,
   MoreHorizontal,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -49,6 +50,7 @@ interface UploadData {
   desmontagens: File | null;
   montagens: File | null;
   testesAprovados: File | null;
+  testesReprovados: File | null;
 }
 
 interface FilterData {
@@ -77,25 +79,25 @@ interface PersistedData {
   };
 }
 
-
 export function ProductionDashboard() {
   // Hooks do Convex
   const indicadoresSession = useQuery(api.indicadores.getIndicadoresSession);
   const indicadoresData = useQuery(
     api.indicadores.getIndicadoresData,
-    indicadoresSession?.sessionId 
+    indicadoresSession?.sessionId
       ? { sessionId: indicadoresSession.sessionId }
       : "skip"
   );
   const saveIndicadores = useMutation(api.indicadores.saveIndicadores);
   const clearIndicadores = useMutation(api.indicadores.clearIndicadores);
-  
+
   // Hook para obter usuário atual
   const { user } = useCurrentUser();
   const [uploadData, setUploadData] = useState<UploadData>({
     desmontagens: null,
     montagens: null,
     testesAprovados: null,
+    testesReprovados: null,
   });
 
   const [filters, setFilters] = useState<FilterData>({
@@ -161,13 +163,17 @@ export function ProductionDashboard() {
 
   // Carrega dados salvos do Convex ao inicializar
   useEffect(() => {
-    if (indicadoresSession && indicadoresData && typeof indicadoresData === 'object' && 'montagens' in indicadoresData) {
+    if (
+      indicadoresSession &&
+      indicadoresData &&
+      typeof indicadoresData === "object" &&
+      "montagens" in indicadoresData
+    ) {
       setProcessedData(indicadoresData as ProcessedData);
       setFilters(indicadoresSession.filters);
       setDataLoaded(true);
     }
   }, [indicadoresSession, indicadoresData]);
-
 
   const handleFileUpload = useCallback(
     (type: keyof UploadData, file: File | null) => {
@@ -178,10 +184,24 @@ export function ProductionDashboard() {
 
   const handleFilterChange = useCallback(
     (type: keyof FilterData, value: string) => {
-      setFilters((prev) => ({ ...prev, [type]: value }));
+      setFilters((prev) => {
+        // Se mudou o setor, limpar o executante
+        if (type === "setor") {
+          return { ...prev, [type]: value, executante: "" };
+        }
+        return { ...prev, [type]: value };
+      });
     },
     []
   );
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      executante: "",
+      setor: "",
+      orcamento: "",
+    });
+  }, []);
 
   const processExcelFile = useCallback(
     async (file: File, type: string): Promise<any[]> => {
@@ -287,6 +307,18 @@ export function ProductionDashboard() {
         totalProcessed += testesAprovadosData.length;
       }
 
+      if (uploadData.testesReprovados) {
+        const testesReprovadosData = await processExcelFile(
+          uploadData.testesReprovados,
+          "teste_reprovado"
+        );
+        newProcessedData.testes = [
+          ...newProcessedData.testes,
+          ...testesReprovadosData,
+        ];
+        totalProcessed += testesReprovadosData.length;
+      }
+
       newProcessedData.apontamentos = [
         ...newProcessedData.montagens,
         ...newProcessedData.desmontagens,
@@ -321,6 +353,13 @@ export function ProductionDashboard() {
                   name: uploadData.testesAprovados.name,
                   size: uploadData.testesAprovados.size,
                   lastModified: uploadData.testesAprovados.lastModified,
+                }
+              : undefined,
+            testesReprovados: uploadData.testesReprovados
+              ? {
+                  name: uploadData.testesReprovados.name,
+                  size: uploadData.testesReprovados.size,
+                  lastModified: uploadData.testesReprovados.lastModified,
                 }
               : undefined,
           },
@@ -431,6 +470,7 @@ export function ProductionDashboard() {
         desmontagens: null,
         montagens: null,
         testesAprovados: null,
+        testesReprovados: null,
       });
       setDataLoaded(false);
 
@@ -445,13 +485,12 @@ export function ProductionDashboard() {
     }
   };
 
-  const executantesFiltrados = useMemo(
-    () =>
-      filters.setor
-        ? setores.find((s) => s.id === filters.setor)?.executantes || []
-        : [],
-    [filters.setor, setores]
-  );
+  const executantesFiltrados = useMemo(() => {
+    if (!filters.setor || filters.setor === "todos") {
+      return [];
+    }
+    return setores.find((s) => s.id === filters.setor)?.executantes || [];
+  }, [filters.setor, setores]);
 
   const hasUploadedFiles = useMemo(
     () => Object.values(uploadData).some((file) => file),
@@ -476,11 +515,12 @@ export function ProductionDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { key: "desmontagens", label: "Desmontagens" },
                 { key: "montagens", label: "Montagens" },
-                { key: "testesAprovados", label: "Testes" },
+                { key: "testesAprovados", label: "Testes Aprovados" },
+                { key: "testesReprovados", label: "Testes Reprovados" },
               ].map(({ key, label }) => (
                 <div key={key} className="text-center">
                   <Input
@@ -542,28 +582,42 @@ export function ProductionDashboard() {
                 <Filter className="h-4 w-4" />
                 Filtros
               </CardTitle>
-              {dataLoaded && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <MoreHorizontal className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleExportToExcel}>
-                      <Download className="h-3 w-3 mr-2" />
-                      Exportar Excel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleClearData}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="h-3 w-3 mr-2" />
-                      Limpar Dados
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+              <div className="flex items-center gap-2">
+                {/* Botão Limpar Filtros */}
+                {(filters.setor || filters.executante || filters.orcamento) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearFilters}
+                    className="h-6 px-2 text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Limpar
+                  </Button>
+                )}
+                {dataLoaded && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <MoreHorizontal className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleExportToExcel}>
+                        <Download className="h-3 w-3 mr-2" />
+                        Exportar Excel
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={handleClearData}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="h-3 w-3 mr-2" />
+                        Limpar Dados
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -575,14 +629,16 @@ export function ProductionDashboard() {
                   <span>{indicadoresSession.uploadedBy}</span>
                 </div>
                 <div className="text-gray-400">
-                  {new Date(indicadoresSession.uploadedAt).toLocaleString('pt-BR')}
+                  {new Date(indicadoresSession.uploadedAt).toLocaleString(
+                    "pt-BR"
+                  )}
                 </div>
                 <div className="text-gray-400">
                   {indicadoresSession.totalRecords} registros
                 </div>
               </div>
             )}
-            
+
             <Select
               value={filters.setor}
               onValueChange={(value) => handleFilterChange("setor", value)}
@@ -591,6 +647,7 @@ export function ProductionDashboard() {
                 <SelectValue placeholder="Selecione um setor" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="todos">Todos os Setores</SelectItem>
                 {setores.map((setor) => (
                   <SelectItem key={setor.id} value={setor.id}>
                     {setor.nome}
@@ -602,7 +659,7 @@ export function ProductionDashboard() {
             <Select
               value={filters.executante}
               onValueChange={(value) => handleFilterChange("executante", value)}
-              disabled={!filters.setor}
+              disabled={!filters.setor || filters.setor === "todos"}
             >
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="Selecione um executante" />
