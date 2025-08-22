@@ -134,14 +134,18 @@ export default defineSchema({
     content: v.string(),
     messageType: v.string(), // "text", "image", "file", "system"
     // Attachment fields
-    attachments: v.optional(v.array(v.object({
-      id: v.string(),
-      fileName: v.string(),
-      fileSize: v.number(),
-      mimeType: v.string(),
-      storageId: v.optional(v.id("_storage")), // Convex file storage ID
-      url: v.optional(v.string()), // Fallback URL for external storage
-    }))),
+    attachments: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          fileName: v.string(),
+          fileSize: v.number(),
+          mimeType: v.string(),
+          storageId: v.optional(v.id("_storage")), // Convex file storage ID
+          url: v.optional(v.string()), // Fallback URL for external storage
+        })
+      )
+    ),
     isEdited: v.boolean(),
     editedAt: v.optional(v.number()),
     isDeleted: v.boolean(),
@@ -325,21 +329,34 @@ export default defineSchema({
       orcamento: v.string(),
     }),
     filesInfo: v.object({
-      desmontagens: v.optional(v.object({
-        name: v.string(),
-        size: v.number(),
-        lastModified: v.number(),
-      })),
-      montagens: v.optional(v.object({
-        name: v.string(),
-        size: v.number(),
-        lastModified: v.number(),
-      })),
-      testesAprovados: v.optional(v.object({
-        name: v.string(),
-        size: v.number(),
-        lastModified: v.number(),
-      })),
+      desmontagens: v.optional(
+        v.object({
+          name: v.string(),
+          size: v.number(),
+          lastModified: v.number(),
+        })
+      ),
+      montagens: v.optional(
+        v.object({
+          name: v.string(),
+          size: v.number(),
+          lastModified: v.number(),
+        })
+      ),
+      testesAprovados: v.optional(
+        v.object({
+          name: v.string(),
+          size: v.number(),
+          lastModified: v.number(),
+        })
+      ),
+      testesReprovados: v.optional(
+        v.object({
+          name: v.string(),
+          size: v.number(),
+          lastModified: v.number(),
+        })
+      ),
     }),
     uploadedBy: v.string(),
     uploadedAt: v.string(),
@@ -354,5 +371,7 @@ export default defineSchema({
     data: v.array(v.any()),
     chunkIndex: v.number(),
     createdAt: v.number(),
-  }).index("by_session", ["sessionId"]).index("by_session_type", ["sessionId", "dataType"]),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_session_type", ["sessionId", "dataType"]),
 });

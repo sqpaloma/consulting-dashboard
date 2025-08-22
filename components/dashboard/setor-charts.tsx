@@ -343,7 +343,6 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip />
@@ -643,7 +642,6 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
                         <BarChart data={realTestesData[setor.nome] || []}>
-                          <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="name" />
                           <YAxis />
                           <Tooltip content={<CustomTooltip />} />
@@ -688,7 +686,6 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={consolidatedMontagens}>
-                  <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis
                     label={{
@@ -721,7 +718,6 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={consolidatedDesmontagens}>
-                  <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis
                     label={{
@@ -756,7 +752,6 @@ export function SetorCharts({ filters, processedData }: SetorChartsProps) {
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={consolidatedTestes}>
-                  <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis
                     label={{
