@@ -684,3 +684,72 @@ export const updateQualidadePcpUsersRole = mutation({
     };
   },
 });
+
+export const initializeGerentePermissions = mutation({
+  handler: async (ctx) => {
+    // Verificar se já existe permissão para gerente
+    const existing = await ctx.db
+      .query("rolePermissions")
+      .withIndex("by_role", (q) => q.eq("role", "gerente"))
+      .first();
+
+    if (!existing) {
+      // Criar permissões para gerente
+      await ctx.db.insert("rolePermissions", {
+        role: "gerente",
+        // Páginas
+        accessDashboard: true,
+        accessChat: true,
+        accessManual: true,
+        accessIndicadores: true, // Acesso à página de indicadores
+        accessAnalise: true,
+        accessSettings: true, // Gerente tem acesso às configurações
+        // Regras de visualização
+        dashboardDataScope: "all", // Pode ver todos os dados
+        dashboardFilterVisible: true, // IMPORTANTE: Acesso aos filtros
+        chatDataScope: "all",
+        // Metadados
+        updatedAt: Date.now(),
+      });
+
+      console.log("Permissões inicializadas para role gerente");
+      return {
+        success: true,
+        message: "Permissões criadas para gerente",
+      };
+    } else {
+      console.log("Permissões já existem para role gerente");
+      return {
+        success: false,
+        message: "Permissões já existem para gerente",
+      };
+    }
+  },
+});
+
+export const updateGiovanniRole = mutation({
+  handler: async (ctx) => {
+    // Buscar o usuário do Giovanni
+    const giovanni = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", "giovanni.gamero@novakgouveia.com.br"))
+      .first();
+
+    if (!giovanni) {
+      throw new Error("Usuário Giovanni não encontrado");
+    }
+
+    // Atualizar o role para "gerente"
+    await ctx.db.patch(giovanni._id, {
+      role: "gerente",
+      updatedAt: Date.now(),
+    });
+
+    console.log("Role do Giovanni atualizado para 'gerente'");
+    return {
+      success: true,
+      message: "Role do Giovanni atualizado para gerente",
+      userId: giovanni._id,
+    };
+  },
+});
