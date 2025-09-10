@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MessageSquare, Save, Calculator } from "lucide-react";
+import { MessageSquare, Save, Calculator, Copy } from "lucide-react";
 import { useCotacao, useCotacoes } from "@/hooks/use-cotacoes";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -98,6 +98,49 @@ export function CotacaoResponseModal({
       style: 'currency',
       currency: 'BRL'
     });
+  };
+
+  const copyToClipboard = async () => {
+    if (!cotacao) return;
+
+    let texto = `COTAÇÃO #${cotacao.numeroSequencial}\n`;
+    texto += `********************************\n\n`;
+    
+    texto += `Data: ${new Date(cotacao.createdAt).toLocaleDateString('pt-BR')}\n\n`;
+    
+    texto += `ITENS SOLICITADOS:\n`;
+    texto += `********************************\n`;
+    
+    cotacao.itens?.forEach((item, index) => {
+      texto += `\n${index + 1}. ${item.codigoPeca}\n`;
+      texto += `   ${item.descricao}\n`;
+      texto += `   Quantidade: ${item.quantidade}\n`;
+      if (item.observacoes) {
+        texto += `   Observações: ${item.observacoes}\n`;
+      }
+    });
+    
+    if (cotacao.observacoes) {
+      texto += `\nOBSERVAÇÕES GERAIS:\n`;
+      texto += `${cotacao.observacoes}\n`;
+    }
+    
+    texto += `\nPor favor, envie sua melhor cotação com preços e prazos de entrega.\n`;
+    texto += `\nObrigado!`;
+
+    try {
+      await navigator.clipboard.writeText(texto);
+      alert('Cotação copiada para a área de transferência!');
+    } catch (err) {
+      // Fallback para navegadores mais antigos
+      const textArea = document.createElement('textarea');
+      textArea.value = texto;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Cotação copiada para a área de transferência!');
+    }
   };
 
   const validateForm = () => {
@@ -334,6 +377,16 @@ export function CotacaoResponseModal({
 
           {/* Botões */}
           <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={copyToClipboard}
+              disabled={isSubmitting}
+              className="border-green-600 text-green-600 hover:bg-green-50"
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copiar Cotação
+            </Button>
             <Button
               type="button"
               variant="outline"

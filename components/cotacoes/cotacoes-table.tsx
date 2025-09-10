@@ -34,6 +34,7 @@ import { useBuscaCotacoes, useCotacoes } from "@/hooks/use-cotacoes";
 import { getStatusInfo, podeExecutarAcao } from "@/hooks/use-cotacoes";
 // import { CotacaoDetailModal } from "./cotacao-detail-modal";
 import { CotacaoResponseModal } from "./cotacao-response-modal";
+import { SankhyaResponseModal } from "./sankhya-response-modal";
 import { Id } from "@/convex/_generated/dataModel";
 
 interface FiltrosState {
@@ -54,8 +55,9 @@ interface CotacoesTableProps {
 export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps) {
   const [selectedCotacao, setSelectedCotacao] = useState<Id<"cotacoes"> | null>(null);
   const [respondingCotacao, setRespondingCotacao] = useState<Id<"cotacoes"> | null>(null);
+  const [respondingPendencia, setRespondingPendencia] = useState<Id<"pendenciasCadastro"> | null>(null);
 
-  const { excluirCotacao, excluirPendencia } = useCotacoes();
+  const { excluirCotacao, excluirPendencia, concluirPendencia } = useCotacoes();
 
   // Função para confirmar e excluir
   const handleExcluir = async (cotacao: any) => {
@@ -78,6 +80,25 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
       } else {
         await excluirCotacao(cotacao._id, userId);
       }
+    } catch (error) {
+      // Erro já tratado no hook
+    }
+  };
+
+  // Função para concluir cadastro
+  const handleConcluir = async (cotacao: any) => {
+    if (!userId) {
+      return;
+    }
+    
+    const numero = `#${cotacao.numeroSequencial}`;
+    
+    if (!window.confirm(`Confirma a conclusão da solicitação ${numero}?`)) {
+      return;
+    }
+
+    try {
+      await concluirPendencia(cotacao._id, userId);
     } catch (error) {
       // Erro já tratado no hook
     }
@@ -122,6 +143,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
       case "cotar": return <MessageSquare className="h-4 w-4" />;
       case "responder": return <MessageSquare className="h-4 w-4" />;
       case "aprovar": return <CheckCircle className="h-4 w-4" />;
+      case "concluir": return <CheckCircle className="h-4 w-4" />;
       case "comprar": return <ShoppingCart className="h-4 w-4" />;
       case "cancelar": return <XCircle className="h-4 w-4" />;
       case "editar": return <Edit className="h-4 w-4" />;
@@ -135,6 +157,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
       case "cotar": return "Responder";
       case "responder": return "Responder";
       case "aprovar": return "Aprovar";
+      case "concluir": return "Concluir";
       case "comprar": return "Comprar";
       case "cancelar": return "Cancelar";
       case "editar": return "Editar";
@@ -152,6 +175,17 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
 
     // Para cadastros, lógica diferente
     if (cotacao.tipo === "cadastro") {
+      // Equipe de compras pode responder pendências pendentes ou em andamento
+      if (["admin", "compras", "gerente"].includes(userRole) && 
+          ["pendente", "em_andamento"].includes(cotacao.status)) {
+        actions.push("responder");
+      }
+      
+      // Solicitante pode concluir cadastros respondidos
+      if (cotacao.status === "respondida_cadastro" && isSolicitante) {
+        actions.push("concluir");
+      }
+      
       // Administradores sempre podem excluir
       // Solicitante pode excluir suas próprias solicitações
       // Equipe de compras pode excluir qualquer solicitação
@@ -192,7 +226,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
   const isPendente = (cotacao: any) => {
     // Se é cadastro, verificar status de cadastro
     if (cotacao.tipo === "cadastro") {
-      const statusPendentesCadastro = ["pendente", "em_andamento"];
+      const statusPendentesCadastro = ["pendente", "em_andamento", "respondida_cadastro"];
       return statusPendentesCadastro.includes(cotacao.status) && 
              ["admin", "compras", "gerente"].includes(userRole);
     }
@@ -241,6 +275,9 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                 <div className="text-sm font-medium">{cotacao.descricao}</div>
                 {cotacao.marca && (
                   <div className="text-sm text-blue-300">Marca: {cotacao.marca}</div>
+                )}
+                {cotacao.codigoSankhya && (
+                  <div className="text-sm text-green-300 font-mono">Sankhya: {cotacao.codigoSankhya}</div>
                 )}
                 {cotacao.anexoNome && (
                   <div className="text-xs text-green-300">📎 {cotacao.anexoNome}</div>
@@ -308,7 +345,13 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                     } else if (action === "cotar") {
                       setRespondingCotacao(cotacao._id);
                     } else if (action === "responder") {
-                      setRespondingCotacao(cotacao._id);
+                      if (cotacao.tipo === "cadastro") {
+                        setRespondingPendencia(cotacao._id);
+                      } else {
+                        setRespondingCotacao(cotacao._id);
+                      }
+                    } else if (action === "concluir") {
+                      handleConcluir(cotacao);
                     } else if (action === "excluir") {
                       handleExcluir(cotacao);
                     } else {
@@ -447,6 +490,17 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
           onClose={() => setRespondingCotacao(null)}
           userRole={userRole}
           userId={userId}
+        />
+      )}
+
+      {/* Modal de resposta Sankhya para pendências de cadastro */}
+      {respondingPendencia && (
+        <SankhyaResponseModal
+          pendenciaId={respondingPendencia}
+          isOpen={!!respondingPendencia}
+          onClose={() => setRespondingPendencia(null)}
+          userId={userId}
+          pendenciaData={cotacoes?.find(c => c._id === respondingPendencia && c.tipo === "cadastro")}
         />
       )}
     </>

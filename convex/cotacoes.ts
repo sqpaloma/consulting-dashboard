@@ -956,6 +956,48 @@ export const excluirPendenciaCadastro = mutation({
   },
 });
 
+// Responder pendência de cadastro com código Sankhya
+export const responderPendenciaCadastro = mutation({
+  args: {
+    pendenciaId: v.id("pendenciasCadastro"),
+    usuarioId: v.id("users"),
+    codigoSankhya: v.string(),
+    observacoes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const pendencia = await ctx.db.get(args.pendenciaId);
+    if (!pendencia) throw new Error("Pendência não encontrada");
+
+    const usuario = await ctx.db.get(args.usuarioId);
+    if (!usuario) throw new Error("Usuário não encontrado");
+
+    // Verificar se pode responder (equipe de compras/admin)
+    const podeResponder = ["admin", "compras", "gerente"].includes(usuario.role || "");
+    
+    if (!podeResponder) {
+      throw new Error("Usuário não tem permissão para responder pendências");
+    }
+
+    // Verificar status
+    if (!["pendente", "em_andamento"].includes(pendencia.status)) {
+      throw new Error("Pendência não pode ser respondida no status atual");
+    }
+
+    // Atualizar pendência
+    await ctx.db.patch(args.pendenciaId, {
+      codigoSankhya: args.codigoSankhya.trim(),
+      status: "concluida",
+      responsavelId: args.usuarioId,
+      observacoes: args.observacoes?.trim(),
+      dataResposta: Date.now(),
+      dataConclusao: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
 // Função de migration para atualizar pendências sem numeroSequencial
 export const migrarPendenciasSemNumero = mutation({
   args: {},

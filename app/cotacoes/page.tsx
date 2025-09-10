@@ -86,15 +86,6 @@ export default function CotacoesPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Botão temporário para migração */}
-            <Button
-              onClick={migrarPendencias}
-              variant="outline"
-              className="border-yellow-600 text-yellow-600 hover:bg-yellow-50 font-semibold text-xs"
-            >
-              Migrar
-            </Button>
-            
             {/* Botão para cadastrar peça */}
             <Button
               onClick={() => setShowCadastroForm(true)}

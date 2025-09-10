@@ -40,6 +40,8 @@ export function useCotacoes() {
   const editarItensCotacao = useMutation(api.cotacoes.editarItensCotacao);
   const excluirCotacao = useMutation(api.cotacoes.excluirCotacao);
   const excluirPendenciaCadastro = useMutation(api.cotacoes.excluirPendenciaCadastro);
+  const responderPendenciaCadastro = useMutation(api.cotacoes.responderPendenciaCadastro);
+  const concluirPendenciaCadastro = useMutation(api.cotacoes.concluirPendenciaCadastro);
   const migrarPendenciasSemNumero = useMutation(api.cotacoes.migrarPendenciasSemNumero);
 
   // Função para criar nova cotação
@@ -211,6 +213,44 @@ export function useCotacoes() {
     }
   };
 
+  // Função para responder pendência de cadastro com código Sankhya
+  const handleResponderPendencia = async (
+    pendenciaId: Id<"pendenciasCadastro">,
+    usuarioId: Id<"users">,
+    codigoSankhya: string,
+    observacoes?: string
+  ) => {
+    try {
+      await responderPendenciaCadastro({
+        pendenciaId,
+        usuarioId,
+        codigoSankhya,
+        observacoes,
+      });
+      toast.success("Pendência respondida com código Sankhya!");
+    } catch (error) {
+      toast.error(`Erro ao responder pendência: ${error}`);
+      throw error;
+    }
+  };
+
+  // Função para concluir pendência de cadastro
+  const handleConcluirPendencia = async (
+    pendenciaId: Id<"pendenciasCadastro">,
+    usuarioId: Id<"users">
+  ) => {
+    try {
+      await concluirPendenciaCadastro({
+        pendenciaId,
+        usuarioId,
+      });
+      toast.success("Solicitação concluída com sucesso!");
+    } catch (error) {
+      toast.error(`Erro ao concluir solicitação: ${error}`);
+      throw error;
+    }
+  };
+
   // Função para migrar pendências sem número sequencial
   const handleMigrarPendencias = async () => {
     try {
@@ -242,6 +282,8 @@ export function useCotacoes() {
     editarItens: handleEditarItens,
     excluirCotacao: handleExcluirCotacao,
     excluirPendencia: handleExcluirPendencia,
+    responderPendencia: handleResponderPendencia,
+    concluirPendencia: handleConcluirPendencia,
     migrarPendencias: handleMigrarPendencias,
     
     // Loading states
@@ -306,6 +348,7 @@ export const statusCotacao = {
   // Status de pendências de cadastro
   pendente: { label: "Pendente", color: "bg-yellow-100 text-yellow-800 border-yellow-200", textColor: "text-yellow-800" },
   em_andamento: { label: "Em Andamento", color: "bg-blue-100 text-blue-800 border-blue-200", textColor: "text-blue-800" },
+  respondida_cadastro: { label: "Respondida", color: "bg-white text-blue-900 border-blue-200", textColor: "text-blue-900" },
   concluida: { label: "Concluída", color: "bg-green-100 text-green-800 border-green-200", textColor: "text-green-800" },
   rejeitada: { label: "Rejeitada", color: "bg-red-100 text-red-800 border-red-200", textColor: "text-red-800" },
 };
