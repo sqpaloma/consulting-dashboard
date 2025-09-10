@@ -435,4 +435,28 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_codigo", ["codigo"]),
+
+  // ===== TABELA DE PENDÊNCIAS DE CADASTRO DE PEÇAS =====
+  pendenciasCadastro: defineTable({
+    numeroSequencial: v.number(), // Auto-increment para número da solicitação
+    codigo: v.string(), // Código da peça solicitada
+    descricao: v.string(), // Descrição da peça
+    marca: v.optional(v.string()), // Marca da peça
+    observacoes: v.optional(v.string()), // Observações do solicitante
+    solicitanteId: v.id("users"), // Quem fez a solicitação
+    status: v.string(), // "pendente", "em_andamento", "concluida", "rejeitada"
+    anexoStorageId: v.optional(v.id("_storage")), // PDF anexado
+    anexoNome: v.optional(v.string()), // Nome do arquivo anexado
+    responsavelId: v.optional(v.id("users")), // Quem está tratando (compras)
+    motivoRejeicao: v.optional(v.string()), // Se rejeitada, o motivo
+    pecaCriadadId: v.optional(v.id("pecas")), // Se concluída, referência à peça criada
+    dataAtribuicao: v.optional(v.number()), // Quando foi atribuída a alguém
+    dataConclusao: v.optional(v.number()), // Quando foi concluída/rejeitada
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_solicitante", ["solicitanteId"])
+    .index("by_responsavel", ["responsavelId"])
+    .index("by_status", ["status"])
+    .index("by_numero", ["numeroSequencial"]),
 });

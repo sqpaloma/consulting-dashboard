@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 
 // ===== QUERIES =====
 
-// Listar todas as cotações com filtros
+// Listar todas as cotações com filtros (incluindo pendências de cadastro)
 export const listCotacoes = query({
   args: {
     status: v.optional(v.string()),
@@ -15,10 +15,13 @@ export const listCotacoes = query({
     dataFim: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // Buscar todas as cotações e filtrar em memória
+    // Buscar todas as cotações
     let cotacoes = await ctx.db.query("cotacoes").collect();
+    
+    // Buscar todas as pendências de cadastro
+    let pendenciasCadastro = await ctx.db.query("pendenciasCadastro").collect();
 
-    // Aplicar filtros
+    // Aplicar filtros às cotações
     if (args.status && args.status !== "all") {
       cotacoes = cotacoes.filter(c => c.status === args.status);
     }
@@ -31,11 +34,39 @@ export const listCotacoes = query({
       cotacoes = cotacoes.filter(c => c.compradorId === args.compradorId);
     }
 
+    // Aplicar filtros às pendências de cadastro
+    if (args.status && args.status !== "all") {
+      // Mapear status de cotação para pendência
+      const statusMapping: Record<string, string> = {
+        "novo": "pendente",
+        "em_cotacao": "em_andamento",
+        "respondida": "concluida",
+        "comprada": "concluida",
+        "cancelada": "rejeitada"
+      };
+      const pendenciaStatus = statusMapping[args.status];
+      if (pendenciaStatus) {
+        pendenciasCadastro = pendenciasCadastro.filter(p => p.status === pendenciaStatus);
+      } else {
+        pendenciasCadastro = [];
+      }
+    }
+    
+    if (args.solicitanteId) {
+      pendenciasCadastro = pendenciasCadastro.filter(p => p.solicitanteId === args.solicitanteId);
+    }
+
     // Filtro por data
     if (args.dataInicio || args.dataFim) {
       cotacoes = cotacoes.filter(cotacao => {
         if (args.dataInicio && cotacao.createdAt < args.dataInicio) return false;
         if (args.dataFim && cotacao.createdAt > args.dataFim) return false;
+        return true;
+      });
+      
+      pendenciasCadastro = pendenciasCadastro.filter(pendencia => {
+        if (args.dataInicio && pendencia.createdAt < args.dataInicio) return false;
+        if (args.dataFim && pendencia.createdAt > args.dataFim) return false;
         return true;
       });
     }
@@ -44,6 +75,9 @@ export const listCotacoes = query({
     if (!args.incluirHistorico) {
       cotacoes = cotacoes.filter(cotacao => 
         !["comprada", "cancelada"].includes(cotacao.status)
+      );
+      pendenciasCadastro = pendenciasCadastro.filter(pendencia => 
+        !["concluida", "rejeitada"].includes(pendencia.status)
       );
     }
 
@@ -56,6 +90,14 @@ export const listCotacoes = query({
           cotacao.numeroOrcamento?.toLowerCase().includes(busca) ||
           cotacao.cliente?.toLowerCase().includes(busca) ||
           cotacao.numeroSequencial.toString().includes(busca)
+        );
+      });
+      
+      pendenciasCadastro = pendenciasCadastro.filter(pendencia => {
+        return (
+          pendencia.codigo.toLowerCase().includes(busca) ||
+          pendencia.descricao.toLowerCase().includes(busca) ||
+          pendencia.marca?.toLowerCase().includes(busca)
         );
       });
     }
@@ -73,17 +115,56 @@ export const listCotacoes = query({
 
         return {
           ...cotacao,
+          tipo: "cotacao" as const,
           solicitante,
           comprador,
           itens,
           totalItens: itens.length,
           valorTotal: itens.reduce((sum, item) => sum + (item.precoTotal || 0), 0),
+          numeroSequencial: cotacao.numeroSequencial,
         };
       })
     );
 
+    // Buscar dados das pendências de cadastro
+    const pendenciasComDados = await Promise.all(
+      pendenciasCadastro.map(async (pendencia) => {
+        const solicitante = await ctx.db.get(pendencia.solicitanteId);
+        const responsavel = pendencia.responsavelId ? await ctx.db.get(pendencia.responsavelId) : null;
+
+        return {
+          ...pendencia,
+          tipo: "cadastro" as const,
+          solicitante,
+          comprador: responsavel, // Usar responsável como comprador para consistência
+          itens: [], // Pendências de cadastro não têm itens
+          totalItens: 1, // Representar como 1 item (a própria peça)
+          valorTotal: 0, // Sem valor para cadastros
+          numeroSequencial: pendencia.numeroSequencial, // Usar o número sequencial real
+          // Mapear campos para consistência
+          numeroOS: undefined,
+          numeroOrcamento: undefined,
+          cliente: undefined,
+        };
+      })
+    );
+
+    // Combinar ambas as listas
+    const itemsCombinados = [...cotacoesComDados, ...pendenciasComDados];
+
     // Ordenar por número sequencial (mais recente primeiro)
-    return cotacoesComDados.sort((a, b) => b.numeroSequencial - a.numeroSequencial);
+    return itemsCombinados.sort((a, b) => {
+      if (a.tipo === "cotacao" && b.tipo === "cotacao") {
+        return b.numeroSequencial - a.numeroSequencial;
+      }
+      if (a.tipo === "cadastro" && b.tipo === "cadastro") {
+        return b.createdAt - a.createdAt;
+      }
+      // Cotações primeiro, depois cadastros
+      if (a.tipo === "cotacao" && b.tipo === "cadastro") return -1;
+      if (a.tipo === "cadastro" && b.tipo === "cotacao") return 1;
+      return 0;
+    });
   },
 });
 
@@ -190,7 +271,7 @@ export const getCotacao = query({
   },
 });
 
-// Buscar próximo número sequencial
+// Buscar próximo número sequencial (unificado para cotações e cadastros)
 export const getProximoNumero = query({
   handler: async (ctx) => {
     const ultimaCotacao = await ctx.db
@@ -198,8 +279,70 @@ export const getProximoNumero = query({
       .withIndex("by_numero")
       .order("desc")
       .first();
+
+    const ultimaSolicitacao = await ctx.db
+      .query("pendenciasCadastro")
+      .withIndex("by_numero")
+      .order("desc")
+      .first();
     
-    return (ultimaCotacao?.numeroSequencial || 0) + 1;
+    const maiorNumeroCotacao = ultimaCotacao?.numeroSequencial || 0;
+    const maiorNumeroSolicitacao = ultimaSolicitacao?.numeroSequencial || 0;
+    
+    return Math.max(maiorNumeroCotacao, maiorNumeroSolicitacao) + 1;
+  },
+});
+
+// Listar pendências de cadastro
+export const listPendenciasCadastro = query({
+  args: {
+    status: v.optional(v.string()),
+    solicitanteId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    let pendencias = await ctx.db.query("pendenciasCadastro").collect();
+
+    // Filtrar por status se especificado
+    if (args.status && args.status !== "all") {
+      pendencias = pendencias.filter(p => p.status === args.status);
+    }
+
+    // Filtrar por solicitante se especificado
+    if (args.solicitanteId) {
+      pendencias = pendencias.filter(p => p.solicitanteId === args.solicitanteId);
+    }
+
+    // Buscar dados dos usuários
+    const pendenciasComDados = await Promise.all(
+      pendencias.map(async (pendencia) => {
+        const solicitante = await ctx.db.get(pendencia.solicitanteId);
+        const responsavel = pendencia.responsavelId ? await ctx.db.get(pendencia.responsavelId) : null;
+
+        return {
+          ...pendencia,
+          solicitante,
+          responsavel,
+        };
+      })
+    );
+
+    // Ordenar por data de criação (mais recente primeiro)
+    return pendenciasComDados.sort((a, b) => b.createdAt - a.createdAt);
+  },
+});
+
+// Contar pendências por status
+export const contarPendenciasCadastro = query({
+  handler: async (ctx) => {
+    const pendencias = await ctx.db.query("pendenciasCadastro").collect();
+
+    return {
+      total: pendencias.length,
+      pendente: pendencias.filter(p => p.status === "pendente").length,
+      em_andamento: pendencias.filter(p => p.status === "em_andamento").length,
+      concluida: pendencias.filter(p => p.status === "concluida").length,
+      rejeitada: pendencias.filter(p => p.status === "rejeitada").length,
+    };
   },
 });
 
@@ -658,5 +801,70 @@ export const cadastrarPeca = mutation({
     });
 
     return { pecaId };
+  },
+});
+
+// Criar pendência de cadastro de peça
+export const criarPendenciaCadastro = mutation({
+  args: {
+    codigo: v.string(),
+    descricao: v.string(),
+    marca: v.optional(v.string()),
+    observacoes: v.optional(v.string()),
+    solicitanteId: v.id("users"),
+    anexoStorageId: v.optional(v.id("_storage")),
+    anexoNome: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Verificar se o usuário existe
+    const solicitante = await ctx.db.get(args.solicitanteId);
+    if (!solicitante) throw new Error("Usuário solicitante não encontrado");
+
+    // Verificar se já existe uma pendência com o mesmo código em aberto
+    const pendenciaExistente = await ctx.db
+      .query("pendenciasCadastro")
+      .withIndex("by_status", (q) => q.eq("status", "pendente"))
+      .filter((q) => q.eq(q.field("codigo"), args.codigo))
+      .first();
+
+    if (pendenciaExistente) {
+      throw new Error("Já existe uma solicitação pendente para este código de peça");
+    }
+
+    // Verificar se a peça já existe
+    const pecaExistente = await ctx.db
+      .query("pecas")
+      .withIndex("by_codigo", (q) => q.eq("codigo", args.codigo))
+      .first();
+
+    if (pecaExistente) {
+      throw new Error("Esta peça já está cadastrada no sistema");
+    }
+
+    // Obter próximo número sequencial
+    const ultimaSolicitacao = await ctx.db
+      .query("pendenciasCadastro")
+      .withIndex("by_numero")
+      .order("desc")
+      .first();
+    
+    const numeroSequencial = (ultimaSolicitacao?.numeroSequencial || 0) + 1;
+
+    // Criar pendência
+    const pendenciaId = await ctx.db.insert("pendenciasCadastro", {
+      numeroSequencial,
+      codigo: args.codigo.trim(),
+      descricao: args.descricao.trim(),
+      marca: args.marca?.trim(),
+      observacoes: args.observacoes?.trim(),
+      solicitanteId: args.solicitanteId,
+      status: "pendente",
+      anexoStorageId: args.anexoStorageId,
+      anexoNome: args.anexoNome,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return { pendenciaId, numeroSequencial };
   },
 }); 

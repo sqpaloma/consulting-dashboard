@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, X, Calendar } from "lucide-react";
+import { Filter, X, Calendar } from "lucide-react";
 import { statusCotacao } from "@/hooks/use-cotacoes";
 
 interface FiltrosState {
@@ -68,25 +68,15 @@ export function CotacoesFilters({
   return (
     <Card className="bg-blue-800/30 border-blue-700">
       <CardContent className="p-4">
-        {/* Linha principal de busca */}
+        {/* Linha principal de filtros */}
         <div className="flex items-center gap-4 mb-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar por número da OS, orçamento, código de peça ou cliente..."
-              value={filtros.busca}
-              onChange={(e) => updateFiltro("busca", e.target.value)}
-              className="pl-10 bg-blue-900/50 border-blue-600 text-white placeholder-gray-400"
-            />
-          </div>
-
           <Button
             variant="outline"
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="border-blue-600 text-blue-300 hover:bg-blue-700"
           >
             <Filter className="h-4 w-4 mr-2" />
-            Filtros
+            Filtros Avançados
           </Button>
 
           {hasActiveFilters && (
@@ -96,7 +86,7 @@ export function CotacoesFilters({
               className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
             >
               <X className="h-4 w-4 mr-2" />
-              Limpar
+              Limpar Filtros
             </Button>
           )}
         </div>

@@ -102,7 +102,11 @@ export function CotacaoDetailModal({
                      <div className="mt-2 grid grid-cols-3 gap-2 bg-blue-50 p-2 rounded">
                        <div>
                          <span className="text-sm text-blue-700 font-medium">Preço Unit.:</span>
-                         <p className="font-semibold text-blue-900">
+                         <p className={`font-semibold ${
+                           ["respondida", "aprovada_para_compra", "comprada"].includes(cotacao.status) 
+                             ? "text-white" 
+                             : "text-blue-900"
+                         }`}>
                            {item.precoUnitario.toLocaleString('pt-BR', {
                              style: 'currency',
                              currency: 'BRL'

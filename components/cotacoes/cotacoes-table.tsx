@@ -164,21 +164,39 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     return (
       <TableRow className={`${pendente ? "bg-blue-600/20 border-blue-400/50" : ""} hover:!bg-blue-600/30 transition-colors text-white hover:text-white`}>
         <TableCell>
-          <div className="flex items-center gap-2">
-            {pendente && <Clock className="h-4 w-4 text-blue-300" />}
-            <span className="font-mono font-semibold">#{cotacao.numeroSequencial}</span>
-          </div>
+          <Badge className={cotacao.tipo === "cadastro" ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}>
+            {cotacao.tipo === "cadastro" ? "Cadastro" : "Cotação"}
+          </Badge>
+        </TableCell>
+        <TableCell>
+          <span className="font-mono font-semibold">
+            {cotacao.tipo === "cadastro" ? `#S${cotacao.numeroSequencial}` : `#${cotacao.numeroSequencial}`}
+          </span>
         </TableCell>
         <TableCell>
           <div className="space-y-1">
-            {cotacao.numeroOS && (
-              <div className="text-sm">OS: {cotacao.numeroOS}</div>
-            )}
-            {cotacao.numeroOrcamento && (
-              <div className="text-sm text-gray-400">Orç: {cotacao.numeroOrcamento}</div>
-            )}
-            {cotacao.cliente && (
-              <div className="text-sm text-blue-300">{cotacao.cliente}</div>
+            {cotacao.tipo === "cadastro" ? (
+              <>
+                <div className="text-sm font-medium">{cotacao.descricao}</div>
+                {cotacao.marca && (
+                  <div className="text-sm text-blue-300">Marca: {cotacao.marca}</div>
+                )}
+                {cotacao.anexoNome && (
+                  <div className="text-xs text-green-300">📎 {cotacao.anexoNome}</div>
+                )}
+              </>
+            ) : (
+              <>
+                {cotacao.numeroOS && (
+                  <div className="text-sm">OS: {cotacao.numeroOS}</div>
+                )}
+                {cotacao.numeroOrcamento && (
+                  <div className="text-sm text-gray-400">Orç: {cotacao.numeroOrcamento}</div>
+                )}
+                {cotacao.cliente && (
+                  <div className="text-sm text-blue-300">{cotacao.cliente}</div>
+                )}
+              </>
             )}
           </div>
         </TableCell>
@@ -200,7 +218,11 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
         </TableCell>
         <TableCell className="text-right">
           {cotacao.valorTotal > 0 ? (
-            <span className="font-semibold text-blue-600">
+            <span className={`font-semibold ${
+              ["respondida", "aprovada_para_compra", "comprada"].includes(cotacao.status) 
+                ? "text-white" 
+                : "text-blue-600"
+            }`}>
               {formatCurrency(cotacao.valorTotal)}
             </span>
           ) : "-"}
@@ -270,6 +292,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                 <Table className="w-full">
                   <TableHeader>
                     <TableRow className="hover:!bg-transparent">
+                      <TableHead className="text-blue-300 w-20">Tipo</TableHead>
                       <TableHead className="text-blue-300 w-24">Número</TableHead>
                       <TableHead className="text-blue-300 min-w-[200px]">Identificação</TableHead>
                       <TableHead className="text-blue-300 w-32">Status</TableHead>
@@ -304,6 +327,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                 <Table className="w-full">
                   <TableHeader>
                     <TableRow className="hover:!bg-transparent">
+                      <TableHead className="text-blue-300 w-20">Tipo</TableHead>
                       <TableHead className="text-blue-300 w-24">Número</TableHead>
                       <TableHead className="text-blue-300 min-w-[200px]">Identificação</TableHead>
                       <TableHead className="text-blue-300 w-32">Status</TableHead>

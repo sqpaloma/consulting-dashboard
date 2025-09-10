@@ -20,6 +20,7 @@ import type * as cotacoes from "../cotacoes.js";
 import type * as dashboard from "../dashboard.js";
 import type * as diagnose_login from "../diagnose_login.js";
 import type * as events from "../events.js";
+import type * as files from "../files.js";
 import type * as indicadores from "../indicadores.js";
 import type * as notes from "../notes.js";
 import type * as returnsMovements from "../returnsMovements.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   dashboard: typeof dashboard;
   diagnose_login: typeof diagnose_login;
   events: typeof events;
+  files: typeof files;
   indicadores: typeof indicadores;
   notes: typeof notes;
   returnsMovements: typeof returnsMovements;
