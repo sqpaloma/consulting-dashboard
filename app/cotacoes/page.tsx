@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Package, Search, Filter, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useCotacoesPendentes } from "@/hooks/use-cotacoes";
+import { useCotacoesPendentes, useCotacoes } from "@/hooks/use-cotacoes";
 import { Badge } from "@/components/ui/badge";
 import { CotacoesTable } from "@/components/cotacoes/cotacoes-table";
 import { CotacaoForm } from "@/components/cotacoes/cotacao-form";
@@ -35,6 +35,7 @@ export default function CotacoesPage() {
 
   // Buscar cotações pendentes para o usuário atual
   const { totalPendentes } = useCotacoesPendentes(user?.userId);
+  const { migrarPendencias } = useCotacoes();
 
   // Verificar se o usuário pode criar cotações (vendedores)
   const podecriarCotacao = ["consultor", "vendedor", "admin", "gerente"].includes(
@@ -85,6 +86,15 @@ export default function CotacoesPage() {
           </div>
           
           <div className="flex items-center gap-3">
+            {/* Botão temporário para migração */}
+            <Button
+              onClick={migrarPendencias}
+              variant="outline"
+              className="border-yellow-600 text-yellow-600 hover:bg-yellow-50 font-semibold text-xs"
+            >
+              Migrar
+            </Button>
+            
             {/* Botão para cadastrar peça */}
             <Button
               onClick={() => setShowCadastroForm(true)}

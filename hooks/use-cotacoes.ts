@@ -38,6 +38,9 @@ export function useCotacoes() {
   const finalizarCompra = useMutation(api.cotacoes.finalizarCompra);
   const cancelarCotacao = useMutation(api.cotacoes.cancelarCotacao);
   const editarItensCotacao = useMutation(api.cotacoes.editarItensCotacao);
+  const excluirCotacao = useMutation(api.cotacoes.excluirCotacao);
+  const excluirPendenciaCadastro = useMutation(api.cotacoes.excluirPendenciaCadastro);
+  const migrarPendenciasSemNumero = useMutation(api.cotacoes.migrarPendenciasSemNumero);
 
   // Função para criar nova cotação
   const handleCriarCotacao = async (
@@ -180,6 +183,50 @@ export function useCotacoes() {
     }
   };
 
+  // Função para excluir cotação
+  const handleExcluirCotacao = async (
+    cotacaoId: Id<"cotacoes">,
+    usuarioId: Id<"users">
+  ) => {
+    try {
+      await excluirCotacao({ cotacaoId, usuarioId });
+      toast.success("Cotação excluída com sucesso!");
+    } catch (error) {
+      toast.error(`Erro ao excluir cotação: ${error}`);
+      throw error;
+    }
+  };
+
+  // Função para excluir pendência de cadastro
+  const handleExcluirPendencia = async (
+    pendenciaId: Id<"pendenciasCadastro">,
+    usuarioId: Id<"users">
+  ) => {
+    try {
+      await excluirPendenciaCadastro({ pendenciaId, usuarioId });
+      toast.success("Solicitação excluída com sucesso!");
+    } catch (error) {
+      toast.error(`Erro ao excluir solicitação: ${error}`);
+      throw error;
+    }
+  };
+
+  // Função para migrar pendências sem número sequencial
+  const handleMigrarPendencias = async () => {
+    try {
+      const result = await migrarPendenciasSemNumero({});
+      if (result.migradas > 0) {
+        toast.success(result.message);
+      } else {
+        toast.info(result.message);
+      }
+      return result;
+    } catch (error) {
+      toast.error(`Erro na migração: ${error}`);
+      throw error;
+    }
+  };
+
   return {
     // Data
     cotacoes: listCotacoes,
@@ -193,6 +240,9 @@ export function useCotacoes() {
     finalizarCompra: handleFinalizarCompra,
     cancelarCotacao: handleCancelarCotacao,
     editarItens: handleEditarItens,
+    excluirCotacao: handleExcluirCotacao,
+    excluirPendencia: handleExcluirPendencia,
+    migrarPendencias: handleMigrarPendencias,
     
     // Loading states
     isLoading: listCotacoes === undefined,

@@ -85,7 +85,7 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
         anexoNome: selectedFile?.name,
       });
 
-      toast.success(`Solicitação #S${result.numeroSequencial} criada com sucesso! O setor de compras será notificado.`);
+      toast.success(`Solicitação #${result.numeroSequencial} criada com sucesso! O setor de compras será notificado.`);
       setFormData({ codigo: "", descricao: "", marca: "", observacoes: "" });
       setSelectedFile(null);
       if (fileInputRef.current) {

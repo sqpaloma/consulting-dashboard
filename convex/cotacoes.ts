@@ -140,7 +140,7 @@ export const listCotacoes = query({
           itens: [], // Pendências de cadastro não têm itens
           totalItens: 1, // Representar como 1 item (a própria peça)
           valorTotal: 0, // Sem valor para cadastros
-          numeroSequencial: pendencia.numeroSequencial, // Usar o número sequencial real
+          numeroSequencial: pendencia.numeroSequencial || 0, // Usar o número sequencial real ou 0
           // Mapear campos para consistência
           numeroOS: undefined,
           numeroOrcamento: undefined,
@@ -152,18 +152,9 @@ export const listCotacoes = query({
     // Combinar ambas as listas
     const itemsCombinados = [...cotacoesComDados, ...pendenciasComDados];
 
-    // Ordenar por número sequencial (mais recente primeiro)
+    // Ordenar por número sequencial unificado (mais recente primeiro)
     return itemsCombinados.sort((a, b) => {
-      if (a.tipo === "cotacao" && b.tipo === "cotacao") {
-        return b.numeroSequencial - a.numeroSequencial;
-      }
-      if (a.tipo === "cadastro" && b.tipo === "cadastro") {
-        return b.createdAt - a.createdAt;
-      }
-      // Cotações primeiro, depois cadastros
-      if (a.tipo === "cotacao" && b.tipo === "cadastro") return -1;
-      if (a.tipo === "cadastro" && b.tipo === "cotacao") return 1;
-      return 0;
+      return b.numeroSequencial - a.numeroSequencial;
     });
   },
 });
@@ -368,14 +359,23 @@ export const criarCotacao = mutation({
     const solicitante = await ctx.db.get(args.solicitanteId);
     if (!solicitante) throw new Error("Usuário solicitante não encontrado");
 
-    // Obter próximo número sequencial
+    // Obter próximo número sequencial (unificado)
     const ultimaCotacao = await ctx.db
       .query("cotacoes")
       .withIndex("by_numero")
       .order("desc")
       .first();
+
+    const ultimaSolicitacao = await ctx.db
+      .query("pendenciasCadastro")
+      .withIndex("by_numero")
+      .order("desc")
+      .first();
     
-    const numeroSequencial = (ultimaCotacao?.numeroSequencial || 0) + 1;
+    const maiorNumeroCotacao = ultimaCotacao?.numeroSequencial || 0;
+    const maiorNumeroSolicitacao = ultimaSolicitacao?.numeroSequencial || 0;
+    
+    const numeroSequencial = Math.max(maiorNumeroCotacao, maiorNumeroSolicitacao) + 1;
 
     // Criar cotação
     const cotacaoId = await ctx.db.insert("cotacoes", {
@@ -841,14 +841,23 @@ export const criarPendenciaCadastro = mutation({
       throw new Error("Esta peça já está cadastrada no sistema");
     }
 
-    // Obter próximo número sequencial
+    // Obter próximo número sequencial (unificado)
+    const ultimaCotacao = await ctx.db
+      .query("cotacoes")
+      .withIndex("by_numero")
+      .order("desc")
+      .first();
+
     const ultimaSolicitacao = await ctx.db
       .query("pendenciasCadastro")
       .withIndex("by_numero")
       .order("desc")
       .first();
     
-    const numeroSequencial = (ultimaSolicitacao?.numeroSequencial || 0) + 1;
+    const maiorNumeroCotacao = ultimaCotacao?.numeroSequencial || 0;
+    const maiorNumeroSolicitacao = ultimaSolicitacao?.numeroSequencial || 0;
+    
+    const numeroSequencial = Math.max(maiorNumeroCotacao, maiorNumeroSolicitacao) + 1;
 
     // Criar pendência
     const pendenciaId = await ctx.db.insert("pendenciasCadastro", {
@@ -866,5 +875,124 @@ export const criarPendenciaCadastro = mutation({
     });
 
     return { pendenciaId, numeroSequencial };
+  },
+});
+
+// Excluir cotação
+export const excluirCotacao = mutation({
+  args: {
+    cotacaoId: v.id("cotacoes"),
+    usuarioId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const cotacao = await ctx.db.get(args.cotacaoId);
+    if (!cotacao) throw new Error("Cotação não encontrada");
+
+    const usuario = await ctx.db.get(args.usuarioId);
+    if (!usuario) throw new Error("Usuário não encontrado");
+
+    // Verificar se pode excluir (admin ou solicitante)
+    const podeExcluir = 
+      usuario.role === "admin" || 
+      cotacao.solicitanteId === args.usuarioId;
+
+    if (!podeExcluir) {
+      throw new Error("Usuário não tem permissão para excluir esta cotação");
+    }
+
+    // Excluir itens da cotação
+    const itens = await ctx.db
+      .query("cotacaoItens")
+      .withIndex("by_cotacao", (q) => q.eq("cotacaoId", args.cotacaoId))
+      .collect();
+
+    for (const item of itens) {
+      await ctx.db.delete(item._id);
+    }
+
+    // Excluir histórico da cotação
+    const historico = await ctx.db
+      .query("cotacaoHistorico")
+      .withIndex("by_cotacao", (q) => q.eq("cotacaoId", args.cotacaoId))
+      .collect();
+
+    for (const item of historico) {
+      await ctx.db.delete(item._id);
+    }
+
+    // Excluir a cotação
+    await ctx.db.delete(args.cotacaoId);
+
+    return { success: true };
+  },
+});
+
+// Excluir pendência de cadastro
+export const excluirPendenciaCadastro = mutation({
+  args: {
+    pendenciaId: v.id("pendenciasCadastro"),
+    usuarioId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const pendencia = await ctx.db.get(args.pendenciaId);
+    if (!pendencia) throw new Error("Pendência não encontrada");
+
+    const usuario = await ctx.db.get(args.usuarioId);
+    if (!usuario) throw new Error("Usuário não encontrado");
+
+    // Verificar se pode excluir (admin, equipe de compras ou solicitante)
+    const podeExcluir = 
+      ["admin", "compras", "gerente"].includes(usuario.role || "") ||
+      pendencia.solicitanteId === args.usuarioId;
+
+    if (!podeExcluir) {
+      throw new Error("Usuário não tem permissão para excluir esta solicitação");
+    }
+
+    // Excluir a pendência
+    await ctx.db.delete(args.pendenciaId);
+
+    return { success: true };
+  },
+});
+
+// Função de migration para atualizar pendências sem numeroSequencial
+export const migrarPendenciasSemNumero = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Buscar pendências sem numeroSequencial
+    const pendenciasSemNumero = await ctx.db
+      .query("pendenciasCadastro")
+      .filter((q) => q.eq(q.field("numeroSequencial"), undefined))
+      .collect();
+
+    if (pendenciasSemNumero.length === 0) {
+      return { migradas: 0, message: "Nenhuma pendência precisou ser migrada" };
+    }
+
+    // Obter o próximo número sequencial
+    const todasCotacoes = await ctx.db.query("cotacoes").collect();
+    const todasPendencias = await ctx.db.query("pendenciasCadastro").collect();
+
+    const maiorNumeroCotacao = todasCotacoes.reduce((max, cotacao) => 
+      Math.max(max, cotacao.numeroSequencial), 0);
+    
+    const maiorNumeroSolicitacao = todasPendencias.reduce((max, pendencia) => 
+      Math.max(max, pendencia.numeroSequencial || 0), 0);
+    
+    let proximoNumero = Math.max(maiorNumeroCotacao, maiorNumeroSolicitacao) + 1;
+
+    // Atualizar cada pendência sem número sequencial
+    for (const pendencia of pendenciasSemNumero) {
+      await ctx.db.patch(pendencia._id, {
+        numeroSequencial: proximoNumero
+      });
+      proximoNumero++;
+    }
+
+    return { 
+      migradas: pendenciasSemNumero.length, 
+      message: `${pendenciasSemNumero.length} pendências foram migradas com sucesso` 
+    };
   },
 }); 

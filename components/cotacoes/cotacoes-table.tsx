@@ -28,8 +28,9 @@ import {
   XCircle,
   Edit,
   Clock,
+  Trash2,
 } from "lucide-react";
-import { useBuscaCotacoes } from "@/hooks/use-cotacoes";
+import { useBuscaCotacoes, useCotacoes } from "@/hooks/use-cotacoes";
 import { getStatusInfo, podeExecutarAcao } from "@/hooks/use-cotacoes";
 // import { CotacaoDetailModal } from "./cotacao-detail-modal";
 import { CotacaoResponseModal } from "./cotacao-response-modal";
@@ -53,6 +54,34 @@ interface CotacoesTableProps {
 export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps) {
   const [selectedCotacao, setSelectedCotacao] = useState<Id<"cotacoes"> | null>(null);
   const [respondingCotacao, setRespondingCotacao] = useState<Id<"cotacoes"> | null>(null);
+
+  const { excluirCotacao, excluirPendencia } = useCotacoes();
+
+  // Função para confirmar e excluir
+  const handleExcluir = async (cotacao: any) => {
+    
+    if (!userId) {
+      return;
+    }
+    
+    const tipo = cotacao.tipo === "cadastro" ? "solicitação" : "cotação";
+    const numero = `#${cotacao.numeroSequencial}`;
+    
+    
+    if (!window.confirm(`Tem certeza que deseja excluir esta ${tipo} ${numero}?`)) {
+      return;
+    }
+
+    try {
+      if (cotacao.tipo === "cadastro") {
+        await excluirPendencia(cotacao._id, userId);
+      } else {
+        await excluirCotacao(cotacao._id, userId);
+      }
+    } catch (error) {
+      // Erro já tratado no hook
+    }
+  };
 
   // Construir filtros para a query
   const queryFiltros = {
@@ -90,24 +119,26 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
 
   const getActionIcon = (action: string) => {
     switch (action) {
-      case "assumir": return <UserCheck className="h-4 w-4" />;
+      case "cotar": return <MessageSquare className="h-4 w-4" />;
       case "responder": return <MessageSquare className="h-4 w-4" />;
       case "aprovar": return <CheckCircle className="h-4 w-4" />;
       case "comprar": return <ShoppingCart className="h-4 w-4" />;
       case "cancelar": return <XCircle className="h-4 w-4" />;
       case "editar": return <Edit className="h-4 w-4" />;
+      case "excluir": return <Trash2 className="h-4 w-4" />;
       default: return <Eye className="h-4 w-4" />;
     }
   };
 
   const getActionLabel = (action: string) => {
     switch (action) {
-      case "assumir": return "Assumir";
+      case "cotar": return "Cotar";
       case "responder": return "Responder";
       case "aprovar": return "Aprovar";
       case "comprar": return "Comprar";
       case "cancelar": return "Cancelar";
       case "editar": return "Editar";
+      case "excluir": return "Excluir";
       default: return "Visualizar";
     }
   };
@@ -118,8 +149,21 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     const isSolicitante = cotacao.solicitanteId === userId;
     const isComprador = cotacao.compradorId === userId;
 
+
+    // Para cadastros, lógica diferente
+    if (cotacao.tipo === "cadastro") {
+      // Administradores sempre podem excluir
+      // Solicitante pode excluir suas próprias solicitações
+      // Equipe de compras pode excluir qualquer solicitação
+      if (userRole === "admin" || isSolicitante || ["compras", "gerente"].includes(userRole)) {
+        actions.push("excluir");
+      }
+      return actions;
+    }
+
+    // Para cotações, lógica original
     if (podeExecutarAcao(cotacao.status, "assumir", userRole, isSolicitante, isComprador)) {
-      actions.push("assumir");
+      actions.push("cotar");
     }
     if (podeExecutarAcao(cotacao.status, "responder", userRole, isSolicitante, isComprador)) {
       actions.push("responder");
@@ -136,10 +180,24 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     if (podeExecutarAcao(cotacao.status, "cancelar", userRole, isSolicitante, isComprador)) {
       actions.push("cancelar");
     }
+    
+    // Administradores podem excluir cotações
+    if (userRole === "admin" || isSolicitante) {
+      actions.push("excluir");
+    }
+    
     return actions;
   };
 
   const isPendente = (cotacao: any) => {
+    // Se é cadastro, verificar status de cadastro
+    if (cotacao.tipo === "cadastro") {
+      const statusPendentesCadastro = ["pendente", "em_andamento"];
+      return statusPendentesCadastro.includes(cotacao.status) && 
+             ["admin", "compras", "gerente"].includes(userRole);
+    }
+    
+    // Se é cotação, usar lógica original
     const statusPendentesCompras = ["novo", "em_cotacao", "aprovada_para_compra"];
     const statusPendentesVendedor = ["respondida"];
     
@@ -169,9 +227,12 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
           </Badge>
         </TableCell>
         <TableCell>
-          <span className="font-mono font-semibold">
-            {cotacao.tipo === "cadastro" ? `#S${cotacao.numeroSequencial}` : `#${cotacao.numeroSequencial}`}
-          </span>
+          <div className="flex items-center gap-2">
+            {pendente && <Clock className="h-4 w-4 text-blue-300" />}
+            <span className="font-mono font-semibold">
+              #{cotacao.numeroSequencial}
+            </span>
+          </div>
         </TableCell>
         <TableCell>
           <div className="space-y-1">
@@ -244,14 +305,18 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                   onClick={() => {
                     if (action === "view") {
                       setSelectedCotacao(cotacao._id);
+                    } else if (action === "cotar") {
+                      setRespondingCotacao(cotacao._id);
                     } else if (action === "responder") {
                       setRespondingCotacao(cotacao._id);
+                    } else if (action === "excluir") {
+                      handleExcluir(cotacao);
                     } else {
                       // TODO: Implementar outras ações
                       setSelectedCotacao(cotacao._id);
                     }
                   }}
-                  className={action === "cancelar" ? "text-red-400" : ""}
+                  className={["cancelar", "excluir"].includes(action) ? "text-red-400" : ""}
                 >
                   {getActionIcon(action)}
                   <span className="ml-2">{getActionLabel(action)}</span>
