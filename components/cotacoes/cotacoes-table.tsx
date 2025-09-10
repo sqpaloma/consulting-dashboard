@@ -132,7 +132,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
 
   const getActionLabel = (action: string) => {
     switch (action) {
-      case "cotar": return "Cotar";
+      case "cotar": return "Responder";
       case "responder": return "Responder";
       case "aprovar": return "Aprovar";
       case "comprar": return "Comprar";
