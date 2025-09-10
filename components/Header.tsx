@@ -10,6 +10,7 @@ import {
   LogOut,
   TrendingUp,
   Mail,
+  ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -152,6 +153,22 @@ export function Header({
               </TooltipContent>
             </Tooltip>
           )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/cotacoes">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="!text-white hover:bg-blue-700/50 data-[state=open]:bg-transparent"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Cotação de Peças</p>
+            </TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Link href="/follow-up">

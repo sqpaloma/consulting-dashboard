@@ -374,4 +374,65 @@ export default defineSchema({
   })
     .index("by_session", ["sessionId"])
     .index("by_session_type", ["sessionId", "dataType"]),
+
+  // ===== TABELAS DE COTAÇÃO DE PEÇAS =====
+  cotacoes: defineTable({
+    numeroSequencial: v.number(), // Auto-increment para número da cotação
+    numeroOS: v.optional(v.string()), // Número da OS
+    numeroOrcamento: v.optional(v.string()), // Número do Orçamento
+    cliente: v.optional(v.string()), // Cliente
+    solicitanteId: v.id("users"), // Vendedor que criou
+    compradorId: v.optional(v.id("users")), // Pessoa da compra (ex: Simone)
+    status: v.string(), // "novo", "em_cotacao", "respondida", "aprovada_para_compra", "comprada", "cancelada"
+    motivoCancelamento: v.optional(v.string()), // Motivo quando cancelada
+    observacoes: v.optional(v.string()), // Observações gerais
+    dataResposta: v.optional(v.number()), // Quando foi respondida
+    dataAprovacao: v.optional(v.number()), // Quando foi aprovada
+    dataCompra: v.optional(v.number()), // Quando foi comprada
+    dataCancelamento: v.optional(v.number()), // Quando foi cancelada
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_solicitante", ["solicitanteId"])
+    .index("by_comprador", ["compradorId"])
+    .index("by_status", ["status"])
+    .index("by_numero", ["numeroSequencial"]),
+
+  cotacaoItens: defineTable({
+    cotacaoId: v.id("cotacoes"),
+    codigoPeca: v.string(), // Código da peça
+    descricao: v.string(), // Descrição da peça
+    quantidade: v.number(), // Quantidade solicitada
+    precoUnitario: v.optional(v.number()), // Preço unitário cotado
+    precoTotal: v.optional(v.number()), // Preço total (quantidade * precoUnitario)
+    prazoEntrega: v.optional(v.string()), // Prazo de entrega
+    fornecedor: v.optional(v.string()), // Fornecedor cotado
+    observacoes: v.optional(v.string()), // Observações específicas do item
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_cotacao", ["cotacaoId"]),
+
+  cotacaoHistorico: defineTable({
+    cotacaoId: v.id("cotacoes"),
+    usuarioId: v.id("users"), // Usuário que fez a ação
+    acao: v.string(), // "criada", "assumida", "respondida", "aprovada", "comprada", "cancelada"
+    statusAnterior: v.optional(v.string()), // Status anterior
+    statusNovo: v.string(), // Novo status
+    observacoes: v.optional(v.string()), // Observações da ação
+    createdAt: v.number(),
+  })
+    .index("by_cotacao", ["cotacaoId"])
+    .index("by_usuario", ["usuarioId"]),
+
+  // ===== TABELA DE CADASTRO DE PEÇAS =====
+  pecas: defineTable({
+    codigo: v.string(), // Código único da peça
+    descricao: v.string(), // Descrição da peça
+    marca: v.optional(v.string()), // Marca da peça
+    ativo: v.boolean(), // Se a peça está ativa no sistema
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_codigo", ["codigo"]),
 });

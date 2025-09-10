@@ -16,6 +16,7 @@ import type {
 import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
+import type * as cotacoes from "../cotacoes.js";
 import type * as dashboard from "../dashboard.js";
 import type * as diagnose_login from "../diagnose_login.js";
 import type * as events from "../events.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   auth: typeof auth;
   chat: typeof chat;
+  cotacoes: typeof cotacoes;
   dashboard: typeof dashboard;
   diagnose_login: typeof diagnose_login;
   events: typeof events;
