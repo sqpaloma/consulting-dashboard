@@ -128,6 +128,13 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     }
   };
 
+  // Função para exportar histórico
+  const handleExportarHistorico = () => {
+    // TODO: Implementar exportação para Excel
+    console.log("Exportar histórico para Excel", cotacoesHistorico);
+    alert("Funcionalidade de exportação será implementada em breve");
+  };
+
   // Construir filtros para a query
   const queryFiltros = {
     busca: filtros.busca || undefined,
@@ -550,7 +557,17 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
           isOpen={!!respondingPendencia}
           onClose={() => setRespondingPendencia(null)}
           userId={userId}
-          pendenciaData={cotacoes?.find(c => c._id === respondingPendencia && c.tipo === "cadastro")}
+          pendenciaData={(() => {
+            const pendencia = cotacoes?.find(c => c._id === respondingPendencia && c.tipo === "cadastro");
+            if (!pendencia || pendencia.tipo !== "cadastro") return undefined;
+            return {
+              numeroSequencial: pendencia.numeroSequencial,
+              codigo: pendencia.codigo,
+              descricao: pendencia.descricao,
+              marca: pendencia.marca,
+              solicitante: pendencia.solicitante ? { name: pendencia.solicitante.name } : undefined
+            };
+          })()}
         />
       )}
 

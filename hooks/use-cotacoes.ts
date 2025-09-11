@@ -44,7 +44,7 @@ export function useCotacoes() {
   const excluirCotacao = useMutation(api.cotacoes.excluirCotacao);
   const excluirPendenciaCadastro = useMutation(api.cotacoes.excluirPendenciaCadastro);
   const responderPendencia = useMutation(api.cotacoes.responderPendencia);
-  // const concluirPendenciaCadastro = useMutation(api.cotacoes.concluirPendenciaCadastro);
+  const concluirPendenciaCadastro = useMutation(api.cotacoes.concluirPendenciaCadastro);
   const migrarPendenciasSemNumero = useMutation(api.cotacoes.migrarPendenciasSemNumero);
 
   // Função para criar nova cotação
@@ -241,21 +241,21 @@ export function useCotacoes() {
   };
 
   // Função para concluir pendência de cadastro
-  // const handleConcluirPendencia = async (
-  //   pendenciaId: Id<"pendenciasCadastro">,
-  //   usuarioId: Id<"users">
-  // ) => {
-  //   try {
-  //     await concluirPendenciaCadastro({
-  //       pendenciaId,
-  //       usuarioId,
-  //     });
-  //     toast.success("Solicitação concluída com sucesso!");
-  //   } catch (error) {
-  //     toast.error(`Erro ao concluir solicitação: ${error}`);
-  //     throw error;
-  //   }
-  // };
+  const handleConcluirPendencia = async (
+    pendenciaId: Id<"pendenciasCadastro">,
+    usuarioId: Id<"users">
+  ) => {
+    try {
+      await concluirPendenciaCadastro({
+        pendenciaId,
+        usuarioId,
+      });
+      toast.success("Solicitação concluída com sucesso!");
+    } catch (error) {
+      toast.error(`Erro ao concluir solicitação: ${error}`);
+      throw error;
+    }
+  };
 
   // Função para migrar pendências sem número sequencial
   const handleMigrarPendencias = async () => {
@@ -288,7 +288,7 @@ export function useCotacoes() {
     excluirCotacao: handleExcluirCotacao,
     excluirPendencia: handleExcluirPendencia,
     responderPendencia: handleResponderPendencia,
-    // concluirPendencia: handleConcluirPendencia,
+    concluirPendencia: handleConcluirPendencia,
     migrarPendencias: handleMigrarPendencias,
     
     // Loading states

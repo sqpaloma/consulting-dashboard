@@ -1022,10 +1022,47 @@ export const responderPendencia = mutation({
     // Atualizar pendência
     await ctx.db.patch(args.pendenciaId, {
       codigoSankhya: args.codigoSankhya.trim(),
-      status: "concluida",
+      status: "respondida_cadastro",
       responsavelId: args.usuarioId,
       observacoes: args.observacoes?.trim(),
       dataResposta: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+// Concluir pendência de cadastro (solicitante confirma recebimento da resposta)
+export const concluirPendenciaCadastro = mutation({
+  args: {
+    pendenciaId: v.id("pendenciasCadastro"),
+    usuarioId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const pendencia = await ctx.db.get(args.pendenciaId);
+    if (!pendencia) throw new Error("Pendência não encontrada");
+
+    const usuario = await ctx.db.get(args.usuarioId);
+    if (!usuario) throw new Error("Usuário não encontrado");
+
+    // Verificar se pode concluir (apenas o solicitante original ou admin)
+    const podeConcluir = 
+      pendencia.solicitanteId === args.usuarioId || 
+      usuario.role === "admin";
+    
+    if (!podeConcluir) {
+      throw new Error("Apenas o solicitante pode concluir esta pendência");
+    }
+
+    // Verificar status
+    if (pendencia.status !== "respondida_cadastro") {
+      throw new Error("Pendência deve estar no status 'respondida_cadastro' para ser concluída");
+    }
+
+    // Atualizar pendência para concluída
+    await ctx.db.patch(args.pendenciaId, {
+      status: "concluida",
       dataConclusao: Date.now(),
       updatedAt: Date.now(),
     });
