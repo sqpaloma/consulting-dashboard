@@ -388,6 +388,11 @@ export default defineSchema({
     observacoes: v.optional(v.string()), // Observações gerais
     fornecedor: v.optional(v.string()), // Fornecedor preferencial (Rexroth, Danfoss, Handok, Parker)
     solicitarInfoTecnica: v.optional(v.boolean()), // Se solicitou informação técnica
+    // Campos de upload de arquivos na resposta
+    anexoCotacaoStorageId: v.optional(v.id("_storage")), // Arquivo PDF da cotação anexado
+    anexoCotacaoNome: v.optional(v.string()), // Nome do arquivo de cotação
+    anexoPropostaTecnicaStorageId: v.optional(v.id("_storage")), // Arquivo PDF da proposta técnica/catálogo
+    anexoPropostaTecnicaNome: v.optional(v.string()), // Nome do arquivo de proposta técnica
     dataResposta: v.optional(v.number()), // Quando foi respondida
     dataAprovacao: v.optional(v.number()), // Quando foi aprovada
     dataCompra: v.optional(v.number()), // Quando foi comprada

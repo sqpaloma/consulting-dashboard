@@ -23,6 +23,7 @@ import {
 import { MessageSquare, Save, Calculator, Copy, Loader2 } from "lucide-react";
 import { useCotacao, useCotacoes } from "@/hooks/use-cotacoes";
 import { Id } from "@/convex/_generated/dataModel";
+import { FileUpload } from "./file-upload";
 
 interface CotacaoResponseModalProps {
   cotacaoId: Id<"cotacoes">;
@@ -54,6 +55,12 @@ export function CotacaoResponseModal({
   const [observacoesGerais, setObservacoesGerais] = useState("");
   const [itensResposta, setItensResposta] = useState<ItemResponse[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Estados para upload de arquivos
+  const [cotacaoFile, setCotacaoFile] = useState<File | null>(null);
+  const [propostaTecnicaFile, setPropostaTecnicaFile] = useState<File | null>(null);
+  const [isUploadingCotacao, setIsUploadingCotacao] = useState(false);
+  const [isUploadingProposta, setIsUploadingProposta] = useState(false);
 
   // Inicializar respostas dos itens quando a cotação carregar
   useEffect(() => {
@@ -179,6 +186,10 @@ export function CotacaoResponseModal({
     setIsSubmitting(true);
 
     try {
+      // Atualizar estados de upload
+      if (cotacaoFile) setIsUploadingCotacao(true);
+      if (propostaTecnicaFile) setIsUploadingProposta(true);
+
       const itensFormatados = itensResposta.map(resposta => ({
         itemId: resposta.itemId,
         precoUnitario: parseFloat(resposta.precoUnitario),
@@ -192,7 +203,9 @@ export function CotacaoResponseModal({
         cotacaoId,
         userId,
         itensFormatados,
-        observacoesGerais || undefined
+        observacoesGerais || undefined,
+        cotacaoFile || undefined,
+        propostaTecnicaFile || undefined
       );
 
       onClose();
@@ -200,6 +213,8 @@ export function CotacaoResponseModal({
       console.error("Erro ao responder cotação:", error);
     } finally {
       setIsSubmitting(false);
+      setIsUploadingCotacao(false);
+      setIsUploadingProposta(false);
     }
   };
 
@@ -419,6 +434,41 @@ export function CotacaoResponseModal({
                />
              </div>
            </div>
+
+          {/* Upload de Arquivos */}
+          <div className="p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
+            <h3 className="text-lg font-semibold text-white mb-4">Anexos da Resposta</h3>
+            <div className="space-y-4">
+              <p className="text-sm text-blue-200 mb-4">
+                Você pode anexar um PDF com a cotação detalhada e/ou uma proposta técnica/catálogo. 
+                Os arquivos são opcionais, mas recomendamos anexar pelo menos a cotação para melhor documentação.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Upload de Cotação */}
+                <FileUpload
+                  label="Cotação (PDF)"
+                  accept=".pdf"
+                  maxSizeMB={10}
+                  onFileSelect={setCotacaoFile}
+                  selectedFile={cotacaoFile}
+                  isUploading={isUploadingCotacao}
+                  placeholder="PDF com cotação detalhada"
+                />
+
+                {/* Upload de Proposta Técnica */}
+                <FileUpload
+                  label="Proposta Técnica / Catálogo"
+                  accept=".pdf"
+                  maxSizeMB={10}
+                  onFileSelect={setPropostaTecnicaFile}
+                  selectedFile={propostaTecnicaFile}
+                  isUploading={isUploadingProposta}
+                  placeholder="PDF com especificações técnicas"
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Botões */}
           <div className="flex justify-end space-x-2">

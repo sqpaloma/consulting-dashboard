@@ -46,6 +46,7 @@ export function useCotacoes() {
   const responderPendencia = useMutation(api.cotacoes.responderPendencia);
   const concluirPendenciaCadastro = useMutation(api.cotacoes.concluirPendenciaCadastro);
   const migrarPendenciasSemNumero = useMutation(api.cotacoes.migrarPendenciasSemNumero);
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
 
   // Função para criar nova cotação
   const handleCriarCotacao = async (
@@ -95,24 +96,68 @@ export function useCotacoes() {
       observacoes?: string;
       codigoSankhya?: string; // Código Sankhya para itens que precisam de cadastro
     }>,
-    observacoes?: string
+    observacoes?: string,
+    // Parâmetros para upload de arquivos
+    cotacaoFile?: File,
+    propostaTecnicaFile?: File
   ) => {
     try {
+      let cotacaoStorageId: Id<"_storage"> | undefined;
+      let cotacaoNome: string | undefined;
+      let propostaStorageId: Id<"_storage"> | undefined;
+      let propostaNome: string | undefined;
+
+      // Upload do arquivo de cotação se fornecido
+      if (cotacaoFile) {
+        const uploadUrl = await generateUploadUrl();
+        const result = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": cotacaoFile.type },
+          body: cotacaoFile,
+        });
+        const { storageId } = await result.json();
+        cotacaoStorageId = storageId;
+        cotacaoNome = cotacaoFile.name;
+      }
+
+      // Upload do arquivo de proposta técnica se fornecido
+      if (propostaTecnicaFile) {
+        const uploadUrl = await generateUploadUrl();
+        const result = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": propostaTecnicaFile.type },
+          body: propostaTecnicaFile,
+        });
+        const { storageId } = await result.json();
+        propostaStorageId = storageId;
+        propostaNome = propostaTecnicaFile.name;
+      }
+
       await responderCotacao({
         cotacaoId,
         compradorId,
         itensResposta,
         observacoes,
+        anexoCotacaoStorageId: cotacaoStorageId,
+        anexoCotacaoNome: cotacaoNome,
+        anexoPropostaTecnicaStorageId: propostaStorageId,
+        anexoPropostaTecnicaNome: propostaNome,
       });
       
       // Verificar se algum item tem código Sankhya para personalizar a mensagem
       const temCodigoSankhya = itensResposta.some(item => item.codigoSankhya?.trim());
+      const temAnexos = cotacaoFile || propostaTecnicaFile;
       
-      if (temCodigoSankhya) {
-        toast.success("Cotação respondida com sucesso! Códigos Sankhya foram registrados para os itens que precisam de cadastro.");
-      } else {
-        toast.success("Cotação respondida com sucesso!");
+      let mensagem = "Cotação respondida com sucesso!";
+      if (temCodigoSankhya && temAnexos) {
+        mensagem += " Códigos Sankhya foram registrados e arquivos anexados.";
+      } else if (temCodigoSankhya) {
+        mensagem += " Códigos Sankhya foram registrados para os itens que precisam de cadastro.";
+      } else if (temAnexos) {
+        mensagem += " Arquivos anexados com sucesso.";
       }
+      
+      toast.success(mensagem);
     } catch (error) {
       toast.error(`Erro ao responder cotação: ${error}`);
       throw error;

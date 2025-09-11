@@ -494,6 +494,11 @@ export const responderCotacao = mutation({
       codigoSankhya: v.optional(v.string()), // Código Sankhya para itens que precisam de cadastro
     })),
     observacoes: v.optional(v.string()),
+    // Campos de upload de arquivos
+    anexoCotacaoStorageId: v.optional(v.id("_storage")),
+    anexoCotacaoNome: v.optional(v.string()),
+    anexoPropostaTecnicaStorageId: v.optional(v.id("_storage")),
+    anexoPropostaTecnicaNome: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const cotacao = await ctx.db.get(args.cotacaoId);
@@ -553,6 +558,11 @@ export const responderCotacao = mutation({
       status: "respondida",
       dataResposta: Date.now(),
       observacoes: args.observacoes,
+      // Salvar informações dos arquivos anexados
+      anexoCotacaoStorageId: args.anexoCotacaoStorageId,
+      anexoCotacaoNome: args.anexoCotacaoNome,
+      anexoPropostaTecnicaStorageId: args.anexoPropostaTecnicaStorageId,
+      anexoPropostaTecnicaNome: args.anexoPropostaTecnicaNome,
       updatedAt: Date.now(),
     });
 
