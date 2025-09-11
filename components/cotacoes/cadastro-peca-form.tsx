@@ -16,7 +16,7 @@ import {
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
-import { Loader2, Upload, FileText, X } from "lucide-react";
+import { Loader2, Upload, FileText, X, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 interface CadastroPecaFormProps {
@@ -141,10 +141,13 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white">
         <DialogHeader>
-          <DialogTitle>Solicitação de Cadastro de Peça</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
+            <Plus className="h-6 w-6" />
+            Solicitação de Cadastro de Peça
+          </DialogTitle>
+          <DialogDescription className="text-blue-300">
             Crie uma solicitação para o setor de compras cadastrar uma nova peça. 
             Você pode anexar um PDF com informações adicionais.
           </DialogDescription>
@@ -152,8 +155,8 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="codigo">
-              Código da Peça <span className="text-red-500">*</span>
+            <Label htmlFor="codigo" className="text-blue-300">
+              Código da Peça <span className="text-red-400">*</span>
             </Label>
             <Input
               id="codigo"
@@ -164,12 +167,13 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
               placeholder="Ex: ABC123"
               disabled={isSubmitting}
               required
+              className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="descricao">
-              Descrição <span className="text-red-500">*</span>
+            <Label htmlFor="descricao" className="text-blue-300">
+              Descrição <span className="text-red-400">*</span>
             </Label>
             <Textarea
               id="descricao"
@@ -181,11 +185,12 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
               disabled={isSubmitting}
               required
               rows={3}
+              className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="marca">Marca</Label>
+            <Label htmlFor="marca" className="text-blue-300">Marca</Label>
             <Input
               id="marca"
               value={formData.marca}
@@ -194,11 +199,12 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
               }
               placeholder="Ex: Bosch, SKF, etc."
               disabled={isSubmitting}
+              className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="observacoes">Observações</Label>
+            <Label htmlFor="observacoes" className="text-blue-300">Observações</Label>
             <Textarea
               id="observacoes"
               value={formData.observacoes}
@@ -208,11 +214,12 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
               placeholder="Informações adicionais sobre a peça..."
               disabled={isSubmitting}
               rows={2}
+              className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Anexar PDF (Opcional)</Label>
+            <Label className="text-blue-300">Anexar PDF (Opcional)</Label>
             <div className="space-y-2">
               <input
                 ref={fileInputRef}
@@ -229,19 +236,19 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isSubmitting}
-                  className="w-full"
+                  className="w-full border-blue-600 text-blue-300 hover:bg-blue-800"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Selecionar PDF
                 </Button>
               ) : (
-                <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center justify-between p-3 bg-blue-800/30 border border-blue-700 rounded-md">
                   <div className="flex items-center">
-                    <FileText className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="text-sm text-blue-900 truncate">
+                    <FileText className="h-4 w-4 text-blue-300 mr-2" />
+                    <span className="text-sm text-white truncate">
                       {selectedFile.name}
                     </span>
-                    <span className="text-xs text-blue-600 ml-2">
+                    <span className="text-xs text-blue-300 ml-2">
                       ({(selectedFile.size / 1024 / 1024).toFixed(1)}MB)
                     </span>
                   </div>
@@ -251,6 +258,7 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
                     size="sm"
                     onClick={removeFile}
                     disabled={isSubmitting}
+                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -265,10 +273,11 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
+              className="border-blue-600 text-blue-300 hover:bg-blue-800"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 text-white">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -386,6 +386,8 @@ export default defineSchema({
     status: v.string(), // "novo", "em_cotacao", "respondida", "aprovada_para_compra", "comprada", "cancelada"
     motivoCancelamento: v.optional(v.string()), // Motivo quando cancelada
     observacoes: v.optional(v.string()), // Observações gerais
+    fornecedor: v.optional(v.string()), // Fornecedor preferencial (Rexroth, Danfoss, Handok, Parker)
+    solicitarInfoTecnica: v.optional(v.boolean()), // Se solicitou informação técnica
     dataResposta: v.optional(v.number()), // Quando foi respondida
     dataAprovacao: v.optional(v.number()), // Quando foi aprovada
     dataCompra: v.optional(v.number()), // Quando foi comprada
@@ -408,6 +410,8 @@ export default defineSchema({
     prazoEntrega: v.optional(v.string()), // Prazo de entrega
     fornecedor: v.optional(v.string()), // Fornecedor cotado
     observacoes: v.optional(v.string()), // Observações específicas do item
+    precisaCadastro: v.optional(v.boolean()), // Se a peça precisa de cadastro
+    codigoSankhya: v.optional(v.string()), // Código Sankhya informado na resposta (para itens que precisam de cadastro)
     createdAt: v.number(),
     updatedAt: v.number(),
   })

@@ -122,6 +122,7 @@ export const listCotacoes = query({
           totalItens: itens.length,
           valorTotal: itens.reduce((sum, item) => sum + (item.precoTotal || 0), 0),
           numeroSequencial: cotacao.numeroSequencial,
+          temItensPrecisaCadastro: itens.some(item => item.precisaCadastro), // Indicar se tem itens que precisam de cadastro
         };
       })
     );
@@ -347,11 +348,14 @@ export const criarCotacao = mutation({
     cliente: v.optional(v.string()),
     solicitanteId: v.id("users"),
     observacoes: v.optional(v.string()),
+    fornecedor: v.optional(v.string()),
+    solicitarInfoTecnica: v.optional(v.boolean()),
     itens: v.array(v.object({
       codigoPeca: v.string(),
       descricao: v.string(),
       quantidade: v.number(),
       observacoes: v.optional(v.string()),
+      precisaCadastro: v.optional(v.boolean()),
     })),
   },
   handler: async (ctx, args) => {
@@ -386,6 +390,8 @@ export const criarCotacao = mutation({
       solicitanteId: args.solicitanteId,
       status: "novo",
       observacoes: args.observacoes,
+      fornecedor: args.fornecedor,
+      solicitarInfoTecnica: args.solicitarInfoTecnica || false,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -398,10 +404,14 @@ export const criarCotacao = mutation({
         descricao: item.descricao,
         quantidade: item.quantidade,
         observacoes: item.observacoes,
+        precisaCadastro: item.precisaCadastro,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
     }
+
+    // Verificar se tem itens que precisam de cadastro (para indicação visual)
+    const temItensPrecisaCadastro = args.itens.some(item => item.precisaCadastro);
 
     // Criar histórico
     await ctx.db.insert("cotacaoHistorico", {
@@ -409,11 +419,17 @@ export const criarCotacao = mutation({
       usuarioId: args.solicitanteId,
       acao: "criada",
       statusNovo: "novo",
-      observacoes: "Cotação criada",
+      observacoes: temItensPrecisaCadastro 
+        ? "Cotação criada com itens que precisam de cadastro"
+        : "Cotação criada",
       createdAt: Date.now(),
     });
 
-    return { cotacaoId, numeroSequencial };
+    return { 
+      cotacaoId, 
+      numeroSequencial,
+      temItensPrecisaCadastro
+    };
   },
 });
 
@@ -475,6 +491,7 @@ export const responderCotacao = mutation({
       prazoEntrega: v.optional(v.string()),
       fornecedor: v.optional(v.string()),
       observacoes: v.optional(v.string()),
+      codigoSankhya: v.optional(v.string()), // Código Sankhya para itens que precisam de cadastro
     })),
     observacoes: v.optional(v.string()),
   },
@@ -491,8 +508,21 @@ export const responderCotacao = mutation({
     }
 
     // Verificar status
-    if (cotacao.status !== "em_cotacao") {
-      throw new Error("Cotação não está em cotação");
+    if (!["novo", "em_cotacao"].includes(cotacao.status)) {
+      throw new Error("Cotação deve estar em status 'novo' ou 'em cotação' para ser respondida");
+    }
+
+    // Validar códigos Sankhya obrigatórios para itens que precisam de cadastro
+    for (const itemResposta of args.itensResposta) {
+      const item = await ctx.db.get(itemResposta.itemId);
+      if (!item || item.cotacaoId !== args.cotacaoId) {
+        throw new Error("Item não encontrado ou não pertence a esta cotação");
+      }
+
+      // Se o item precisa de cadastro, o código Sankhya é obrigatório
+      if (item.precisaCadastro && !itemResposta.codigoSankhya?.trim()) {
+        throw new Error(`O item "${item.codigoPeca} - ${item.descricao}" precisa de cadastro. Informe o código Sankhya correspondente.`);
+      }
     }
 
     // Atualizar itens com preços
@@ -508,12 +538,18 @@ export const responderCotacao = mutation({
         prazoEntrega: itemResposta.prazoEntrega,
         fornecedor: itemResposta.fornecedor,
         observacoes: itemResposta.observacoes,
+        codigoSankhya: itemResposta.codigoSankhya, // Salvar código Sankhya se informado
         updatedAt: Date.now(),
       });
+
+      // Apenas salvar os dados - os códigos Sankhya ficam registrados nos itens da cotação
     }
 
+    const statusAnterior = cotacao.status;
+    
     // Atualizar cotação
     await ctx.db.patch(args.cotacaoId, {
+      compradorId: args.compradorId, // Assumir a cotação se estava em "novo"
       status: "respondida",
       dataResposta: Date.now(),
       observacoes: args.observacoes,
@@ -525,7 +561,7 @@ export const responderCotacao = mutation({
       cotacaoId: args.cotacaoId,
       usuarioId: args.compradorId,
       acao: "respondida",
-      statusAnterior: "em_cotacao",
+      statusAnterior,
       statusNovo: "respondida",
       observacoes: args.observacoes || `Cotação respondida por ${comprador.name}`,
       createdAt: Date.now(),
@@ -957,7 +993,7 @@ export const excluirPendenciaCadastro = mutation({
 });
 
 // Responder pendência de cadastro com código Sankhya
-export const responderPendenciaCadastro = mutation({
+export const responderPendencia = mutation({
   args: {
     pendenciaId: v.id("pendenciasCadastro"),
     usuarioId: v.id("users"),

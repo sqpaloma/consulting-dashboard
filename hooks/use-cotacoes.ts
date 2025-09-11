@@ -15,6 +15,8 @@ export interface CotacaoItem {
   prazoEntrega?: string;
   fornecedor?: string;
   observacoes?: string;
+  precisaCadastro?: boolean;
+  codigoSankhya?: string; // Código Sankhya para itens que precisam de cadastro
 }
 
 export interface CotacaoFormData {
@@ -22,6 +24,8 @@ export interface CotacaoFormData {
   numeroOrcamento?: string;
   cliente?: string;
   observacoes?: string;
+  fornecedor?: string;
+  solicitarInfoTecnica?: boolean;
   itens: CotacaoItem[];
 }
 
@@ -32,7 +36,6 @@ export function useCotacoes() {
 
   // Mutations
   const criarCotacao = useMutation(api.cotacoes.criarCotacao);
-  const assumirCotacao = useMutation(api.cotacoes.assumirCotacao);
   const responderCotacao = useMutation(api.cotacoes.responderCotacao);
   const aprovarCotacao = useMutation(api.cotacoes.aprovarCotacao);
   const finalizarCompra = useMutation(api.cotacoes.finalizarCompra);
@@ -40,8 +43,8 @@ export function useCotacoes() {
   const editarItensCotacao = useMutation(api.cotacoes.editarItensCotacao);
   const excluirCotacao = useMutation(api.cotacoes.excluirCotacao);
   const excluirPendenciaCadastro = useMutation(api.cotacoes.excluirPendenciaCadastro);
-  const responderPendenciaCadastro = useMutation(api.cotacoes.responderPendenciaCadastro);
-  const concluirPendenciaCadastro = useMutation(api.cotacoes.concluirPendenciaCadastro);
+  const responderPendencia = useMutation(api.cotacoes.responderPendencia);
+  // const concluirPendenciaCadastro = useMutation(api.cotacoes.concluirPendenciaCadastro);
   const migrarPendenciasSemNumero = useMutation(api.cotacoes.migrarPendenciasSemNumero);
 
   // Função para criar nova cotação
@@ -56,15 +59,22 @@ export function useCotacoes() {
         cliente: data.cliente,
         solicitanteId,
         observacoes: data.observacoes,
+        fornecedor: data.fornecedor,
+        solicitarInfoTecnica: data.solicitarInfoTecnica,
         itens: data.itens.map(item => ({
           codigoPeca: item.codigoPeca,
           descricao: item.descricao,
           quantidade: item.quantidade,
           observacoes: item.observacoes,
+          precisaCadastro: item.precisaCadastro,
         })),
       });
 
-      toast.success(`Cotação #${result.numeroSequencial} criada com sucesso!`);
+      if (result.temItensPrecisaCadastro) {
+        toast.success(`Cotação #${result.numeroSequencial} criada com sucesso! Alguns itens precisam de cadastro - lembre-se de informar os códigos Sankhya na resposta.`);
+      } else {
+        toast.success(`Cotação #${result.numeroSequencial} criada com sucesso!`);
+      }
       return result;
     } catch (error) {
       toast.error(`Erro ao criar cotação: ${error}`);
@@ -72,19 +82,6 @@ export function useCotacoes() {
     }
   };
 
-  // Função para assumir cotação
-  const handleAssumirCotacao = async (
-    cotacaoId: Id<"cotacoes">,
-    compradorId: Id<"users">
-  ) => {
-    try {
-      await assumirCotacao({ cotacaoId, compradorId });
-      toast.success("Cotação assumida com sucesso!");
-    } catch (error) {
-      toast.error(`Erro ao assumir cotação: ${error}`);
-      throw error;
-    }
-  };
 
   // Função para responder cotação
   const handleResponderCotacao = async (
@@ -96,6 +93,7 @@ export function useCotacoes() {
       prazoEntrega?: string;
       fornecedor?: string;
       observacoes?: string;
+      codigoSankhya?: string; // Código Sankhya para itens que precisam de cadastro
     }>,
     observacoes?: string
   ) => {
@@ -106,7 +104,15 @@ export function useCotacoes() {
         itensResposta,
         observacoes,
       });
-      toast.success("Cotação respondida com sucesso!");
+      
+      // Verificar se algum item tem código Sankhya para personalizar a mensagem
+      const temCodigoSankhya = itensResposta.some(item => item.codigoSankhya?.trim());
+      
+      if (temCodigoSankhya) {
+        toast.success("Cotação respondida com sucesso! Códigos Sankhya foram registrados para os itens que precisam de cadastro.");
+      } else {
+        toast.success("Cotação respondida com sucesso!");
+      }
     } catch (error) {
       toast.error(`Erro ao responder cotação: ${error}`);
       throw error;
@@ -221,7 +227,7 @@ export function useCotacoes() {
     observacoes?: string
   ) => {
     try {
-      await responderPendenciaCadastro({
+      await responderPendencia({
         pendenciaId,
         usuarioId,
         codigoSankhya,
@@ -235,21 +241,21 @@ export function useCotacoes() {
   };
 
   // Função para concluir pendência de cadastro
-  const handleConcluirPendencia = async (
-    pendenciaId: Id<"pendenciasCadastro">,
-    usuarioId: Id<"users">
-  ) => {
-    try {
-      await concluirPendenciaCadastro({
-        pendenciaId,
-        usuarioId,
-      });
-      toast.success("Solicitação concluída com sucesso!");
-    } catch (error) {
-      toast.error(`Erro ao concluir solicitação: ${error}`);
-      throw error;
-    }
-  };
+  // const handleConcluirPendencia = async (
+  //   pendenciaId: Id<"pendenciasCadastro">,
+  //   usuarioId: Id<"users">
+  // ) => {
+  //   try {
+  //     await concluirPendenciaCadastro({
+  //       pendenciaId,
+  //       usuarioId,
+  //     });
+  //     toast.success("Solicitação concluída com sucesso!");
+  //   } catch (error) {
+  //     toast.error(`Erro ao concluir solicitação: ${error}`);
+  //     throw error;
+  //   }
+  // };
 
   // Função para migrar pendências sem número sequencial
   const handleMigrarPendencias = async () => {
@@ -274,7 +280,6 @@ export function useCotacoes() {
     
     // Actions
     criarCotacao: handleCriarCotacao,
-    assumirCotacao: handleAssumirCotacao,
     responderCotacao: handleResponderCotacao,
     aprovarCotacao: handleAprovarCotacao,
     finalizarCompra: handleFinalizarCompra,
@@ -283,7 +288,7 @@ export function useCotacoes() {
     excluirCotacao: handleExcluirCotacao,
     excluirPendencia: handleExcluirPendencia,
     responderPendencia: handleResponderPendencia,
-    concluirPendencia: handleConcluirPendencia,
+    // concluirPendencia: handleConcluirPendencia,
     migrarPendencias: handleMigrarPendencias,
     
     // Loading states
@@ -367,7 +372,6 @@ export const getStatusInfo = (status: string) => {
  * PERMISSÕES DO ADMINISTRADOR (role === "admin"):
  * ✅ Criar cotações (como vendedor)
  * ✅ Ver todas as cotações (sem restrições)
- * ✅ Assumir cotações (como compras)
  * ✅ Responder cotações (como compras) 
  * ✅ Aprovar cotações (pode aprovar qualquer cotação, não só as próprias)
  * ✅ Finalizar compras (como compras)
@@ -389,12 +393,8 @@ export const podeExecutarAcao = (
   const isAdmin = userRole === "admin";
   
   switch (acao) {
-    case "assumir":
-      return ["novo", "em_cotacao"].includes(status) && 
-             (isAdmin || ["compras", "gerente"].includes(userRole));
-    
     case "responder":
-      return status === "em_cotacao" && 
+      return ["novo", "em_cotacao"].includes(status) && 
              (isAdmin || ["compras", "gerente"].includes(userRole));
     
     case "aprovar":

@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MessageSquare, Save, Calculator, Copy } from "lucide-react";
+import { MessageSquare, Save, Calculator, Copy, Loader2 } from "lucide-react";
 import { useCotacao, useCotacoes } from "@/hooks/use-cotacoes";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -38,6 +38,7 @@ interface ItemResponse {
   prazoEntrega: string;
   fornecedor: string;
   observacoes: string;
+  codigoSankhya: string; // Código Sankhya para itens que precisam de cadastro
 }
 
 export function CotacaoResponseModal({
@@ -64,6 +65,7 @@ export function CotacaoResponseModal({
           prazoEntrega: item.prazoEntrega || "",
           fornecedor: item.fornecedor || "",
           observacoes: item.observacoes || "",
+          codigoSankhya: item.codigoSankhya || "", // Inicializar com valor existente ou vazio
         }))
       );
     }
@@ -150,6 +152,12 @@ export function CotacaoResponseModal({
       if (!resposta.precoUnitario || isNaN(preco) || preco <= 0) {
         return "Todos os itens devem ter um preço unitário válido";
       }
+      
+      // Verificar se itens que precisam de cadastro têm código Sankhya
+      const item = cotacao?.itens?.find(i => i._id === resposta.itemId);
+      if (item?.precisaCadastro && !resposta.codigoSankhya?.trim()) {
+        return `O item "${item.codigoPeca} - ${item.descricao}" precisa de cadastro. Informe o código Sankhya correspondente.`;
+      }
     }
     return null;
   };
@@ -177,6 +185,7 @@ export function CotacaoResponseModal({
         prazoEntrega: resposta.prazoEntrega || undefined,
         fornecedor: resposta.fornecedor || undefined,
         observacoes: resposta.observacoes || undefined,
+        codigoSankhya: resposta.codigoSankhya || undefined,
       }));
 
       await responderCotacao(
@@ -203,14 +212,17 @@ export function CotacaoResponseModal({
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto w-full">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto w-full bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white">
           <DialogHeader>
-            <DialogTitle>Carregando cotação...</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
+              <MessageSquare className="h-6 w-6" />
+              Carregando Cotação
+            </DialogTitle>
           </DialogHeader>
-                     <div className="p-8 text-center">
-             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-             <p className="mt-2 text-blue-900">Carregando dados da cotação...</p>
-           </div>
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Carregando dados da cotação...</span>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -219,11 +231,16 @@ export function CotacaoResponseModal({
   if (!cotacao) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto w-full bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white">
           <DialogHeader>
-            <DialogTitle>Erro</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
+              <MessageSquare className="h-6 w-6" />
+              Erro
+            </DialogTitle>
           </DialogHeader>
-          <p>Cotação não encontrada.</p>
+          <div className="p-4 text-center">
+            <p className="text-red-300">Cotação não encontrada.</p>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -231,84 +248,101 @@ export function CotacaoResponseModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto w-full">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto w-full bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+          <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
+            <MessageSquare className="h-6 w-6" />
             Responder Cotação #{cotacao.numeroSequencial}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
                      {/* Informações da Cotação */}
-           <Card>
-             <CardHeader className="bg-blue-50">
-               <CardTitle className="text-lg text-blue-900">Informações da Cotação</CardTitle>
-             </CardHeader>
-                         <CardContent>
+           <div className="p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
+             <h3 className="text-lg font-semibold text-white mb-4">Informações da Cotação</h3>
+             <div>
                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                  {cotacao.numeroOS && (
                    <div>
-                     <Label className="text-sm font-medium text-blue-900">Número da OS</Label>
-                     <p className="mt-1 font-mono text-blue-800 font-semibold">{cotacao.numeroOS}</p>
+                     <Label className="text-sm font-medium text-blue-300">Número da OS</Label>
+                     <p className="mt-1 font-mono text-white font-semibold">{cotacao.numeroOS}</p>
                    </div>
                  )}
                  {cotacao.numeroOrcamento && (
                    <div>
-                     <Label className="text-sm font-medium text-blue-900">Número do Orçamento</Label>
-                     <p className="mt-1 font-mono text-blue-800 font-semibold">{cotacao.numeroOrcamento}</p>
+                     <Label className="text-sm font-medium text-blue-300">Número do Orçamento</Label>
+                     <p className="mt-1 font-mono text-white font-semibold">{cotacao.numeroOrcamento}</p>
                    </div>
                  )}
                  {cotacao.cliente && (
                    <div>
-                     <Label className="text-sm font-medium text-blue-900">Cliente</Label>
-                     <p className="mt-1 text-blue-800 font-semibold">{cotacao.cliente}</p>
+                     <Label className="text-sm font-medium text-blue-300">Cliente</Label>
+                     <p className="mt-1 text-white font-semibold">{cotacao.cliente}</p>
                    </div>
                  )}
                </div>
                <div className="mt-4">
-                 <Label className="text-sm font-medium text-blue-900">Solicitante</Label>
-                 <p className="mt-1 text-blue-800 font-semibold">{cotacao.solicitante?.name}</p>
+                 <Label className="text-sm font-medium text-blue-300">Solicitante</Label>
+                 <p className="mt-1 text-white font-semibold">{cotacao.solicitante?.name}</p>
                </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Itens para Cotação */}
-          <Card>
-                         <CardHeader className="flex flex-row items-center justify-between bg-blue-50">
-               <CardTitle className="text-lg text-blue-900">Itens para Cotação</CardTitle>
-               <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border-2 border-blue-600">
-                 <Calculator className="h-4 w-4 text-blue-600" />
-                 <span className="text-lg font-bold text-blue-900">
+          <div className="p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
+            <div className="flex flex-row items-center justify-between mb-4">
+               <h3 className="text-lg font-semibold text-white">Itens para Cotação</h3>
+               <div className="flex items-center gap-2 bg-green-600 px-3 py-2 rounded-lg">
+                 <Calculator className="h-4 w-4 text-white" />
+                 <span className="text-lg font-bold text-white">
                    Total: {getGrandTotal()}
                  </span>
                </div>
-             </CardHeader>
-            <CardContent>
+             </div>
+            
+            {/* Verificar se algum item precisa de cadastro */}
+            {cotacao.itens?.some(item => item.precisaCadastro) && (
+              <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
+                <p className="text-yellow-200 text-sm">
+                  <strong>⚠️ Atenção:</strong> Alguns itens marcados como "Cadastro" requerem o código Sankhya obrigatório. 
+                  Estes códigos devem ser informados para que a cotação possa ser respondida.
+                </p>
+              </div>
+            )}
+            
+            <div>
               <div className="overflow-x-auto">
                 <Table>
                                      <TableHeader>
-                     <TableRow className="bg-blue-50">
-                       <TableHead className="min-w-[120px] text-blue-900 font-semibold">Código</TableHead>
-                       <TableHead className="min-w-[200px] text-blue-900 font-semibold">Descrição</TableHead>
-                       <TableHead className="w-20 text-blue-900 font-semibold">Qtd</TableHead>
-                       <TableHead className="w-32 text-blue-900 font-semibold">Preço Unit. *</TableHead>
-                       <TableHead className="w-32 text-blue-900 font-semibold">Total</TableHead>
-                       <TableHead className="min-w-[120px] text-blue-900 font-semibold">Prazo</TableHead>
-                       <TableHead className="min-w-[150px] text-blue-900 font-semibold">Fornecedor</TableHead>
-                       <TableHead className="min-w-[150px] text-blue-900 font-semibold">Observações</TableHead>
+                     <TableRow className="hover:!bg-transparent border-blue-700">
+                       <TableHead className="min-w-[120px] text-blue-300 font-semibold">Código</TableHead>
+                       <TableHead className="min-w-[200px] text-blue-300 font-semibold">Descrição</TableHead>
+                       <TableHead className="w-20 text-blue-300 font-semibold">Qtd</TableHead>
+                       <TableHead className="w-32 text-blue-300 font-semibold">Preço Unit. *</TableHead>
+                       <TableHead className="w-32 text-blue-300 font-semibold">Total</TableHead>
+                       <TableHead className="min-w-[120px] text-blue-300 font-semibold">Prazo</TableHead>
+                       <TableHead className="min-w-[150px] text-blue-300 font-semibold">Fornecedor</TableHead>
+                       <TableHead className="min-w-[120px] text-blue-300 font-semibold">Cód. Sankhya</TableHead>
+                       <TableHead className="min-w-[150px] text-blue-300 font-semibold">Observações</TableHead>
                      </TableRow>
                    </TableHeader>
                   <TableBody>
                     {cotacao.itens?.map((item, index) => {
                       const resposta = itensResposta.find(r => r.itemId === item._id);
                                              return (
-                         <TableRow key={item._id} className="hover:bg-blue-25">
-                           <TableCell className="font-mono font-semibold text-blue-900">
+                         <TableRow key={item._id} className="border-blue-700/50 hover:bg-blue-800/30">
+                           <TableCell className="font-mono font-semibold text-white">
                              {item.codigoPeca}
                            </TableCell>
-                           <TableCell className="text-blue-800">{item.descricao}</TableCell>
-                           <TableCell className="text-center font-semibold text-blue-900">
+                           <TableCell className="text-blue-100">
+                             {item.descricao}
+                             {item.precisaCadastro && (
+                               <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-900/30 text-orange-300 border border-orange-700/50">
+                                 Cadastro
+                               </span>
+                             )}
+                           </TableCell>
+                           <TableCell className="text-center font-semibold text-white">
                              {item.quantidade}
                            </TableCell>
                                                      <TableCell>
@@ -319,11 +353,11 @@ export function CotacaoResponseModal({
                                placeholder="0,00"
                                value={resposta?.precoUnitario || ""}
                                onChange={(e) => updateItemResponse(item._id, "precoUnitario", e.target.value)}
-                               className="w-full border-blue-300 focus:border-blue-600 focus:ring-blue-600"
+                               className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                                required
                              />
                            </TableCell>
-                           <TableCell className="font-semibold text-blue-800 bg-blue-50">
+                           <TableCell className="font-semibold text-green-400 bg-blue-900/30">
                              {calculateTotal(item.quantidade, resposta?.precoUnitario || "0")}
                            </TableCell>
                                                      <TableCell>
@@ -331,7 +365,7 @@ export function CotacaoResponseModal({
                                placeholder="Ex: 15 dias"
                                value={resposta?.prazoEntrega || ""}
                                onChange={(e) => updateItemResponse(item._id, "prazoEntrega", e.target.value)}
-                               className="w-full border-blue-300 focus:border-blue-600 focus:ring-blue-600"
+                               className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                              />
                            </TableCell>
                            <TableCell>
@@ -339,15 +373,28 @@ export function CotacaoResponseModal({
                                placeholder="Nome do fornecedor"
                                value={resposta?.fornecedor || ""}
                                onChange={(e) => updateItemResponse(item._id, "fornecedor", e.target.value)}
-                               className="w-full border-blue-300 focus:border-blue-600 focus:ring-blue-600"
+                               className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                              />
+                           </TableCell>
+                           <TableCell>
+                             {item.precisaCadastro ? (
+                               <Input
+                                 placeholder="Código Sankhya *"
+                                 value={resposta?.codigoSankhya || ""}
+                                 onChange={(e) => updateItemResponse(item._id, "codigoSankhya", e.target.value)}
+                                 className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
+                                 required
+                               />
+                             ) : (
+                               <span className="text-blue-400 text-sm">-</span>
+                             )}
                            </TableCell>
                            <TableCell>
                              <Input
                                placeholder="Observações"
                                value={resposta?.observacoes || ""}
                                onChange={(e) => updateItemResponse(item._id, "observacoes", e.target.value)}
-                               className="w-full border-blue-300 focus:border-blue-600 focus:ring-blue-600"
+                               className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                              />
                            </TableCell>
                         </TableRow>
@@ -356,24 +403,22 @@ export function CotacaoResponseModal({
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
                      {/* Observações Gerais */}
-           <Card>
-             <CardHeader className="bg-blue-50">
-               <CardTitle className="text-lg text-blue-900">Observações Gerais</CardTitle>
-             </CardHeader>
-             <CardContent>
+           <div className="p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
+             <h3 className="text-lg font-semibold text-white mb-4">Observações Gerais</h3>
+             <div>
                <Textarea
                  placeholder="Observações gerais sobre a cotação respondida..."
                  value={observacoesGerais}
                  onChange={(e) => setObservacoesGerais(e.target.value)}
                  rows={4}
-                 className="border-blue-300 focus:border-blue-600 focus:ring-blue-600 placeholder-blue-400"
+                 className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                />
-             </CardContent>
-           </Card>
+             </div>
+           </div>
 
           {/* Botões */}
           <div className="flex justify-end space-x-2">
@@ -382,7 +427,7 @@ export function CotacaoResponseModal({
               variant="outline"
               onClick={copyToClipboard}
               disabled={isSubmitting}
-              className="border-green-600 text-green-600 hover:bg-green-50"
+              className="border-green-600 text-green-400 hover:bg-green-900/20"
             >
               <Copy className="h-4 w-4 mr-2" />
               Copiar Cotação
@@ -392,13 +437,14 @@ export function CotacaoResponseModal({
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
+              className="border-blue-600 text-blue-300 hover:bg-blue-800"
             >
               Cancelar
             </Button>
                          <Button
                type="submit"
                disabled={isSubmitting}
-               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+               className="bg-green-600 hover:bg-green-700 text-white font-semibold"
              >
               {isSubmitting ? (
                 <>

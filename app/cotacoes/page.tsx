@@ -121,7 +121,7 @@ export default function CotacoesPage() {
                 <span className="text-blue-600">→</span>
                 <span className="bg-blue-600 text-white px-2 py-1 rounded font-medium">3. Respondida</span>
                 <span className="text-blue-600">→</span>
-                <span className="bg-blue-100 text-blue-900 px-2 py-1 rounded font-medium">4. Aprovada</span>
+                <span className="bg-blue-100 text-blue-900 px-2 py-1 rounded font-medium">4. Aprovada p/ Compra</span>
                 <span className="text-blue-600">→</span>
                 <span className="bg-blue-600 text-white px-2 py-1 rounded font-medium">5. Comprada</span>
               </div>
@@ -184,7 +184,7 @@ export default function CotacoesPage() {
                   <option value="novo">Novo</option>
                   <option value="em_cotacao">Em Cotação</option>
                   <option value="respondida">Respondida</option>
-                  <option value="aprovada">Aprovada</option>
+                  <option value="aprovada_para_compra">Aprovada para Compra</option>
                   <option value="comprada">Comprada</option>
                   <option value="cancelada">Cancelada</option>
                 </select>

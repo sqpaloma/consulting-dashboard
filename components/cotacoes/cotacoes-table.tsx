@@ -29,12 +29,15 @@ import {
   Edit,
   Clock,
   Trash2,
+  Download,
 } from "lucide-react";
 import { useBuscaCotacoes, useCotacoes } from "@/hooks/use-cotacoes";
 import { getStatusInfo, podeExecutarAcao } from "@/hooks/use-cotacoes";
-// import { CotacaoDetailModal } from "./cotacao-detail-modal";
+import { CotacaoDetailModal } from "./cotacao-detail-modal";
 import { CotacaoResponseModal } from "./cotacao-response-modal";
 import { SankhyaResponseModal } from "./sankhya-response-modal";
+import { CotacaoApprovalModal } from "./cotacao-approval-modal";
+import { CotacaoEditModal } from "./cotacao-edit-modal";
 import { Id } from "@/convex/_generated/dataModel";
 
 interface FiltrosState {
@@ -56,8 +59,10 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
   const [selectedCotacao, setSelectedCotacao] = useState<Id<"cotacoes"> | null>(null);
   const [respondingCotacao, setRespondingCotacao] = useState<Id<"cotacoes"> | null>(null);
   const [respondingPendencia, setRespondingPendencia] = useState<Id<"pendenciasCadastro"> | null>(null);
+  const [approvingCotacao, setApprovingCotacao] = useState<Id<"cotacoes"> | null>(null);
+  const [editingCotacao, setEditingCotacao] = useState<Id<"cotacoes"> | null>(null);
 
-  const { excluirCotacao, excluirPendencia, concluirPendencia } = useCotacoes();
+  const { excluirCotacao, excluirPendencia, concluirPendencia, finalizarCompra } = useCotacoes();
 
   // Função para confirmar e excluir
   const handleExcluir = async (cotacao: any) => {
@@ -104,6 +109,25 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     }
   };
 
+  // Função para finalizar compra
+  const handleComprar = async (cotacao: any) => {
+    if (!userId) {
+      return;
+    }
+    
+    const numero = `#${cotacao.numeroSequencial}`;
+    
+    if (!window.confirm(`Confirma a finalização da compra da cotação ${numero}?`)) {
+      return;
+    }
+
+    try {
+      await finalizarCompra(cotacao._id, userId);
+    } catch (error) {
+      // Erro já tratado no hook
+    }
+  };
+
   // Construir filtros para a query
   const queryFiltros = {
     busca: filtros.busca || undefined,
@@ -140,7 +164,6 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
 
   const getActionIcon = (action: string) => {
     switch (action) {
-      case "cotar": return <MessageSquare className="h-4 w-4" />;
       case "responder": return <MessageSquare className="h-4 w-4" />;
       case "aprovar": return <CheckCircle className="h-4 w-4" />;
       case "concluir": return <CheckCircle className="h-4 w-4" />;
@@ -154,7 +177,6 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
 
   const getActionLabel = (action: string) => {
     switch (action) {
-      case "cotar": return "Responder";
       case "responder": return "Responder";
       case "aprovar": return "Aprovar";
       case "concluir": return "Concluir";
@@ -196,9 +218,6 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     }
 
     // Para cotações, lógica original
-    if (podeExecutarAcao(cotacao.status, "assumir", userRole, isSolicitante, isComprador)) {
-      actions.push("cotar");
-    }
     if (podeExecutarAcao(cotacao.status, "responder", userRole, isSolicitante, isComprador)) {
       actions.push("responder");
     }
@@ -224,11 +243,20 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
   };
 
   const isPendente = (cotacao: any) => {
+    // Administrador vê TODAS as pendências
+    if (userRole === "admin") {
+      if (cotacao.tipo === "cadastro") {
+        return ["pendente", "em_andamento", "respondida_cadastro"].includes(cotacao.status);
+      } else {
+        return ["novo", "em_cotacao", "aprovada_para_compra", "respondida"].includes(cotacao.status);
+      }
+    }
+    
     // Se é cadastro, verificar status de cadastro
     if (cotacao.tipo === "cadastro") {
       const statusPendentesCadastro = ["pendente", "em_andamento", "respondida_cadastro"];
       return statusPendentesCadastro.includes(cotacao.status) && 
-             ["admin", "compras", "gerente"].includes(userRole);
+             ["compras", "gerente"].includes(userRole);
     }
     
     // Se é cotação, usar lógica original
@@ -236,7 +264,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     const statusPendentesVendedor = ["respondida"];
     
     if (statusPendentesCompras.includes(cotacao.status) && 
-        ["admin", "compras", "gerente"].includes(userRole)) {
+        ["compras", "gerente"].includes(userRole)) {
       return true;
     }
     
@@ -254,11 +282,18 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     const pendente = isPendente(cotacao);
 
     return (
-      <TableRow className={`${pendente ? "bg-blue-600/20 border-blue-400/50" : ""} hover:!bg-blue-600/30 transition-colors text-white hover:text-white`}>
+      <TableRow className={`${pendente ? "bg-blue-600/20 border-blue-400/50" : ""} hover:!bg-blue-600/30 transition-colors text-white hover:text-white border-0`}>
         <TableCell>
-          <Badge className={cotacao.tipo === "cadastro" ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}>
-            {cotacao.tipo === "cadastro" ? "Cadastro" : "Cotação"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={cotacao.tipo === "cadastro" ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}>
+              {cotacao.tipo === "cadastro" ? "Cadastro" : "Cotação"}
+            </Badge>
+            {cotacao.tipo === "cotacao" && cotacao.temItensPrecisaCadastro && (
+              <Badge className="bg-orange-900/30 text-orange-300 border-orange-700/50">
+                Cadastro
+              </Badge>
+            )}
+          </div>
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
@@ -342,16 +377,20 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                   onClick={() => {
                     if (action === "view") {
                       setSelectedCotacao(cotacao._id);
-                    } else if (action === "cotar") {
-                      setRespondingCotacao(cotacao._id);
                     } else if (action === "responder") {
                       if (cotacao.tipo === "cadastro") {
                         setRespondingPendencia(cotacao._id);
                       } else {
                         setRespondingCotacao(cotacao._id);
                       }
+                    } else if (action === "aprovar") {
+                      setApprovingCotacao(cotacao._id);
+                    } else if (action === "comprar") {
+                      handleComprar(cotacao);
                     } else if (action === "concluir") {
                       handleConcluir(cotacao);
+                    } else if (action === "editar") {
+                      setEditingCotacao(cotacao._id);
                     } else if (action === "excluir") {
                       handleExcluir(cotacao);
                     } else {
@@ -426,8 +465,19 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
         {(filtros.incluirHistorico && cotacoesHistorico.length > 0) && (
           <Card className="bg-blue-800/30 border-blue-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
-                Histórico ({cotacoesHistorico.length})
+              <CardTitle className="flex items-center justify-between text-white">
+                <span className="flex items-center gap-2">
+                  Histórico ({cotacoesHistorico.length})
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExportarHistorico}
+                  className="text-green-400 hover:text-green-300 hover:bg-green-900/20"
+                  title="Exportar histórico para Excel"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -472,7 +522,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
       </div>
 
               {/* Modal de detalhes */}
-        {/* {selectedCotacao && (
+        {selectedCotacao && (
           <CotacaoDetailModal
             cotacaoId={selectedCotacao}
             isOpen={!!selectedCotacao}
@@ -480,7 +530,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
             userRole={userRole}
             userId={userId}
           />
-        )} */}
+        )}
 
       {/* Modal de resposta */}
       {respondingCotacao && (
@@ -501,6 +551,34 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
           onClose={() => setRespondingPendencia(null)}
           userId={userId}
           pendenciaData={cotacoes?.find(c => c._id === respondingPendencia && c.tipo === "cadastro")}
+        />
+      )}
+
+      {/* Modal de aprovação para cotações respondidas */}
+      {approvingCotacao && (
+        <CotacaoApprovalModal
+          cotacaoId={approvingCotacao}
+          isOpen={!!approvingCotacao}
+          onClose={() => setApprovingCotacao(null)}
+          userRole={userRole}
+          userId={userId}
+        />
+      )}
+
+      {/* Modal de edição para cotações */}
+      {editingCotacao && (
+        <CotacaoEditModal
+          cotacaoId={editingCotacao}
+          isOpen={!!editingCotacao}
+          onClose={() => setEditingCotacao(null)}
+          userRole={userRole}
+          userId={userId}
+          onSave={() => {
+            // Aguarda um pouco para o Convex invalidar as queries
+            setTimeout(() => {
+              setEditingCotacao(null);
+            }, 500);
+          }}
         />
       )}
     </>

@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -39,6 +41,8 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
     numeroOrcamento: "",
     cliente: "",
     observacoes: "",
+    fornecedor: "",
+    solicitarInfoTecnica: false,
   });
 
   const [itens, setItens] = useState<CotacaoItem[]>([
@@ -47,19 +51,20 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
       descricao: "",
       quantidade: 1,
       observacoes: "",
+      precisaCadastro: false,
     },
   ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const handleItemChange = (index: number, field: keyof CotacaoItem, value: string | number) => {
+  const handleItemChange = (index: number, field: keyof CotacaoItem, value: string | number | boolean) => {
     setItens(prev => prev.map((item, i) => 
       i === index ? { ...item, [field]: value } : item
     ));
@@ -71,6 +76,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
       descricao: "",
       quantidade: 1,
       observacoes: "",
+      precisaCadastro: false,
     }]);
   };
 
@@ -131,12 +137,15 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
         numeroOrcamento: "",
         cliente: "",
         observacoes: "",
+        fornecedor: "",
+        solicitarInfoTecnica: false,
       });
       setItens([{
         codigoPeca: "",
         descricao: "",
         quantidade: 1,
         observacoes: "",
+        precisaCadastro: false,
       }]);
       
       onClose();
@@ -155,101 +164,134 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto w-full">
+      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto w-full bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
+          <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
+            <Plus className="h-6 w-6" />
             Nova Cotação #{proximoNumero || "..."}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informações gerais */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informações Gerais</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
+            <h3 className="text-lg font-semibold text-white mb-4">Informações Gerais</h3>
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="numeroOS">Número da OS</Label>
+                  <Label htmlFor="numeroOS" className="text-blue-300">Número da OS</Label>
                   <Input
                     id="numeroOS"
                     value={formData.numeroOS}
                     onChange={(e) => handleInputChange("numeroOS", e.target.value)}
                     placeholder="Ex: OS-2024-001"
+                    className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="numeroOrcamento">Número do Orçamento</Label>
+                  <Label htmlFor="numeroOrcamento" className="text-blue-300">Número do Orçamento</Label>
                   <Input
                     id="numeroOrcamento"
                     value={formData.numeroOrcamento}
                     onChange={(e) => handleInputChange("numeroOrcamento", e.target.value)}
                     placeholder="Ex: ORC-2024-001"
+                    className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="cliente">Cliente</Label>
+                  <Label htmlFor="cliente" className="text-blue-300">Cliente</Label>
                   <Input
                     id="cliente"
                     value={formData.cliente}
                     onChange={(e) => handleInputChange("cliente", e.target.value)}
                     placeholder="Nome do cliente"
+                    className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                   />
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fornecedor" className="text-blue-300">Fornecedor Preferencial</Label>
+                  <Select value={formData.fornecedor} onValueChange={(value) => handleInputChange("fornecedor", value)}>
+                    <SelectTrigger className="bg-blue-800 border-blue-600 text-white">
+                      <SelectValue placeholder="Selecione um fornecedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rexroth">Rexroth</SelectItem>
+                      <SelectItem value="danfoss">Danfoss</SelectItem>
+                      <SelectItem value="handok">Handok</SelectItem>
+                      <SelectItem value="parker">Parker</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 flex items-end">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="solicitarInfoTecnica"
+                      checked={formData.solicitarInfoTecnica}
+                      onCheckedChange={(checked) => handleInputChange("solicitarInfoTecnica", checked === true)}
+                    />
+                    <Label htmlFor="solicitarInfoTecnica" className="text-sm font-normal text-blue-300">
+                      Solicitar informação técnica
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações</Label>
+                <Label htmlFor="observacoes" className="text-blue-300">Observações</Label>
                 <Textarea
                   id="observacoes"
                   value={formData.observacoes}
                   onChange={(e) => handleInputChange("observacoes", e.target.value)}
                   placeholder="Observações gerais sobre a cotação..."
                   rows={3}
+                  className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Itens */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Itens para Cotação</CardTitle>
+          <div className="p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
+            <div className="flex flex-row items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Itens para Cotação</h3>
               <Button
                 type="button"
                 onClick={addItem}
                 size="sm"
-                className="bg-white text-blue-900 hover:bg-blue-50 font-medium"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Item
               </Button>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[150px]">Código da Peça *</TableHead>
-                      <TableHead className="min-w-[200px]">Descrição *</TableHead>
-                      <TableHead className="w-[100px]">Quantidade *</TableHead>
-                      <TableHead className="min-w-[150px]">Observações</TableHead>
-                      <TableHead className="w-[80px]">Ações</TableHead>
+                    <TableRow className="hover:!bg-transparent border-blue-700">
+                      <TableHead className="w-[150px] text-blue-300">Código da Peça *</TableHead>
+                      <TableHead className="min-w-[200px] text-blue-300">Descrição *</TableHead>
+                      <TableHead className="w-[100px] text-blue-300">Quantidade *</TableHead>
+                      <TableHead className="w-[120px] text-blue-300">Cadastro</TableHead>
+                      <TableHead className="min-w-[150px] text-blue-300">Observações</TableHead>
+                      <TableHead className="w-[80px] text-blue-300">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {itens.map((item, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={index} className="border-blue-700/50 hover:bg-blue-800/30">
                         <TableCell>
                           <Input
                             value={item.codigoPeca}
                             onChange={(e) => handleItemChange(index, "codigoPeca", e.target.value)}
                             placeholder="Código"
-                            className="w-full"
+                            className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                           />
                         </TableCell>
                         <TableCell>
@@ -257,7 +299,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                             value={item.descricao}
                             onChange={(e) => handleItemChange(index, "descricao", e.target.value)}
                             placeholder="Descrição da peça"
-                            className="w-full"
+                            className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                           />
                         </TableCell>
                         <TableCell>
@@ -266,15 +308,24 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                             min="1"
                             value={item.quantidade}
                             onChange={(e) => handleItemChange(index, "quantidade", parseInt(e.target.value) || 1)}
-                            className="w-full"
+                            className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                           />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center">
+                            <Checkbox
+                              checked={item.precisaCadastro || false}
+                              onCheckedChange={(checked) => handleItemChange(index, "precisaCadastro", !!checked)}
+                              className="border-blue-400 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                            />
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Input
                             value={item.observacoes || ""}
                             onChange={(e) => handleItemChange(index, "observacoes", e.target.value)}
                             placeholder="Observações"
-                            className="w-full"
+                            className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                           />
                         </TableCell>
                         <TableCell>
@@ -284,7 +335,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                             size="sm"
                             onClick={() => removeItem(index)}
                             disabled={itens.length === 1}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -294,8 +345,8 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Botões */}
           <div className="flex justify-end space-x-2">
@@ -304,13 +355,14 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
+              className="border-blue-600 text-blue-300 hover:bg-blue-800"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-white text-blue-900 hover:bg-blue-50 font-medium"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               {isSubmitting ? (
                 <>
