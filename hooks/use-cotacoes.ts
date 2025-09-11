@@ -341,19 +341,6 @@ export function useCotacoes() {
   };
 }
 
-// Hook para cotações pendentes
-export function useCotacoesPendentes(usuarioId?: Id<"users">) {
-  const cotacoesPendentes = useQuery(
-    api.cotacoes.getCotacoesPendentes,
-    usuarioId ? { usuarioId } : "skip"
-  );
-
-  return {
-    cotacoesPendentes,
-    isLoading: cotacoesPendentes === undefined,
-    totalPendentes: cotacoesPendentes?.length || 0,
-  };
-}
 
 // Hook para cotação específica
 export function useCotacao(cotacaoId?: Id<"cotacoes">) {

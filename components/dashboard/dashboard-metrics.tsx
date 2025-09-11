@@ -250,29 +250,28 @@ export function DashboardMetrics({
   };
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2">
-      {/* Cards em grid normal */}
-      <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2 col-span-4 md:col-span-2 lg:col-span-4 xl:col-span-8">
+    <div className="grid grid-cols-3 grid-rows-2 gap-2 h-full">
+      {/* Cards em grid 3x2 */}
         {/* Total Itens */}
         <Card
           onClick={() => openModal("total")}
-          className="bg-white/10 border-white/20 text-white cursor-pointer hover:bg-white/15 transition"
+          className="bg-white border-gray-200 cursor-pointer hover:bg-gray-50 transition"
         >
           <CardContent className="p-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white/70">
+              <span className="text-xs font-medium text-gray-600">
                 Total Itens
               </span>
-              <BarChart3 className="h-3 w-3 text-blue-400" />
+              <BarChart3 className="h-3 w-3 text-blue-500" />
             </div>
-            <div className="text-xl font-bold text-white text-center">
+            <div className="text-xl font-bold text-gray-900 text-center">
               {dashboardData.totalItens}
             </div>
             <div className="flex items-center justify-center space-x-2 text-xs mt-1">
-              <span className="text-red-300">
+              <span className="text-red-500">
                 {calculateAveragePercentages().overdue}%
               </span>
-              <span className="text-green-300">
+              <span className="text-green-500">
                 {calculateAveragePercentages().onTime}%
               </span>
             </div>
@@ -282,15 +281,15 @@ export function DashboardMetrics({
         {/* Aguardando Aprovação */}
         <Card
           onClick={() => openModal("aprovacao")}
-          className="bg-white/10 border-white/20 text-white cursor-pointer hover:bg-white/15 transition"
+          className="bg-white border-gray-200 cursor-pointer hover:bg-gray-50 transition"
         >
           <CardContent className="p-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white/70">
+              <span className="text-xs font-medium text-gray-600">
                 Aguardando Aprovação
               </span>
               <svg
-                className="h-3 w-3 text-gray-300"
+                className="h-3 w-3 text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -303,18 +302,18 @@ export function DashboardMetrics({
                 />
               </svg>
             </div>
-            <div className="text-xl font-bold text-white mb-1 text-center">
+            <div className="text-xl font-bold text-gray-900 mb-1 text-center">
               {dashboardData.aguardandoAprovacao}
             </div>
             <div className="flex items-center justify-center space-x-2 text-xs">
-              <span className="text-red-300">
+              <span className="text-red-500">
                 {calculatePercentage(
                   itemMetrics.aprovacao.overdue,
                   itemMetrics.aprovacao.total
                 )}
                 %
               </span>
-              <span className="text-green-300">
+              <span className="text-green-500">
                 {calculatePercentage(
                   itemMetrics.aprovacao.onTime,
                   itemMetrics.aprovacao.total
@@ -328,15 +327,15 @@ export function DashboardMetrics({
         {/* Análises */}
         <Card
           onClick={() => openModal("analises")}
-          className="bg-white/10 border-white/20 text-white cursor-pointer hover:bg-white/15 transition"
+          className="bg-white border-gray-200 cursor-pointer hover:bg-gray-50 transition"
         >
           <CardContent className="p-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white/70">
+              <span className="text-xs font-medium text-gray-600">
                 Análises
               </span>
               <svg
-                className="h-3 w-3 text-blue-300"
+                className="h-3 w-3 text-blue-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -349,18 +348,18 @@ export function DashboardMetrics({
                 />
               </svg>
             </div>
-            <div className="text-xl font-bold text-white mb-1 text-center">
+            <div className="text-xl font-bold text-gray-900 mb-1 text-center">
               {dashboardData.analises}
             </div>
             <div className="flex items-center justify-center space-x-2 text-xs">
-              <span className="text-red-300">
+              <span className="text-red-500">
                 {calculatePercentage(
                   itemMetrics.analises.overdue,
                   itemMetrics.analises.total
                 )}
                 %
               </span>
-              <span className="text-green-300">
+              <span className="text-green-500">
                 {calculatePercentage(
                   itemMetrics.analises.onTime,
                   itemMetrics.analises.total
@@ -374,27 +373,27 @@ export function DashboardMetrics({
         {/* Orçamentos */}
         <Card
           onClick={() => openModal("orcamentos")}
-          className="bg-white/10 border-white/20 text-white cursor-pointer hover:bg-white/15 transition"
+          className="bg-white border-gray-200 cursor-pointer hover:bg-gray-50 transition"
         >
           <CardContent className="p-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white/70">
+              <span className="text-xs font-medium text-gray-600">
                 Orçamentos
               </span>
-              <DollarSign className="h-3 w-3 text-green-300" />
+              <DollarSign className="h-3 w-3 text-green-500" />
             </div>
-            <div className="text-xl font-bold text-white mb-1 text-center">
+            <div className="text-xl font-bold text-gray-900 mb-1 text-center">
               {dashboardData.orcamentos}
             </div>
             <div className="flex items-center justify-center space-x-2 text-xs">
-              <span className="text-red-300">
+              <span className="text-red-500">
                 {calculatePercentage(
                   itemMetrics.orcamentos.overdue,
                   itemMetrics.orcamentos.total
                 )}
                 %
               </span>
-              <span className="text-green-300">
+              <span className="text-green-500">
                 {calculatePercentage(
                   itemMetrics.orcamentos.onTime,
                   itemMetrics.orcamentos.total
@@ -408,15 +407,15 @@ export function DashboardMetrics({
         {/* Em Execução */}
         <Card
           onClick={() => openModal("execucao")}
-          className="bg-white/10 border-white/20 text-white cursor-pointer hover:bg-white/15 transition"
+          className="bg-white border-gray-200 cursor-pointer hover:bg-gray-50 transition"
         >
           <CardContent className="p-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white/70">
+              <span className="text-xs font-medium text-gray-600">
                 Em Execução
               </span>
               <svg
-                className="h-3 w-3 text-orange-300"
+                className="h-3 w-3 text-orange-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -435,18 +434,18 @@ export function DashboardMetrics({
                 />
               </svg>
             </div>
-            <div className="text-xl font-bold text-white mb-1 text-center">
+            <div className="text-xl font-bold text-gray-900 mb-1 text-center">
               {dashboardData.emExecucao}
             </div>
             <div className="flex items-center justify-center space-x-2 text-xs">
-              <span className="text-red-300">
+              <span className="text-red-500">
                 {calculatePercentage(
                   itemMetrics.execucao.overdue,
                   itemMetrics.execucao.total
                 )}
                 %
               </span>
-              <span className="text-green-300">
+              <span className="text-green-500">
                 {calculatePercentage(
                   itemMetrics.execucao.onTime,
                   itemMetrics.execucao.total
@@ -460,13 +459,13 @@ export function DashboardMetrics({
         {/* Pronto */}
         <Card
           onClick={() => openModal("pronto")}
-          className="bg-white/10 border-white/20 text-white cursor-pointer hover:bg-white/15 transition"
+          className="bg-white border-gray-200 cursor-pointer hover:bg-gray-50 transition"
         >
           <CardContent className="p-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white/70">Pronto</span>
+              <span className="text-xs font-medium text-gray-600">Pronto</span>
               <svg
-                className="h-3 w-3 text-green-300"
+                className="h-3 w-3 text-green-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -479,18 +478,18 @@ export function DashboardMetrics({
                 />
               </svg>
             </div>
-            <div className="text-xl font-bold text-white mb-1 text-center">
+            <div className="text-xl font-bold text-gray-900 mb-1 text-center">
               {dashboardData.pronto}
             </div>
             <div className="flex items-center justify-center space-x-2 text-xs">
-              <span className="text-red-300">
+              <span className="text-red-500">
                 {calculatePercentage(
                   itemMetrics.pronto.overdue,
                   itemMetrics.pronto.total
                 )}
                 %
               </span>
-              <span className="text-green-300">
+              <span className="text-green-500">
                 {calculatePercentage(
                   itemMetrics.pronto.onTime,
                   itemMetrics.pronto.total
@@ -500,8 +499,6 @@ export function DashboardMetrics({
             </div>
           </CardContent>
         </Card>
-
-      </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Package, Search, Filter, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useCotacoesPendentes, useCotacoes } from "@/hooks/use-cotacoes";
+import { useCotacoes } from "@/hooks/use-cotacoes";
 import { Badge } from "@/components/ui/badge";
 import { CotacoesTable } from "@/components/cotacoes/cotacoes-table";
 import { CotacaoForm } from "@/components/cotacoes/cotacao-form";
@@ -33,8 +33,6 @@ export default function CotacoesPage() {
     dataFim: undefined,
   });
 
-  // Buscar cotações pendentes para o usuário atual
-  const { totalPendentes } = useCotacoesPendentes(user?.userId);
   const { migrarPendencias } = useCotacoes();
 
   // Verificar se o usuário pode criar cotações (vendedores)
@@ -76,15 +74,6 @@ export default function CotacoesPage() {
       <div className="space-y-4 sm:space-y-6">
         {/* Header personalizado com actions */}
         <div className="flex flex-col gap-4">
-          {/* Badge de pendências */}
-          {totalPendentes > 0 && (
-            <div className="flex justify-center sm:justify-start">
-              <Badge className="bg-blue-100 text-blue-900 text-sm font-semibold px-3 py-1">
-                {totalPendentes} pendente{totalPendentes > 1 ? "s" : ""}
-              </Badge>
-            </div>
-          )}
-          
           {/* Botões de ação */}
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             {/* Botão para cadastrar peça */}

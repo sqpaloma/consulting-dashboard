@@ -164,7 +164,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto w-full bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white p-3 sm:p-6">
+      <DialogContent className="max-w-[95vw] sm:max-w-[90vw] lg:max-w-[80vw] xl:max-w-6xl max-h-[95vh] overflow-y-auto w-full bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white p-3 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
             <Plus className="h-6 w-6" />
@@ -271,7 +271,82 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
               </Button>
             </div>
             <div>
-              <div className="overflow-x-auto">
+              {/* Layout mobile - Cards */}
+              <div className="space-y-3 sm:hidden">
+                {itens.map((item, index) => (
+                  <Card key={index} className="bg-blue-800/50 border-blue-600">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm text-blue-300">Item {index + 1}</CardTitle>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem(index)}
+                          disabled={itens.length === 1}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-2">
+                        <Label className="text-blue-300 text-xs">Código da Peça *</Label>
+                        <Input
+                          value={item.codigoPeca}
+                          onChange={(e) => handleItemChange(index, "codigoPeca", e.target.value)}
+                          placeholder="Código"
+                          className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-blue-300 text-xs">Descrição *</Label>
+                        <Input
+                          value={item.descricao}
+                          onChange={(e) => handleItemChange(index, "descricao", e.target.value)}
+                          placeholder="Descrição da peça"
+                          className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-blue-300 text-xs">Quantidade *</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantidade}
+                            onChange={(e) => handleItemChange(index, "quantidade", parseInt(e.target.value) || 1)}
+                            className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-blue-300 text-xs">Precisa Cadastro</Label>
+                          <div className="flex items-center justify-center h-10">
+                            <Checkbox
+                              checked={item.precisaCadastro || false}
+                              onCheckedChange={(checked) => handleItemChange(index, "precisaCadastro", !!checked)}
+                              className="border-blue-400 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-blue-300 text-xs">Observações</Label>
+                        <Input
+                          value={item.observacoes || ""}
+                          onChange={(e) => handleItemChange(index, "observacoes", e.target.value)}
+                          placeholder="Observações"
+                          className="bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Layout desktop - Tabela */}
+              <div className="hidden sm:block overflow-x-auto">
                 <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow className="hover:!bg-transparent border-blue-700">

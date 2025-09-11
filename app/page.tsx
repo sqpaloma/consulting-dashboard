@@ -35,15 +35,6 @@ const DistributionPanel = dynamic(
   }
 );
 
-const OverdueDistribution = dynamic(
-  () => import("@/components/dashboard/overdue-distribution"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[256px] animate-pulse rounded-lg bg-neutral-900/40" />
-    ),
-  }
-);
 
 const ActivityPlanner = dynamic(
   () =>
@@ -498,15 +489,20 @@ export function ConsultingDashboard() {
 
       {/* Main Content */}
       <div className="space-y-2">
-        {/* Metrics Cards - Originais */}
-        <DashboardMetrics
-          dashboardData={filteredDashboardData}
-          openModal={openModal}
-          overdueItems={overdueItems}
-        />
 
-        {/* Mobile layout: order -> Departamento -> Calendário -> Distribuições (sem execução) */}
+        {/* Mobile layout: order -> Cards+Distribuições -> Departamento -> Calendário */}
         <div className="block lg:hidden md:hidden space-y-2">
+          <div className="space-y-4 mt-4">
+            <DashboardMetrics
+              dashboardData={filteredDashboardData}
+              openModal={openModal}
+              overdueItems={overdueItems}
+            />
+            <div className="h-[250px]">
+              <DistributionPanel dashboardData={filteredDashboardData} />
+            </div>
+          </div>
+
           <DepartamentoInfo
             processedItems={deferredFilteredItems}
             filteredByResponsavel={filteredByResponsavel}
@@ -517,19 +513,20 @@ export function ConsultingDashboard() {
             onDateClick={handleCalendarDateClick}
             filteredByResponsavel={filteredByResponsavel}
           />
+        </div>
 
-          <div className="space-y-4 mt-4">
+        {/* Medium screens (md to <xl): Cards+Gráficos lado a lado; Departamento + Calendário embaixo lado a lado */}
+        <div className="hidden md:grid xl:hidden grid-cols-2 gap-2">
+          <div className="col-span-2 grid grid-cols-2 gap-2">
+            <DashboardMetrics
+              dashboardData={filteredDashboardData}
+              openModal={openModal}
+              overdueItems={overdueItems}
+            />
             <div className="h-[250px]">
               <DistributionPanel dashboardData={filteredDashboardData} />
             </div>
-            <div className="h-[250px]">
-              <OverdueDistribution overdueItems={overdueItems} />
-            </div>
           </div>
-        </div>
-
-        {/* Medium screens (md to <xl): Departamento + Calendário lado a lado; gráficos embaixo lado a lado */}
-        <div className="hidden md:grid xl:hidden grid-cols-2 gap-2">
           <div className="col-span-1">
             <DepartamentoInfo
               processedItems={deferredFilteredItems}
@@ -543,38 +540,34 @@ export function ConsultingDashboard() {
               filteredByResponsavel={filteredByResponsavel}
             />
           </div>
-          <div className="col-span-2 grid grid-cols-2 gap-2">
-            <div className="h-[250px]">
-              <DistributionPanel dashboardData={filteredDashboardData} />
-            </div>
-            <div className="h-[250px]">
-              <OverdueDistribution overdueItems={overdueItems} />
-            </div>
-          </div>
         </div>
 
         {/* Desktop layout (xl+): layout amplo */}
         <div className="hidden xl:grid grid-cols-6 xl:grid-cols-8 gap-2">
-          {/* Seção esquerda: Informações do Departamento */}
+          {/* Seção esquerda: Cards e Gráfico */}
+          <div className="space-y-2 col-span-2 xl:col-span-3">
+            {/* Cards e gráfico empilhados */}
+            <div className="block h-[520px] flex flex-col">
+              <div className="h-[198px]">
+                <DashboardMetrics
+                  dashboardData={filteredDashboardData}
+                  openModal={openModal}
+                  overdueItems={overdueItems}
+                />
+              </div>
+              <div className="mt-2 flex-1">
+                <DistributionPanel dashboardData={filteredDashboardData} />
+              </div>
+            </div>
+          </div>
+
+          {/* Seção central: Informações do Departamento */}
           <div className="col-span-1 xl:col-span-2">
             <DepartamentoInfo
               processedItems={deferredFilteredItems}
               filteredByResponsavel={filteredByResponsavel}
               className="h-[520px]"
             />
-          </div>
-
-          {/* Seção central: Gráficos */}
-          <div className="space-y-2 col-span-2 xl:col-span-3">
-            {/* Gráficos empilhados */}
-            <div className="block">
-              <div className="h-[256px]">
-                <DistributionPanel dashboardData={filteredDashboardData} />
-              </div>
-              <div className="mt-2 h-[256px]">
-                <OverdueDistribution overdueItems={overdueItems} />
-              </div>
-            </div>
           </div>
 
           {/* Seção direita: Calendário */}
