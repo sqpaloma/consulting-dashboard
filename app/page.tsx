@@ -79,6 +79,14 @@ const ResponsavelFilter = dynamic(
   { ssr: false }
 );
 
+const SearchFilter = dynamic(
+  () =>
+    import("@/components/dashboard/search-filter").then(
+      (m) => m.SearchFilter
+    ),
+  { ssr: false }
+);
+
 const DepartamentoInfo = dynamic(
   () =>
     import("@/components/dashboard/departamento-info").then(
@@ -114,6 +122,7 @@ export function ConsultingDashboard() {
     string | null
   >(null);
 
+
   // Forçar escopo somente do próprio usuário para Lucas, independente do papel
   const forceOwnByEmail =
     user?.email?.toLowerCase() === "lucas@novakgouveia.com.br" ||
@@ -138,7 +147,7 @@ export function ConsultingDashboard() {
     }
 
     if (!shouldForceOwn && filteredByResponsavel) {
-      return base.filter(
+      base = base.filter(
         (item) =>
           item.responsavel && item.responsavel.trim() === filteredByResponsavel
       );
@@ -154,7 +163,7 @@ export function ConsultingDashboard() {
       !isAdmin
     ) {
       const ownFirstName = user.name.split(" ")[0]?.toLowerCase();
-      return base.filter((item) =>
+      base = base.filter((item) =>
         (item.responsavel || "").toString().toLowerCase().includes(ownFirstName)
       );
     }
@@ -400,6 +409,12 @@ export function ConsultingDashboard() {
     setFilteredByResponsavel(responsavel);
   };
 
+  const handleItemSelect = (item: any) => {
+    // Abrir modal com detalhes do item selecionado
+    setActiveModal("item-details");
+    setModalData([item]);
+  };
+
   const handleCalendarDateClick = (date: string, items: any[]) => {
     setSelectedDate(date);
     setCalendarModalData(items);
@@ -464,12 +479,19 @@ export function ConsultingDashboard() {
             <br className="sm:hidden" /> {user?.name || "Usuário"}!
           </h1>
         </div>
-        <div className="sm:mt-0 mt-2">
+        <div className="sm:mt-0 mt-2 flex flex-col sm:flex-row gap-2 sm:gap-4">
+          <SearchFilter
+            onItemSelect={handleItemSelect}
+            processedItems={processedItems}
+            className="w-full sm:w-80"
+          />
           {canSeeResponsavelFilter && (
-            <ResponsavelFilter
-              onFilterChange={handleResponsavelFilterChange}
-              processedItems={processedItems}
-            />
+            <div className="w-full sm:w-auto">
+              <ResponsavelFilter
+                onFilterChange={handleResponsavelFilterChange}
+                processedItems={processedItems}
+              />
+            </div>
           )}
         </div>
       </div>

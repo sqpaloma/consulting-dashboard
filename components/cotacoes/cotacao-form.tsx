@@ -164,20 +164,20 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto w-full bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto w-full bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
             <Plus className="h-6 w-6" />
             Nova Cotação #{proximoNumero || "..."}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Informações gerais */}
-          <div className="p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
-            <h3 className="text-lg font-semibold text-white mb-4">Informações Gerais</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-3 sm:p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Informações Gerais</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="numeroOS" className="text-blue-300">Número da OS</Label>
                   <Input
@@ -212,7 +212,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="fornecedor" className="text-blue-300">Fornecedor Preferencial</Label>
                   <Select value={formData.fornecedor} onValueChange={(value) => handleInputChange("fornecedor", value)}>
@@ -257,14 +257,14 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
           </div>
 
           {/* Itens */}
-          <div className="p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
-            <div className="flex flex-row items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Itens para Cotação</h3>
+          <div className="p-3 sm:p-4 bg-blue-800/30 border border-blue-700 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-white">Itens para Cotação</h3>
               <Button
                 type="button"
                 onClick={addItem}
                 size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Item
@@ -272,21 +272,21 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
             </div>
             <div>
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow className="hover:!bg-transparent border-blue-700">
-                      <TableHead className="w-[150px] text-blue-300">Código da Peça *</TableHead>
-                      <TableHead className="min-w-[200px] text-blue-300">Descrição *</TableHead>
-                      <TableHead className="w-[100px] text-blue-300">Quantidade *</TableHead>
-                      <TableHead className="w-[120px] text-blue-300">Cadastro</TableHead>
-                      <TableHead className="min-w-[150px] text-blue-300">Observações</TableHead>
-                      <TableHead className="w-[80px] text-blue-300">Ações</TableHead>
+                      <TableHead className="w-[150px] text-blue-300 px-2 sm:px-4 text-xs sm:text-sm">Código da Peça *</TableHead>
+                      <TableHead className="min-w-[200px] text-blue-300 px-2 sm:px-4 text-xs sm:text-sm">Descrição *</TableHead>
+                      <TableHead className="w-[100px] text-blue-300 px-2 sm:px-4 text-xs sm:text-sm">Quantidade *</TableHead>
+                      <TableHead className="w-[120px] text-blue-300 px-2 sm:px-4 text-xs sm:text-sm">Cadastro</TableHead>
+                      <TableHead className="min-w-[150px] text-blue-300 px-2 sm:px-4 text-xs sm:text-sm">Observações</TableHead>
+                      <TableHead className="w-[80px] text-blue-300 px-2 sm:px-4 text-xs sm:text-sm">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {itens.map((item, index) => (
                       <TableRow key={index} className="border-blue-700/50 hover:bg-blue-800/30">
-                        <TableCell>
+                        <TableCell className="px-2 sm:px-4">
                           <Input
                             value={item.codigoPeca}
                             onChange={(e) => handleItemChange(index, "codigoPeca", e.target.value)}
@@ -294,7 +294,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                             className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-2 sm:px-4">
                           <Input
                             value={item.descricao}
                             onChange={(e) => handleItemChange(index, "descricao", e.target.value)}
@@ -302,7 +302,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                             className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-2 sm:px-4">
                           <Input
                             type="number"
                             min="1"
@@ -311,7 +311,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                             className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-2 sm:px-4">
                           <div className="flex justify-center">
                             <Checkbox
                               checked={item.precisaCadastro || false}
@@ -320,7 +320,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                             />
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-2 sm:px-4">
                           <Input
                             value={item.observacoes || ""}
                             onChange={(e) => handleItemChange(index, "observacoes", e.target.value)}
@@ -328,7 +328,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
                             className="w-full bg-blue-800 border-blue-600 text-white placeholder:text-blue-400"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-2 sm:px-4">
                           <Button
                             type="button"
                             variant="ghost"
@@ -349,7 +349,7 @@ export function CotacaoForm({ isOpen, onClose, solicitanteId }: CotacaoFormProps
           </div>
 
           {/* Botões */}
-          <div className="flex justify-end space-x-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 sm:space-x-0">
             <Button
               type="button"
               variant="outline"

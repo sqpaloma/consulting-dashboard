@@ -247,7 +247,7 @@ export function CotacaoEditModal({
               onClick={onClose}
               variant="outline"
               disabled={isSaving}
-              className="border-blue-600 text-blue-300 hover:bg-blue-800"
+              className="border-blue-600 text-blue-200 hover:bg-blue-800 hover:text-blue-100"
             >
               <X className="h-4 w-4 mr-2" />
               Cancelar

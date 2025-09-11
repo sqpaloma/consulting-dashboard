@@ -73,34 +73,35 @@ export default function CotacoesPage() {
       subtitle=""
       fullWidth={true}
     >
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header personalizado com actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Badge de pendências */}
-            {totalPendentes > 0 && (
-              <Badge className="bg-blue-100 text-blue-900 text-sm font-semibold">
+        <div className="flex flex-col gap-4">
+          {/* Badge de pendências */}
+          {totalPendentes > 0 && (
+            <div className="flex justify-center sm:justify-start">
+              <Badge className="bg-blue-100 text-blue-900 text-sm font-semibold px-3 py-1">
                 {totalPendentes} pendente{totalPendentes > 1 ? "s" : ""}
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
           
-          <div className="flex items-center gap-3">
+          {/* Botões de ação */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             {/* Botão para cadastrar peça */}
             <Button
               onClick={() => setShowCadastroForm(true)}
               variant="outline"
-              className="border-green-600 text-green-600 hover:bg-green-50 font-semibold"
+              className="border-green-600 text-green-600 hover:bg-green-50 font-semibold w-full sm:w-auto"
             >
               <Package className="h-4 w-4 mr-2" />
-              Cadastro
+              Cadastro de Peça
             </Button>
             
             {/* Botão para criar nova cotação */}
             {podecriarCotacao && (
               <Button
                 onClick={() => setShowForm(true)}
-                className="bg-blue-600 text-white hover:bg-blue-700 font-semibold"
+                className="bg-blue-600 text-white hover:bg-blue-700 font-semibold w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Nova Cotação
@@ -109,47 +110,34 @@ export default function CotacoesPage() {
           </div>
         </div>
 
-        {/* Informações sobre o fluxo e busca */}
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="font-semibold mb-2 text-blue-900">Fluxo de Negócio:</h3>
-              <div className="flex flex-wrap gap-2 text-sm">
-                <span className="bg-blue-600 text-white px-2 py-1 rounded font-medium">1. Novo</span>
-                <span className="text-blue-600">→</span>
-                <span className="bg-blue-100 text-blue-900 px-2 py-1 rounded font-medium">2. Em Cotação</span>
-                <span className="text-blue-600">→</span>
-                <span className="bg-blue-600 text-white px-2 py-1 rounded font-medium">3. Respondida</span>
-                <span className="text-blue-600">→</span>
-                <span className="bg-blue-100 text-blue-900 px-2 py-1 rounded font-medium">4. Aprovada p/ Compra</span>
-                <span className="text-blue-600">→</span>
-                <span className="bg-blue-600 text-white px-2 py-1 rounded font-medium">5. Comprada</span>
-              </div>
+        {/* Busca e filtros simplificados */}
+        <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
+          <div className="space-y-3">
+            {/* Busca */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar cotações..."
+                value={filtros.busca}
+                onChange={(e) => setFiltros(prev => ({ ...prev, busca: e.target.value }))}
+                className="pl-10 bg-white border-blue-300 text-gray-900 placeholder-gray-500"
+              />
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="relative lg:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar cotações..."
-                  value={filtros.busca}
-                  onChange={(e) => setFiltros(prev => ({ ...prev, busca: e.target.value }))}
-                  className="pl-10 bg-white border-blue-300 text-gray-900 placeholder-gray-500"
-                />
-              </div>
-              
+            {/* Botões de filtro */}
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="border-blue-600 text-blue-900 hover:bg-blue-50 whitespace-nowrap"
+                className="border-blue-600 text-blue-900 hover:bg-blue-50 w-full sm:w-auto"
               >
                 <Filter className="h-4 w-4 mr-2" />
-                Filtros
+                {showFilters ? "Ocultar Filtros" : "Mostrar Filtros"}
               </Button>
               
               {(filtros.status !== "all" || filtros.incluirHistorico || (filtros.responsavel && filtros.responsavel !== "all") || filtros.dataInicio || filtros.dataFim) && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => setFiltros(prev => ({
                     ...prev,
                     status: "all",
@@ -158,20 +146,20 @@ export default function CotacoesPage() {
                     dataInicio: undefined,
                     dataFim: undefined,
                   }))}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 whitespace-nowrap"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 w-full sm:w-auto"
                 >
                   <X className="h-4 w-4 mr-2" />
-                  Limpar
+                  Limpar Filtros
                 </Button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Filtros Expandidos */}
+        {/* Filtros Expandidos - Layout Mobile-First */}
         {showFilters && (
-          <div className="bg-blue-800/30 rounded-lg p-4 border border-blue-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div className="bg-blue-800/30 rounded-lg p-3 sm:p-4 border border-blue-700">
+            <div className="space-y-4">
               {/* Status */}
               <div className="space-y-2">
                 <label className="text-blue-300 text-sm font-medium">Status</label>
@@ -206,47 +194,48 @@ export default function CotacoesPage() {
                 </div>
               )}
 
-              {/* Data início */}
-              <div className="space-y-2">
-                <label className="text-blue-300 text-sm font-medium">Data início</label>
-                <input
-                  type="date"
-                  value={filtros.dataInicio ? new Date(filtros.dataInicio).toISOString().split('T')[0] : ''}
-                  onChange={(e) => {
-                    const date = e.target.value ? new Date(e.target.value).getTime() : undefined;
-                    setFiltros(prev => ({ ...prev, dataInicio: date }));
-                  }}
-                  className="w-full bg-blue-900/50 border-blue-600 text-white rounded-md px-3 py-2 text-sm"
-                />
+              {/* Datas em grid mobile-friendly */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-blue-300 text-sm font-medium">Data início</label>
+                  <input
+                    type="date"
+                    value={filtros.dataInicio ? new Date(filtros.dataInicio).toISOString().split('T')[0] : ''}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value).getTime() : undefined;
+                      setFiltros(prev => ({ ...prev, dataInicio: date }));
+                    }}
+                    className="w-full bg-blue-900/50 border-blue-600 text-white rounded-md px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-blue-300 text-sm font-medium">Data fim</label>
+                  <input
+                    type="date"
+                    value={filtros.dataFim ? new Date(filtros.dataFim).toISOString().split('T')[0] : ''}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value).getTime() : undefined;
+                      setFiltros(prev => ({ ...prev, dataFim: date }));
+                    }}
+                    className="w-full bg-blue-900/50 border-blue-600 text-white rounded-md px-3 py-2 text-sm"
+                  />
+                </div>
               </div>
 
-              {/* Data fim */}
-              <div className="space-y-2">
-                <label className="text-blue-300 text-sm font-medium">Data fim</label>
+              {/* Switch para incluir histórico */}
+              <div className="flex items-start space-x-3 bg-blue-900/30 p-3 rounded-md">
                 <input
-                  type="date"
-                  value={filtros.dataFim ? new Date(filtros.dataFim).toISOString().split('T')[0] : ''}
-                  onChange={(e) => {
-                    const date = e.target.value ? new Date(e.target.value).getTime() : undefined;
-                    setFiltros(prev => ({ ...prev, dataFim: date }));
-                  }}
-                  className="w-full bg-blue-900/50 border-blue-600 text-white rounded-md px-3 py-2 text-sm"
+                  type="checkbox"
+                  id="incluir-historico"
+                  checked={filtros.incluirHistorico}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, incluirHistorico: e.target.checked }))}
+                  className="rounded border-blue-600 bg-blue-900/50 text-blue-600 focus:ring-blue-500 mt-1"
                 />
+                <label htmlFor="incluir-historico" className="text-blue-200 text-sm leading-relaxed">
+                  Incluir cotações finalizadas (Compradas/Canceladas)
+                </label>
               </div>
-            </div>
-
-            {/* Switch para incluir histórico */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="incluir-historico"
-                checked={filtros.incluirHistorico}
-                onChange={(e) => setFiltros(prev => ({ ...prev, incluirHistorico: e.target.checked }))}
-                className="rounded border-blue-600 bg-blue-900/50 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="incluir-historico" className="text-blue-300 text-sm">
-                Incluir cotações finalizadas (Compradas/Canceladas)
-              </label>
             </div>
           </div>
         )}

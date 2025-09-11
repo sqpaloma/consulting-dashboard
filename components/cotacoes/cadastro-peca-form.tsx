@@ -141,10 +141,10 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white">
+      <DialogContent className="max-w-[95vw] sm:max-w-[500px] bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 text-white p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
-            <Plus className="h-6 w-6" />
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
             Solicitação de Cadastro de Peça
           </DialogTitle>
           <DialogDescription className="text-blue-300">
@@ -153,7 +153,7 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div className="space-y-2">
             <Label htmlFor="codigo" className="text-blue-300">
               Código da Peça <span className="text-red-400">*</span>
@@ -267,7 +267,7 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
             </div>
           </div>
 
-          <DialogFooter>
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 sm:space-x-0 pt-4">
             <Button
               type="button"
               variant="outline"
@@ -287,7 +287,7 @@ export function CadastroPecaForm({ isOpen, onClose }: CadastroPecaFormProps) {
                 "Criar Solicitação"
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

@@ -193,6 +193,8 @@ export function DashboardModal({
         return "Follow-up: Itens Atrasados";
       case "overdue-items":
         return "Itens em Atraso";
+      case "item-details":
+        return "Detalhes do Item";
       default:
         return "Detalhes";
     }
@@ -364,6 +366,54 @@ export function DashboardModal({
     );
   };
 
+  // Componente para exibir detalhes completos de um item específico
+  const ItemDetailsView = ({ item }: { item: any }) => {
+    const fields = Object.keys(item).filter(key => key !== 'id' && item[key] !== null && item[key] !== undefined && item[key] !== '');
+    
+    return (
+      <div className="space-y-6">
+        <div className={`rounded-lg p-4 border ${getBackgroundColor(item)}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {fields.map((field) => (
+              <div key={field} className="space-y-1">
+                <label className="text-sm font-medium text-gray-700 capitalize">
+                  {field.replace(/_/g, ' ')}
+                </label>
+                <div className="text-sm text-gray-900">
+                  {field === 'status' ? (
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item[field])}`}
+                    >
+                      {item[field]}
+                    </span>
+                  ) : field.includes('data') || field.includes('prazo') ? (
+                    formatDisplayDate({ [field]: item[field] })
+                  ) : (
+                    item[field]?.toString() || 'N/A'
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex justify-center">
+          <Button
+            onClick={() =>
+              window.open(
+                `https://app.novakgouveia.com.br/ordem-servico/order/${item.id}`,
+                "_blank"
+              )
+            }
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Ver no Sistema Completo
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
@@ -414,6 +464,10 @@ export function DashboardModal({
                 </svg>
               </div>
               <p className="text-gray-500">Nenhum item encontrado</p>
+            </div>
+          ) : activeModal === "item-details" ? (
+            <div className="max-h-[60vh] overflow-y-auto">
+              <ItemDetailsView item={sortedData[0]} />
             </div>
           ) : (
             <div style={{ height: "60vh" }} className="overflow-hidden">

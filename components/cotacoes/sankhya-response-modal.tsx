@@ -153,7 +153,7 @@ export function SankhyaResponseModal({
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
-              className="border-blue-600 text-blue-300 hover:bg-blue-800"
+              className="border-blue-600 text-blue-200 hover:bg-blue-800 hover:text-blue-100"
             >
               Cancelar
             </Button>

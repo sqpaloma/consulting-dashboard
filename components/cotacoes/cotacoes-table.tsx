@@ -40,6 +40,11 @@ import { CotacaoApprovalModal } from "./cotacao-approval-modal";
 import { CotacaoEditModal } from "./cotacao-edit-modal";
 import { Id } from "@/convex/_generated/dataModel";
 
+// Função utilitária para formatar data
+const formatDate = (timestamp: number) => {
+  return new Date(timestamp).toLocaleDateString('pt-BR');
+};
+
 interface FiltrosState {
   busca: string;
   status: string;
@@ -63,6 +68,32 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
   const [editingCotacao, setEditingCotacao] = useState<Id<"cotacoes"> | null>(null);
 
   const { excluirCotacao, excluirPendencia, concluirPendencia, finalizarCompra } = useCotacoes();
+
+  // Função para lidar com ações dos cards mobile
+  const handleCardAction = (cotacao: any, action: string) => {
+    if (action === "view") {
+      setSelectedCotacao(cotacao._id);
+    } else if (action === "responder") {
+      if (cotacao.tipo === "cadastro") {
+        setRespondingPendencia(cotacao._id);
+      } else {
+        setRespondingCotacao(cotacao._id);
+      }
+    } else if (action === "aprovar") {
+      setApprovingCotacao(cotacao._id);
+    } else if (action === "comprar") {
+      handleComprar(cotacao);
+    } else if (action === "concluir") {
+      handleConcluir(cotacao);
+    } else if (action === "editar") {
+      setEditingCotacao(cotacao._id);
+    } else if (action === "excluir") {
+      handleExcluir(cotacao);
+    } else {
+      // Default para visualizar
+      setSelectedCotacao(cotacao._id);
+    }
+  };
 
   // Função para confirmar e excluir
   const handleExcluir = async (cotacao: any) => {
@@ -283,6 +314,131 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
     return false;
   };
 
+  // Componente Card para dispositivos móveis
+  const CotacaoCard = ({ cotacao }: { cotacao: any }) => {
+    const statusInfo = getStatusInfo(cotacao.status);
+    const actions = getAvailableActions(cotacao);
+    const pendente = isPendente(cotacao);
+    
+    return (
+      <Card className={`border-blue-700 mb-4 ${pendente ? "bg-blue-600/20 border-blue-400/50" : "bg-blue-800/30"}`}>
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            {/* Header do card */}
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className={`text-xs ${cotacao.tipo === "cadastro" ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}>
+                    {cotacao.tipo === "cadastro" ? "Cadastro" : "Cotação"}
+                  </Badge>
+                  {cotacao.tipo === "cotacao" && cotacao.temItensPrecisaCadastro && (
+                    <Badge className="bg-orange-900/30 text-orange-300 border-orange-700/50 text-xs">
+                      Cadastro
+                    </Badge>
+                  )}
+                  <div className="flex items-center gap-1">
+                    {pendente && <Clock className="h-3 w-3 text-blue-300" />}
+                    <span className="font-mono font-bold text-white">#{cotacao.numeroSequencial}</span>
+                  </div>
+                </div>
+                
+                <Badge className={statusInfo.color}>
+                  {statusInfo.label}
+                </Badge>
+              </div>
+              
+              {/* Menu de ações */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0 text-gray-400 hover:text-white">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-blue-800 border-blue-600">
+                  {actions.map((action) => (
+                    <DropdownMenuItem
+                      key={action}
+                      onClick={() => handleCardAction(cotacao, action)}
+                      className={`text-blue-100 hover:bg-blue-700 ${["cancelar", "excluir"].includes(action) ? "text-red-400 hover:text-red-300" : ""}`}
+                    >
+                      {getActionIcon(action)}
+                      <span className="ml-2">{getActionLabel(action)}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            {/* Conteúdo principal */}
+            <div className="space-y-2 text-sm">
+              {cotacao.tipo === "cadastro" ? (
+                <>
+                  <div className="text-white font-medium">{cotacao.descricao}</div>
+                  {cotacao.marca && (
+                    <div className="text-blue-200">
+                      <span className="text-blue-300 font-medium">Marca:</span> {cotacao.marca}
+                    </div>
+                  )}
+                  {cotacao.codigoSankhya && (
+                    <div className="text-green-300 font-mono text-xs">
+                      <span className="text-green-400 font-medium">Sankhya:</span> {cotacao.codigoSankhya}
+                    </div>
+                  )}
+                  {cotacao.anexoNome && (
+                    <div className="text-green-300 text-xs">📎 {cotacao.anexoNome}</div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {cotacao.numeroOS && (
+                    <div className="text-blue-200">
+                      <span className="text-blue-300 font-medium">OS:</span> {cotacao.numeroOS}
+                    </div>
+                  )}
+                  {cotacao.numeroOrcamento && (
+                    <div className="text-blue-200">
+                      <span className="text-blue-300 font-medium">Orçamento:</span> {cotacao.numeroOrcamento}
+                    </div>
+                  )}
+                  {cotacao.cliente && (
+                    <div className="text-blue-200">
+                      <span className="text-blue-300 font-medium">Cliente:</span> {cotacao.cliente}
+                    </div>
+                  )}
+                  {cotacao.totalItens > 0 && (
+                    <div className="text-blue-200">
+                      <span className="text-blue-300 font-medium">Itens:</span> {cotacao.totalItens}
+                    </div>
+                  )}
+                  {cotacao.valorTotal > 0 && (
+                    <div className="text-white font-semibold">
+                      <span className="text-blue-300 font-medium">Valor:</span> {formatCurrency(cotacao.valorTotal)}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Footer com responsáveis e data */}
+            <div className="pt-2 border-t border-blue-700/50 space-y-1 text-xs">
+              <div className="text-blue-200">
+                <span className="text-blue-300 font-medium">Solicitante:</span> {cotacao.solicitante?.name}
+              </div>
+              {cotacao.comprador && (
+                <div className="text-blue-200">
+                  <span className="text-blue-300 font-medium">Comprador:</span> {cotacao.comprador.name}
+                </div>
+              )}
+              <div className="text-blue-200">
+                <span className="text-blue-300 font-medium">Data:</span> {formatDate(cotacao.createdAt)}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const CotacaoRow = ({ cotacao }: { cotacao: any }) => {
     const statusInfo = getStatusInfo(cotacao.status);
     const actions = getAvailableActions(cotacao);
@@ -290,19 +446,19 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
 
     return (
       <TableRow className={`${pendente ? "bg-blue-600/20 border-blue-400/50" : ""} hover:!bg-blue-600/30 transition-colors text-white hover:text-white border-0`}>
-        <TableCell>
-          <div className="flex items-center gap-2">
-            <Badge className={cotacao.tipo === "cadastro" ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}>
+        <TableCell className="px-2 sm:px-4">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Badge className={`text-xs ${cotacao.tipo === "cadastro" ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200"}`}>
               {cotacao.tipo === "cadastro" ? "Cadastro" : "Cotação"}
             </Badge>
             {cotacao.tipo === "cotacao" && cotacao.temItensPrecisaCadastro && (
-              <Badge className="bg-orange-900/30 text-orange-300 border-orange-700/50">
+              <Badge className="bg-orange-900/30 text-orange-300 border-orange-700/50 text-xs">
                 Cadastro
               </Badge>
             )}
           </div>
         </TableCell>
-        <TableCell>
+        <TableCell className="px-2 sm:px-4">
           <div className="flex items-center gap-2">
             {pendente && <Clock className="h-4 w-4 text-blue-300" />}
             <span className="font-mono font-semibold">
@@ -310,7 +466,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
             </span>
           </div>
         </TableCell>
-        <TableCell>
+        <TableCell className="px-2 sm:px-4">
           <div className="space-y-1">
             {cotacao.tipo === "cadastro" ? (
               <>
@@ -340,12 +496,12 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
             )}
           </div>
         </TableCell>
-        <TableCell>
+        <TableCell className="px-2 sm:px-4">
           <Badge className={statusInfo.color}>
             {statusInfo.label}
           </Badge>
         </TableCell>
-        <TableCell>
+        <TableCell className="px-2 sm:px-4">
           <div className="space-y-1">
             <div className="text-sm">{cotacao.solicitante?.name}</div>
             {cotacao.comprador && (
@@ -370,7 +526,7 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
         <TableCell className="text-sm text-gray-400">
           {formatDate(cotacao.createdAt)}
         </TableCell>
-        <TableCell>
+        <TableCell className="px-2 sm:px-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -434,27 +590,29 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
       <div className="space-y-6">
         {/* Cotações Pendentes */}
         {cotacoesPendentes.length > 0 && (
-          <Card className="bg-blue-800/30 border-blue-700">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+          <div className="bg-blue-800/30 border border-blue-700 rounded-lg">
+            <div className="p-4 border-b border-blue-700">
+              <h3 className="flex items-center gap-2 text-white font-semibold">
                 <Clock className="h-5 w-5 text-blue-300" />
                 Pendentes ({cotacoesPendentes.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h3>
+            </div>
+            
+            {/* Layout Desktop - Tabela */}
+            <div className="hidden lg:block">
               <div className="overflow-x-auto">
-                <Table className="w-full">
+                <Table className="w-full min-w-[800px]">
                   <TableHeader>
                     <TableRow className="hover:!bg-transparent">
-                      <TableHead className="text-blue-300 w-20">Tipo</TableHead>
-                      <TableHead className="text-blue-300 w-24">Número</TableHead>
-                      <TableHead className="text-blue-300 min-w-[200px]">Identificação</TableHead>
-                      <TableHead className="text-blue-300 w-32">Status</TableHead>
-                      <TableHead className="text-blue-300 min-w-[180px]">Responsáveis</TableHead>
-                      <TableHead className="text-blue-300 text-center w-20">Itens</TableHead>
-                      <TableHead className="text-blue-300 text-right w-32">Valor</TableHead>
-                      <TableHead className="text-blue-300 w-28">Data</TableHead>
-                      <TableHead className="text-blue-300 w-20">Ações</TableHead>
+                      <TableHead className="text-blue-300 w-20 px-2 sm:px-4">Tipo</TableHead>
+                      <TableHead className="text-blue-300 w-24 px-2 sm:px-4">Número</TableHead>
+                      <TableHead className="text-blue-300 min-w-[200px] px-2 sm:px-4">Identificação</TableHead>
+                      <TableHead className="text-blue-300 w-32 px-2 sm:px-4">Status</TableHead>
+                      <TableHead className="text-blue-300 min-w-[180px] px-2 sm:px-4">Responsáveis</TableHead>
+                      <TableHead className="text-blue-300 text-center w-20 px-2 sm:px-4">Itens</TableHead>
+                      <TableHead className="text-blue-300 text-right w-32 px-2 sm:px-4">Valor</TableHead>
+                      <TableHead className="text-blue-300 w-28 px-2 sm:px-4">Data</TableHead>
+                      <TableHead className="text-blue-300 w-20 px-2 sm:px-4">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -464,18 +622,25 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            {/* Layout Mobile - Cards */}
+            <div className="lg:hidden p-4 space-y-4">
+              {cotacoesPendentes.map((cotacao) => (
+                <CotacaoCard key={cotacao._id} cotacao={cotacao} />
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Histórico */}
         {(filtros.incluirHistorico && cotacoesHistorico.length > 0) && (
-          <Card className="bg-blue-800/30 border-blue-700">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-white">
-                <span className="flex items-center gap-2">
+          <div className="bg-blue-800/30 border border-blue-700 rounded-lg">
+            <div className="p-4 border-b border-blue-700">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-white font-semibold">
                   Histórico ({cotacoesHistorico.length})
-                </span>
+                </h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -485,22 +650,24 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                 >
                   <Download className="h-4 w-4" />
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </div>
+            </div>
+            
+            {/* Layout Desktop - Tabela */}
+            <div className="hidden lg:block">
               <div className="overflow-x-auto">
-                <Table className="w-full">
+                <Table className="w-full min-w-[800px]">
                   <TableHeader>
                     <TableRow className="hover:!bg-transparent">
-                      <TableHead className="text-blue-300 w-20">Tipo</TableHead>
-                      <TableHead className="text-blue-300 w-24">Número</TableHead>
-                      <TableHead className="text-blue-300 min-w-[200px]">Identificação</TableHead>
-                      <TableHead className="text-blue-300 w-32">Status</TableHead>
-                      <TableHead className="text-blue-300 min-w-[180px]">Responsáveis</TableHead>
-                      <TableHead className="text-blue-300 text-center w-20">Itens</TableHead>
-                      <TableHead className="text-blue-300 text-right w-32">Valor</TableHead>
-                      <TableHead className="text-blue-300 w-28">Data</TableHead>
-                      <TableHead className="text-blue-300 w-20">Ações</TableHead>
+                      <TableHead className="text-blue-300 w-20 px-2 sm:px-4">Tipo</TableHead>
+                      <TableHead className="text-blue-300 w-24 px-2 sm:px-4">Número</TableHead>
+                      <TableHead className="text-blue-300 min-w-[200px] px-2 sm:px-4">Identificação</TableHead>
+                      <TableHead className="text-blue-300 w-32 px-2 sm:px-4">Status</TableHead>
+                      <TableHead className="text-blue-300 min-w-[180px] px-2 sm:px-4">Responsáveis</TableHead>
+                      <TableHead className="text-blue-300 text-center w-20 px-2 sm:px-4">Itens</TableHead>
+                      <TableHead className="text-blue-300 text-right w-32 px-2 sm:px-4">Valor</TableHead>
+                      <TableHead className="text-blue-300 w-28 px-2 sm:px-4">Data</TableHead>
+                      <TableHead className="text-blue-300 w-20 px-2 sm:px-4">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -510,8 +677,15 @@ export function CotacoesTable({ filtros, userRole, userId }: CotacoesTableProps)
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            {/* Layout Mobile - Cards */}
+            <div className="lg:hidden p-4 space-y-4">
+              {cotacoesHistorico.map((cotacao) => (
+                <CotacaoCard key={cotacao._id} cotacao={cotacao} />
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Mensagem quando não há resultados */}

@@ -4,10 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, DollarSign } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
-  useDevolucaoData,
-  useMovimentacaoData,
-} from "@/lib/convex-returns-movements-client";
-import {
   useDashboardData,
   useDashboardItemsByCategory,
 } from "@/lib/convex-dashboard-client";
@@ -40,19 +36,6 @@ export function DashboardMetrics({
 }: DashboardMetricsProps) {
   // Convex hooks
   const dashData = useDashboardData();
-  const devolucaoDataConvex = useDevolucaoData();
-  const movimentacaoDataConvex = useMovimentacaoData();
-
-  const [devolucaoData, setDevolucaoData] = useState({
-    total: 0,
-    pendentes: 0,
-    concluidas: 0,
-  });
-  const [movimentacaoData, setMovimentacaoData] = useState({
-    total: 0,
-    entrada: 0,
-    saida: 0,
-  });
 
   // Estados para as métricas de itens atrasados
   const [itemMetrics, setItemMetrics] = useState<{
@@ -229,17 +212,6 @@ export function DashboardMetrics({
     }
   }, [dashData]); // Recarrega quando dashData muda
 
-  useEffect(() => {
-    if (devolucaoDataConvex?.devolucaoData) {
-      setDevolucaoData(devolucaoDataConvex.devolucaoData);
-    }
-  }, [devolucaoDataConvex]);
-
-  useEffect(() => {
-    if (movimentacaoDataConvex?.movimentacaoData) {
-      setMovimentacaoData(movimentacaoDataConvex.movimentacaoData);
-    }
-  }, [movimentacaoDataConvex]);
 
   // Função para calcular percentual seguro
   const calculatePercentage = (value: number, total: number): number => {
@@ -529,91 +501,6 @@ export function DashboardMetrics({
           </CardContent>
         </Card>
 
-        {/* Devoluções */}
-        <Card className="bg-white/10 border-white/20 text-white">
-          <CardContent className="p-2">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white/70">
-                Devoluções
-              </span>
-              <svg
-                className="h-3 w-3 text-red-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                />
-              </svg>
-            </div>
-            <div className="text-xl font-bold text-white mb-1 text-center">
-              {devolucaoData.total}
-            </div>
-            <div className="flex items-center justify-center space-x-2 text-xs">
-              <span className="text-red-300">
-                {calculatePercentage(
-                  devolucaoData.pendentes,
-                  devolucaoData.total
-                )}
-                %
-              </span>
-              <span className="text-green-300">
-                {calculatePercentage(
-                  devolucaoData.concluidas,
-                  devolucaoData.total
-                )}
-                %
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Movimentações */}
-        <Card className="bg-white/10 border-white/20 text-white">
-          <CardContent className="p-2">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white/70">
-                Movimentações
-              </span>
-              <svg
-                className="h-3 w-3 text-purple-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                />
-              </svg>
-            </div>
-            <div className="text-xl font-bold text-white mb-1 text-center">
-              {movimentacaoData.total}
-            </div>
-            <div className="flex items-center justify-center space-x-2 text-xs">
-              <span className="text-red-300">
-                {calculatePercentage(
-                  movimentacaoData.saida,
-                  movimentacaoData.total
-                )}
-                %
-              </span>
-              <span className="text-green-300">
-                {calculatePercentage(
-                  movimentacaoData.entrada,
-                  movimentacaoData.total
-                )}
-                %
-              </span>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

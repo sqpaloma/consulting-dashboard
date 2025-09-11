@@ -14,12 +14,8 @@ import {
   History,
   Database,
   Users,
-  RotateCcw,
-  TrendingUp,
 } from "lucide-react";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
-import { useReturnsData } from "@/hooks/use-returns-data";
-import { useMovementsData } from "@/hooks/use-movements-data";
 
 export function SettingsDataManagement() {
   const {
@@ -35,69 +31,24 @@ export function SettingsDataManagement() {
     handleClearData,
   } = useDashboardData();
 
-  // Hook para Devoluções
-  const {
-    devolucaoData,
-    fileName: devolucaoFileName,
-    uploadHistory: devolucaoUploadHistory,
-    isLoading: devolucaoIsLoading,
-    saveStatus: devolucaoSaveStatus,
-    loadSavedData: loadDevolucaoSavedData,
-    loadUploadHistory: loadDevolucaoUploadHistory,
-    handleFileUpload: handleDevolucaoFileUpload,
-    handleSaveData: handleDevolucaoSaveData,
-    handleClearData: handleDevolucaoClearData,
-  } = useReturnsData();
-
-  // Hook para Movimentações
-  const {
-    movimentacaoData,
-    fileName: movimentacaoFileName,
-    uploadHistory: movimentacaoUploadHistory,
-    isLoading: movimentacaoIsLoading,
-    saveStatus: movimentacaoSaveStatus,
-    loadSavedData: loadMovimentacaoSavedData,
-    loadUploadHistory: loadMovimentacaoUploadHistory,
-    handleFileUpload: handleMovimentacaoFileUpload,
-    handleSaveData: handleMovimentacaoSaveData,
-    handleClearData: handleMovimentacaoClearData,
-  } = useMovementsData();
 
   const fileInputRefConsultores = useRef<HTMLInputElement>(null);
-  const fileInputRefDevolucoes = useRef<HTMLInputElement>(null);
-  const fileInputRefMovimentacoes = useRef<HTMLInputElement>(null);
 
   const [historyDropdownOpen, setHistoryDropdownOpen] = useState({
     consultores: false,
-    devolucoes: false,
-    movimentacoes: false,
   });
 
   useEffect(() => {
     loadSavedData();
     loadUploadHistory();
-    loadDevolucaoSavedData();
-    loadDevolucaoUploadHistory();
-    loadMovimentacaoSavedData();
-    loadMovimentacaoUploadHistory();
   }, [
     loadSavedData,
     loadUploadHistory,
-    loadDevolucaoSavedData,
-    loadDevolucaoUploadHistory,
-    loadMovimentacaoSavedData,
-    loadMovimentacaoUploadHistory,
   ]);
 
-  const handleUploadClick = (
-    type: "consultores" | "devolucoes" | "movimentacoes"
-  ) => {
+  const handleUploadClick = (type: "consultores") => {
     if (type === "consultores") {
       fileInputRefConsultores.current?.click();
-    } else if (type === "devolucoes") {
-      fileInputRefDevolucoes.current?.click();
-    } else if (type === "movimentacoes") {
-      fileInputRefMovimentacoes.current?.click();
     }
   };
 
@@ -114,9 +65,7 @@ export function SettingsDataManagement() {
     }
   };
 
-  const toggleHistoryDropdown = (
-    type: "consultores" | "devolucoes" | "movimentacoes"
-  ) => {
+  const toggleHistoryDropdown = (type: "consultores") => {
     setHistoryDropdownOpen((prev) => ({
       ...prev,
       [type]: !prev[type],
@@ -132,33 +81,16 @@ export function SettingsDataManagement() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="consultores" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white/20 mb-6">
-            <TabsTrigger
-              value="consultores"
-              className="text-white data-[state=active]:bg-white/20"
-            >
+        <div className="w-full">
+          <div className="bg-white/20 mb-6 p-1 rounded-lg">
+            <div className="text-white bg-white/20 px-3 py-2 rounded-md flex items-center">
               <Users className="h-4 w-4 mr-2" />
               Consultores
-            </TabsTrigger>
-            <TabsTrigger
-              value="devolucoes"
-              className="text-white data-[state=active]:bg-white/20"
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Devoluções
-            </TabsTrigger>
-            <TabsTrigger
-              value="movimentacoes"
-              className="text-white data-[state=active]:bg-white/20"
-            >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Movimentações
-            </TabsTrigger>
-          </TabsList>
+            </div>
+          </div>
 
-          {/* Aba Consultores */}
-          <TabsContent value="consultores" className="space-y-6">
+          {/* Seção Consultores */}
+          <div className="space-y-6">
             {/* Upload Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -315,214 +247,8 @@ export function SettingsDataManagement() {
                 </p>
               )}
             </div>
-          </TabsContent>
-
-          {/* Aba Devoluções */}
-          <TabsContent value="devolucoes" className="space-y-6">
-            {/* Upload Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-white text-base font-medium">
-                  Upload de Planilha - Devoluções
-                </Label>
-                <Button
-                  variant="outline"
-                  onClick={() => handleUploadClick("devolucoes")}
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Fazer Upload
-                </Button>
-              </div>
-
-              <input
-                ref={fileInputRefDevolucoes}
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleDevolucaoFileUpload}
-                className="hidden"
-              />
-
-              {devolucaoFileName && (
-                <div className="flex items-center space-x-2 text-white/80 text-sm bg-white/5 p-2 rounded">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  <span>Arquivo atual: {devolucaoFileName}</span>
-                </div>
-              )}
-
-              <p className="text-sm text-gray-300">
-                Faça upload de uma planilha Excel (.xlsx ou .xls) para atualizar
-                os dados de devoluções.
-              </p>
-            </div>
-
-            <Separator className="bg-white/20" />
-
-            {/* Current Data Info */}
-            <div className="space-y-4">
-              <Label className="text-white text-base font-medium">
-                Dados Atuais das Devoluções
-              </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="bg-white/5 p-3 rounded">
-                  <div className="text-xs text-gray-300">Total</div>
-                  <div className="text-lg font-semibold text-white">
-                    {devolucaoData.total}
-                  </div>
-                </div>
-                <div className="bg-white/5 p-3 rounded">
-                  <div className="text-xs text-gray-300">Pendentes</div>
-                  <div className="text-lg font-semibold text-white">
-                    {devolucaoData.pendentes}
-                  </div>
-                </div>
-                <div className="bg-white/5 p-3 rounded">
-                  <div className="text-xs text-gray-300">Concluídas</div>
-                  <div className="text-lg font-semibold text-white">
-                    {devolucaoData.concluidas}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Separator className="bg-white/20" />
-
-            {/* Actions */}
-            <div className="space-y-4">
-              <Label className="text-white text-base font-medium">Ações</Label>
-              <div className="flex flex-wrap gap-4">
-                <Button
-                  onClick={handleDevolucaoSaveData}
-                  disabled={
-                    devolucaoData.total === 0 ||
-                    devolucaoSaveStatus === "saving"
-                  }
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {getSaveButtonText(devolucaoSaveStatus)}
-                </Button>
-
-                <Button
-                  onClick={handleDevolucaoClearData}
-                  disabled={devolucaoIsLoading}
-                  variant="destructive"
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Limpar Dados
-                </Button>
-              </div>
-              <p className="text-sm text-gray-300">
-                Salve para compartilhar os dados de devoluções com outros
-                usuários do dashboard.
-              </p>
-            </div>
-          </TabsContent>
-
-          {/* Aba Movimentações */}
-          <TabsContent value="movimentacoes" className="space-y-6">
-            {/* Upload Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-white text-base font-medium">
-                  Upload de Planilha - Movimentações
-                </Label>
-                <Button
-                  variant="outline"
-                  onClick={() => handleUploadClick("movimentacoes")}
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Fazer Upload
-                </Button>
-              </div>
-
-              <input
-                ref={fileInputRefMovimentacoes}
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleMovimentacaoFileUpload}
-                className="hidden"
-              />
-
-              {movimentacaoFileName && (
-                <div className="flex items-center space-x-2 text-white/80 text-sm bg-white/5 p-2 rounded">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  <span>Arquivo atual: {movimentacaoFileName}</span>
-                </div>
-              )}
-
-              <p className="text-sm text-gray-300">
-                Faça upload de uma planilha Excel (.xlsx ou .xls) para atualizar
-                os dados de movimentações.
-              </p>
-            </div>
-
-            <Separator className="bg-white/20" />
-
-            {/* Current Data Info */}
-            <div className="space-y-4">
-              <Label className="text-white text-base font-medium">
-                Dados Atuais das Movimentações
-              </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="bg-white/5 p-3 rounded">
-                  <div className="text-xs text-gray-300">Total</div>
-                  <div className="text-lg font-semibold text-white">
-                    {movimentacaoData.total}
-                  </div>
-                </div>
-                <div className="bg-white/5 p-3 rounded">
-                  <div className="text-xs text-gray-300">Entrada</div>
-                  <div className="text-lg font-semibold text-white">
-                    {movimentacaoData.entrada}
-                  </div>
-                </div>
-                <div className="bg-white/5 p-3 rounded">
-                  <div className="text-xs text-gray-300">Saída</div>
-                  <div className="text-lg font-semibold text-white">
-                    {movimentacaoData.saida}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Separator className="bg-white/20" />
-
-            {/* Actions */}
-            <div className="space-y-4">
-              <Label className="text-white text-base font-medium">Ações</Label>
-              <div className="flex flex-wrap gap-4">
-                <Button
-                  onClick={handleMovimentacaoSaveData}
-                  disabled={
-                    movimentacaoData.total === 0 ||
-                    movimentacaoSaveStatus === "saving"
-                  }
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {getSaveButtonText(movimentacaoSaveStatus)}
-                </Button>
-
-                <Button
-                  onClick={handleMovimentacaoClearData}
-                  disabled={movimentacaoIsLoading}
-                  variant="destructive"
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Limpar Dados
-                </Button>
-              </div>
-              <p className="text-sm text-gray-300">
-                Salve para compartilhar os dados de movimentações com outros
-                usuários do dashboard.
-              </p>
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
