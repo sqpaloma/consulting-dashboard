@@ -34,7 +34,7 @@ export function DistributionPanel({ dashboardData }: DistributionPanelProps) {
   // Prepara os dados para o gráfico de barras
   const chartData = [
     {
-      name: "Aguardando Aprovação",
+      name: "Follow UP",
       value: dashboardData.aguardandoAprovacao,
     },
     {
