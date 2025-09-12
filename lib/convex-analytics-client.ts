@@ -34,6 +34,11 @@ export interface RawDataRow {
 }
 
 export interface AnalyticsUpload {
+  upload_date: string;
+  total_records: ReactNode;
+  uploaded_by: ReactNode;
+  file_name: ReactNode;
+  id: Key | null | undefined;
   _id: string;
   fileName: string;
   uploadedBy: string;

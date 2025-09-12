@@ -221,6 +221,8 @@ export function ActivityPlanner({
         "EDUARDO",
         "YURI",
         "VAGNER",
+      ],
+      rafael: [
         "FABIO F",
         "NIVALDO",
       ],

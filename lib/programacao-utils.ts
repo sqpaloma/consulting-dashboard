@@ -1,7 +1,7 @@
 // Helpers for Programação page
 export const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
-  "paloma-hidraulicos": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
-  "paloma-engrenagens": ["VAGNER", "FABIO F", "NIVALDO"],
+  "paloma-pistoes": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
+  "rafael-engrenagens": ["VAGNER", "FABIO F", "NIVALDO"],
   "lucas-bomba": ["ALEXANDRE", "ALEXSANDRO", "ROBERTO P", "KAUA", "MARCELINO"],
   "lucas-comandos": ["LEANDRO", "RODRIGO N", "LUISMIGUEL"],
   marcelo: [
@@ -22,8 +22,8 @@ export function getTeamForConsultant(name?: string | null): string[] {
   if (!n) return [];
   if (n.includes("paloma")) {
     return [
-      ...TEAMS_BY_CONSULTANT["paloma-hidraulicos"],
-      ...TEAMS_BY_CONSULTANT["paloma-engrenagens"],
+      ...TEAMS_BY_CONSULTANT["paloma-pistoes"],
+      ...TEAMS_BY_CONSULTANT["rafael-engrenagens"],
     ];
   }
   if (n.includes("lucas")) {
@@ -44,8 +44,8 @@ export function getDepartmentsForConsultant(
   if (!n) return [];
   if (n.includes("paloma")) {
     return [
-      { key: "paloma-hidraulicos", label: "Hidráulicos" },
-      { key: "paloma-engrenagens", label: "Engrenagens" },
+      { key: "paloma-pistoes", label: "Pistões" },
+      { key: "rafael-engrenagens", label: "Engrenagens" },
     ];
   }
   if (n.includes("lucas")) {

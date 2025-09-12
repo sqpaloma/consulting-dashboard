@@ -307,6 +307,11 @@ export default function ProgramacaoPage() {
                     onDateFilterChange={setDateFilter}
                     todayCount={todayItems.length}
                     weekCount={thisWeekItems.length}
+                    consultant={selectedConsultant}
+                    mechanics={columns.map(col => ({
+                      name: col,
+                      items: itemsByMechanic[col] || []
+                    }))}
                   />
                 </div>
               )}

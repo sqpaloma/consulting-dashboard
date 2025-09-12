@@ -9,6 +9,10 @@ export function mapEngineerResponsible(nome: string): string {
     "EDUARDO",
     "YURI",
     "VAGNER",
+
+  ]
+  const rafaelTeam = [
+  
     "FABIO F",
     "NIVALDO",
   ];
@@ -44,6 +48,7 @@ export function mapEngineerResponsible(nome: string): string {
     "LUCAS",
     "MARCELO",
     "GIOVANNI",
+    "RAFAEL MASSA",
 
     "SANDRO",
     "RONAN",
@@ -51,7 +56,6 @@ export function mapEngineerResponsible(nome: string): string {
     "VENDAS1",
     "MAMEDE",
     "GIOVANA",
-    "RAFAEL MASSA",
     "LENILTON",
     "CARLINHOS",
     "CLAUDIO",
@@ -100,6 +104,8 @@ export function isEngineerMapped(nome: string): boolean {
     "EDUARDO",
     "YURI",
     "VAGNER",
+  ]
+  const rafaelTeam = [
     "FABIO F",
     "NIVALDO",
   ];
@@ -134,6 +140,7 @@ export function isEngineerMapped(nome: string): boolean {
     "LUCAS",
     "MARCELO",
     "GIOVANNI",
+    "RAFAEL MASSA",
 
     "SANDRO",
     "RONAN",
@@ -141,7 +148,6 @@ export function isEngineerMapped(nome: string): boolean {
     "VENDAS1",
     "MAMEDE",
     "GIOVANA",
-    "RAFAEL MASSA",
     "LENILTON",
     "CARLINHOS",
     "CLAUDIO",
@@ -156,6 +162,7 @@ export function isEngineerMapped(nome: string): boolean {
 
   return (
     palomaTeam.includes(nomeUpper) ||
+    rafaelTeam.includes(nomeUpper) ||
     lucasTeam.includes(nomeUpper) ||
     marceloTeam.includes(nomeUpper) ||
     carlinhosTeam.includes(nomeUpper) ||
@@ -172,6 +179,7 @@ export function getAllMappedNames(): string[] {
     "EDUARDO",
     "YURI",
     "VAGNER",
+    // Equipe RAFAEL
     "FABIO F",
     "NIVALDO",
     // Equipe LUCAS

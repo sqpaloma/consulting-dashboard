@@ -1,4 +1,5 @@
 import { Calendar, CalendarDays } from "lucide-react";
+import { PdfButton } from "./pdf-button";
 
 interface ProgramacaoFiltersProps {
   departments: { key: string; label: string }[];
@@ -13,6 +14,19 @@ interface ProgramacaoFiltersProps {
   onDateFilterChange: (filter: string | null) => void;
   todayCount: number;
   weekCount: number;
+  // Props para PDF
+  consultant?: string;
+  mechanics?: Array<{
+    name: string;
+    items: Array<{
+      titulo?: string;
+      os?: string;
+      cliente: string;
+      data?: string;
+      prazo?: string;
+      status: string;
+    }>;
+  }>;
 }
 
 export function ProgramacaoFilters({
@@ -28,6 +42,8 @@ export function ProgramacaoFilters({
   onDateFilterChange,
   todayCount,
   weekCount,
+  consultant,
+  mechanics = [],
 }: ProgramacaoFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 justify-between">
@@ -101,6 +117,18 @@ export function ProgramacaoFilters({
           <CalendarDays className="w-3 h-3" />
           Esta Semana ({weekCount})
         </button>
+        
+        {consultant && (
+          <PdfButton
+            consultant={consultant}
+            mechanics={mechanics}
+            statusFilter={statusFilter}
+            dateFilter={dateFilter}
+            department={selectedDepartment ? 
+              departments.find(d => d.key === selectedDepartment)?.label || null : null
+            }
+          />
+        )}
       </div>
     </div>
   );

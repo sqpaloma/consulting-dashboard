@@ -27,8 +27,8 @@ interface DepartamentoInfoProps {
 
 // Helpers locais de time dos consultores (mecânicos)
 const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
-  "paloma-hidraulicos": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
-  "paloma-engrenagens": ["VAGNER", "FABIO F", "NIVALDO"],
+  "paloma-pistoes": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
+  "rafael-engrenagens": ["VAGNER", "FABIO F", "NIVALDO"],
   "lucas-bomba": ["ALEXANDRE", "ALEXSANDRO", "ROBERTO P", "KAUA", "MARCELINO"],
   "lucas-comandos": ["LEANDRO", "RODRIGO N", "LUISMIGUEL"],
   marcelo: [
@@ -42,23 +42,8 @@ const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
     "DANIEL G",
   ],
   carlinhos: ["SHEINE"],
-  avulsos: [
-    "JOSE CARLOS",
-    "ANTONIO SILVA",
-    "PEDRO SANTOS",
-    "CARLOS OLIVEIRA",
-    "JOAO FERREIRA",
-    "PAULO COSTA",
-    "RICARDO LIMA",
-    "FERNANDO ALVES",
-    "MARCOS PEREIRA",
-    "ANDRE SOUSA",
-    "LUIS RODRIGUES",
-    "SERGIO MARTINS",
-    "RAFAEL GOMES",
-    "DIEGO BARBOSA",
-    "THIAGO RIBEIRO",
-  ],
+
+
 };
 
 function getTeamForConsultant(

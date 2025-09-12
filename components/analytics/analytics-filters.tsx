@@ -109,13 +109,13 @@ export function AnalyticsFilters({
         "Sobrinho",
         "Mamede",
         "Giovana",
-        "Rafael Massa",
+      
         "LENILTON",
       ],
     },
     servicos: {
       gerente: "Giovanni",
-      colaboradores: ["Giovanni", "Paloma", "Lucas", "Marcelo M", "Raquel"],
+      colaboradores: ["Giovanni", "Paloma", "Lucas", "Marcelo M", "Raquel", "Rafael Massa"],
     },
     engenhariaeassistencia: {
       gerente: "Carlinhos",
