@@ -28,6 +28,8 @@ interface DepartamentoInfoProps {
 // Helpers locais de time dos consultores (mecânicos)
 const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
   "paloma-pistoes": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
+  "paloma-hidraulicos": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
+  "paloma-engrenagens": ["GUSTAVOBEL", "EDUARDO", "YURI", "GUILHERME"],
   "rafael-engrenagens": ["VAGNER", "FABIO F", "NIVALDO"],
   "lucas-bomba": ["ALEXANDRE", "ALEXSANDRO", "ROBERTO P", "KAUA", "MARCELINO"],
   "lucas-comandos": ["LEANDRO", "RODRIGO N", "LUISMIGUEL"],
@@ -42,8 +44,7 @@ const TEAMS_BY_CONSULTANT: Record<string, string[]> = {
     "DANIEL G",
   ],
   carlinhos: ["SHEINE"],
-
-
+  avulsos: ["OUTROS", "GERAL"],
 };
 
 function getTeamForConsultant(
@@ -53,12 +54,12 @@ function getTeamForConsultant(
   const n = (name || "").toLowerCase();
   if (n.includes("paloma")) {
     if (departmentType === "hidraulicos")
-      return TEAMS_BY_CONSULTANT["paloma-hidraulicos"];
+      return TEAMS_BY_CONSULTANT["paloma-pistoes"];
     if (departmentType === "engrenagens")
-      return TEAMS_BY_CONSULTANT["paloma-engrenagens"];
+      return TEAMS_BY_CONSULTANT["rafael-engrenagens"];
     return [
-      ...TEAMS_BY_CONSULTANT["paloma-hidraulicos"],
-      ...TEAMS_BY_CONSULTANT["paloma-engrenagens"],
+      ...TEAMS_BY_CONSULTANT["paloma-pistoes"],
+      ...TEAMS_BY_CONSULTANT["rafael-engrenagens"],
     ];
   }
   if (n.includes("lucas")) {
@@ -537,15 +538,15 @@ const DepartmentItem = ({ index, style, data }: DepartmentItemProps) => {
               {dep.responsavel.toLowerCase().includes("paloma") ? (
                 <div className="space-y-4">
                   <DepartmentSection
-                    title="Bombas e Motores Hidráulicos"
-                    mechanics={TEAMS_BY_CONSULTANT["paloma-hidraulicos"]}
+                    title="Pistões"
+                    mechanics={TEAMS_BY_CONSULTANT["paloma-pistoes"]}
                     processedItems={processedItems}
                     consultantName={dep.responsavel}
                     teamList={team}
                   />
                   <DepartmentSection
-                    title="Bombas e Motores de Engrenagens"
-                    mechanics={TEAMS_BY_CONSULTANT["paloma-engrenagens"]}
+                    title="Engrenagens"
+                    mechanics={TEAMS_BY_CONSULTANT["rafael-engrenagens"]}
                     processedItems={processedItems}
                     consultantName={dep.responsavel}
                     teamList={team}
@@ -744,7 +745,7 @@ export function DepartamentoInfo({
                             <DepartmentSection
                               title="Bombas e Motores Hidráulicos"
                               mechanics={
-                                TEAMS_BY_CONSULTANT["paloma-hidraulicos"]
+                                TEAMS_BY_CONSULTANT["paloma-pistoes"]
                               }
                               processedItems={processedItems}
                               consultantName={responsavel.nome}
@@ -753,7 +754,7 @@ export function DepartamentoInfo({
                             <DepartmentSection
                               title="Bombas e Motores de Engrenagens"
                               mechanics={
-                                TEAMS_BY_CONSULTANT["paloma-engrenagens"]
+                                TEAMS_BY_CONSULTANT["rafael-engrenagens"]
                               }
                               processedItems={processedItems}
                               consultantName={responsavel.nome}
@@ -906,10 +907,10 @@ export function DepartamentoInfo({
                                     .includes("paloma") ? (
                                     <div className="space-y-4">
                                       <DepartmentSection
-                                        title="Bombas e Motores Hidráulicos"
+                                        title="Pistões"
                                         mechanics={
                                           TEAMS_BY_CONSULTANT[
-                                            "paloma-hidraulicos"
+                                            "paloma-pistoes"
                                           ]
                                         }
                                         processedItems={processedItems}
@@ -917,10 +918,10 @@ export function DepartamentoInfo({
                                         teamList={team}
                                       />
                                       <DepartmentSection
-                                        title="Bombas e Motores de Engrenagens"
+                                        title="Engrenagens"
                                         mechanics={
                                           TEAMS_BY_CONSULTANT[
-                                            "paloma-engrenagens"
+                                            "rafael-engrenagens"
                                           ]
                                         }
                                         processedItems={processedItems}
