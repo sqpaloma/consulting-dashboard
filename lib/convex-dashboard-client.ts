@@ -1,5 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { ReactNode } from "react";
+import { Key } from "readline";
 
 export interface DashboardData {
   _id?: string;
@@ -29,6 +31,11 @@ export interface DashboardItem {
 }
 
 export interface DashboardUpload {
+  id: Key | null | undefined;
+  upload_date: string;
+  total_records: ReactNode;
+  uploaded_by: ReactNode;
+  file_name: ReactNode;
   _id?: string;
   fileName: string;
   uploadedBy?: string;

@@ -220,11 +220,11 @@ export function SettingsDataManagement() {
                   <div className="space-y-3">
                     {uploadHistory.map((upload) => (
                       <div
-                        key={upload.id}
+                        key={upload._id || upload.fileName || upload.uploadDate}
                         className="p-3 bg-white/5 rounded border-l-4 border-l-blue-500"
                       >
                         <div className="font-medium text-sm text-white">
-                          {upload.file_name}
+                          {upload.fileName || upload.file_name}
                         </div>
                         <div className="text-xs text-gray-300">
                           {upload.uploaded_by} • {upload.total_records}{" "}
