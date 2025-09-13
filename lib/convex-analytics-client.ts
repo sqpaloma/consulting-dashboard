@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { Key, ReactNode } from "react";
 
 export interface AnalyticsData {
   _id?: string;
